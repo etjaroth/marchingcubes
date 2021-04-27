@@ -25,6 +25,8 @@ layout (binding=1, std140) buffer indirect_render_data {
 };
 
 uniform vec3 pos = vec3(0.0);
+uniform float maxFill = 1.0;
+uniform float minFill = 0.0;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -331,19 +333,23 @@ const int cases[256][5][3] = { // List of faces from edges
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
-	// Code from paulbourke.net/geometry/polygonise/
-	if (f1 < 0.00001 || abs(f1 - f2) < 0.00001)
-		return v1;
-	if (f2 < 0.00001)
-		return v2;
+//	// Code from paulbourke.net/geometry/polygonise/
+//	if (f1 < 0.00001 || abs(f1 - f2) < 0.00001)
+//		return v1;
+//	if (f2 < 0.00001)
+//		return v2;
+//
+//	float mu = -f1 / (f2 - f1);
+//	vec3 p;
+//	p.x = v1.x + mu * (v2.x - v1.x);
+//	p.y = v1.y + mu * (v2.y - v1.y);
+//	p.z = v1.z + mu * (v2.z - v1.z);
+//
+//	return p;
 
-	float mu = -f1 / (f2 - f1);
-	vec3 p;
-	p.x = v1.x + mu * (v2.x - v1.x);
-	p.y = v1.y + mu * (v2.y - v1.y);
-	p.z = v1.z + mu * (v2.z - v1.z);
-
-	return p;
+vec3 u = v1 - v2;
+vec3 v = v2 - v1;
+return 0.5*(f1*v+f2*u+v) + v1;
 }
 
 void main() {
@@ -355,6 +361,7 @@ void main() {
 	//            so corners outside the texture will just have a fill of 0
 	vec4 corners[8];
 	corners[0] = imageLoad(generated_data, cube_location + ivec3(0, 0, 0));
+
 	corners[1] = imageLoad(generated_data, cube_location + ivec3(1, 0, 0));
 	corners[2] = imageLoad(generated_data, cube_location + ivec3(1, 1, 0));
 	corners[3] = imageLoad(generated_data, cube_location + ivec3(0, 1, 0));
@@ -375,9 +382,6 @@ void main() {
 	case_index += (corners[5].x > 0 ? 32 : 0);
 	case_index += (corners[6].x > 0 ? 64 : 0);
 	case_index += (corners[7].x > 0 ? 128 : 0);
-	//if (case_index == 0 || case_index == 255) {
-	//	return;
-	//}
 
 
 	// Count triangles (shockingly hard)
@@ -429,7 +433,8 @@ void main() {
 				// Decide material
 				vertex.material = vec4(v2.y, 0.0, 0.0, 0.0);
 				//vertex.material = vec4(offset, 0.0);
-				vertex.material.x = 1.0;
+				//vertex.material.x = 1.0;
+
 
 				output_verticies[triangle_index][vertex_index] = vertex;
 			}
@@ -439,6 +444,7 @@ void main() {
 			vec3 cross1 = vec3(output_verticies[triangle_index][1].pos) - orgin;
 			vec3 cross2 = vec3(output_verticies[triangle_index][2].pos) - orgin;
 			vec4 normal = vec4(cross(cross1, cross2), 1.0);
+			normal = (normal == vec4(0.0, 0.0, 0.0, 1.0)) ? vec4(1.0, 0.0, 0.0, 1.0) : normal;
 			output_verticies[triangle_index][0].normal = normal;
 			output_verticies[triangle_index][1].normal = normal;
 			output_verticies[triangle_index][2].normal = normal;

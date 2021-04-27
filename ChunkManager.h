@@ -14,6 +14,8 @@ class ChunkManager
 	std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction> chunk_map; // 3D vector of pointers to MarchingCubes
 	unsigned int radius; // distance from orgin that chunks are generated
 	const char* shader_file;
+	SSBOComputeShader gen_verticies;
+	ComputeShader fill_generator;
 
 	void update_chunks();
 

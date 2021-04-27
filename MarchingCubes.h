@@ -15,7 +15,8 @@ public:
 	// Shaders
 	int realCubeSize;
 	//FillCache noise_cache;
-	SSBOComputeShader gen_verticies;
+	SSBOComputeShader *gen_verticies;
+	ComputeShader* fillGenerator;
 
 	// rendering
 	unsigned int  VAO;
@@ -29,7 +30,7 @@ public:
 	// generating terrain
 	
 	// tasks
-	enum class tasks {terrain_fills=0, buffer, verticies, done };
+	enum class tasks {terrain_fills=0, buffer, verticies, done, empty};
 	friend tasks& operator++(tasks& orig)
 	{
 		if (orig == tasks::done) {
@@ -46,8 +47,6 @@ public:
 		return rVal;
 	}
 
-
-
 	tasks current_task;
 	GLsync fence;
 
@@ -60,7 +59,7 @@ public:
 	void generate_verticies();
 
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, const char* shader_file);
+	MarchingCubes(int cubeSize, glm::ivec3 position, SSBOComputeShader* gen_verticies_ptr, ComputeShader* fill_generator_ptr);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);

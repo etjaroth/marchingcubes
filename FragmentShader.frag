@@ -6,7 +6,7 @@ out vec4 FragColor;
 
 //in vec4 Color;
 //in vec2 TexCoord;
-in vec3 normal;
+flat in vec3 normal;
 in vec3 FragPos;
 
 // Material

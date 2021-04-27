@@ -72,10 +72,9 @@ void SSBOComputeShader::dontuse() const {
 
 void SSBOComputeShader::fillSSBO(GLuint ssbo, unsigned int binding, GLuint x, GLuint y, GLuint z) {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, ssbo); // ssbo binding is 1
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, ssbo);
 	use();
-	glDispatchCompute((GLuint)x, (GLuint)y, (GLuint)z); // fence is used elsewhere
-
+	glDispatchCompute((GLuint)x, (GLuint)y, (GLuint)z); // fence or memory barrier is required
 	dontuse();
 };
 

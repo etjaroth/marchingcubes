@@ -1,13 +1,13 @@
 #include "MarchingCubes.h"
 #include <assert.h>
 
-MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, const char* texture_shader_file) :
-	//noise_cache("drawTexture.comp", cubeSize + 1, cubeSize + 1, cubeSize + 1),
-	gen_verticies("genVerticies.comp") {
+MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, SSBOComputeShader* gen_verticies_ptr, ComputeShader* fill_generator_ptr) {
+	gen_verticies = gen_verticies_ptr;
+	fillGenerator = fill_generator_ptr;
+
 
 	realCubeSize = cubeSize + 1;
 	pos = position;
-	texture_shader_file_name = texture_shader_file;
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -44,25 +44,25 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, const char* text
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	current_task = tasks::terrain_fills;
-	//update_cubes(); // causes serious issues
-	//generate_terrain_fills();
-	//generate_verticies();
 }
 
 
 MarchingCubes::~MarchingCubes() {
-	glDeleteBuffers(1, &INDIRECT_SSBO);
-	glDeleteBuffers(1, &OUTPUT_SSBO);
-	glDeleteVertexArrays(1, &VAO);
+	if (current_task != tasks::empty) {
+		glDeleteBuffers(1, &INDIRECT_SSBO);
+		glDeleteBuffers(1, &OUTPUT_SSBO);
+		glDeleteVertexArrays(1, &VAO);
+	}
 }
 
 void MarchingCubes::update_cubes() {
 	glBindVertexArray(VAO);
 	if (current_task == tasks::terrain_fills) { // create first fence
+		std::cout << "g";
 		generate_terrain_fills();
 		++current_task;
 	}
-	else {
+	else if (current_task != tasks::empty) {
 		GLint syncStatus[1] = { GL_UNSIGNALED };
 		syncStatus[0] = GL_SIGNALED;
 		glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
@@ -74,12 +74,26 @@ void MarchingCubes::update_cubes() {
 
 			switch (current_task) {
 			case tasks::buffer:
+				std::cout << "b";
 				++current_task;
 				[[fallthrough]];
 			case tasks::verticies:
+				std::cout << "v";
 				generate_verticies();
 				break;
-			case tasks::done:
+			case tasks::done: // check if empty
+				glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
+				unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
+				glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(unsigned int), indirect_render_data);
+				if (indirect_render_data[0] == 0) {
+					std::cout << "e";
+					current_task = tasks::empty;
+					// Do destructor
+					glDeleteBuffers(1, &INDIRECT_SSBO);
+					glDeleteBuffers(1, &OUTPUT_SSBO);
+					glDeleteVertexArrays(1, &VAO);
+				}
 				break;
 			}
 		}
@@ -93,10 +107,6 @@ void MarchingCubes::update_cubes() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, 0);
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-
-	if (current_task != tasks::done) {
-		//update_cubes();
-	}
 }
 
 void MarchingCubes::generate_terrain_fills() {
@@ -116,11 +126,10 @@ void MarchingCubes::generate_terrain_fills() {
 
 	// Fill texture with render data
 	// might be better to pass a pointer to the shader
-	ComputeShader fillGenerator(texture_shader_file_name, realCubeSize, realCubeSize, realCubeSize);
-	fillGenerator.use();
-	fillGenerator.setVec3("offset", glm::vec3(pos));
-	fillGenerator.dontuse();
-	fillGenerator.fillTexture(landscape_data);
+	fillGenerator->use();
+	fillGenerator->setVec3("offset", glm::vec3(pos));
+	fillGenerator->dontuse();
+	fillGenerator->fillTexture(landscape_data);
 }
 
 //void MarchingCubes::generate_edges() {}
@@ -137,15 +146,15 @@ void MarchingCubes::generate_verticies() {
 	glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(unsigned int), indirect_render_data, GL_DYNAMIC_DRAW);
 
 	// Generate vertex data
-	gen_verticies.use();
-	gen_verticies.setVec3("pos", glm::vec3(pos));
-	gen_verticies.fillSSBO(OUTPUT_SSBO, OUTPUT_SSBO_BINDING, realCubeSize, realCubeSize, realCubeSize);
-	gen_verticies.dontuse();
+	gen_verticies->use();
+	gen_verticies->setVec3("pos", glm::vec3(pos));
+	gen_verticies->fillSSBO(OUTPUT_SSBO, OUTPUT_SSBO_BINDING, realCubeSize-1, realCubeSize-1, realCubeSize-1);
+	gen_verticies->dontuse();
 	glDeleteTextures(1, &landscape_data); // might still need this?
 }
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	if (current_task == tasks::done) {
+	if (current_task == tasks::done || current_task == tasks::empty) {
 		// Draw
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);

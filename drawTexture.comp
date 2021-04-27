@@ -15,6 +15,9 @@ struct vertex { // vertex output format
 
 uniform vec3 offset;
 uniform float maxFill = 1.0;
+uniform float minFill = 0.0;
+
+
 struct Biome {
 	float ampB;
 	float ampC;
@@ -38,6 +41,7 @@ Biome biomes[] =  {{64.0, 32.0, 8.0, 0.002706099, 0.0130321, 0.013718}, // hills
 Biome biome;
 int biomeMode = 0; // 0 for a, 1 for b, -1 for transition
 
+//////////////////////////////////////////////////////////////////////////////
 
 //	Simplex 3D Noise 
 //	by Ian McEwan, Ashima Arts
@@ -138,12 +142,9 @@ float get_cavenoise(vec3 pos, float freq, float floor_height, float base_elevati
 	return round(skew+noise); // 1 or 0
 }
 
-
-
-
-
-
-
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 
 void main() {
@@ -181,6 +182,7 @@ void main() {
 	// biome changing goes here
 	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
 	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
+	float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
 	float elevation = base_elevation
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
@@ -189,9 +191,10 @@ void main() {
 	float caveNoise = get_cavenoise(noise_coords, 0.05845881, elevation - elevationD, base_elevation);
 
 	float ground = elevation - (noise_coords.y * maxFill);
-	ground = min(ground, maxFill) * caveNoise;
+	//ground = min(ground, maxFill) * caveNoise;
 
-	float fill = min(max(ground, 0.0f), maxFill);
+	float fill = min(max(ground, minFill), maxFill);
+
 	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 	
 	//vec4 pixel = vec4(fill, 0.0, 0.0, 1.0);
@@ -241,19 +244,13 @@ void main() {
   vec4 pixel = vec4(fill, material, waterlevel, 1.0);
 
 // Dimonds
-//pixel = vec4(0.0);
+//vec4 pixel = vec4(0.0, 1.0, 0.0, 0.0);
 //const int s = 8;
 //pixel.x = int(noise_coords.x) % s == 0 && 
 //	      int(noise_coords.y) % s == 0 && 
 //		  int(noise_coords.z) % s == 0 
-//		  ? 1.0 : pixel.x;
+//		  ? 1.0 : 0.0;
 
-// Floor
-//  if (noise_coords.y < 1) {
-//	pixel.x = 1.0;
-//  } else {
-//	pixel.y = 0.0;
-//  }
 
   imageStore(img_output, pixel_coords.xyz, pixel);
 }

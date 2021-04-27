@@ -67,7 +67,7 @@ void Light::useAsDirectionalLight(Shader shader, int n) {
     char i = ('0' + n);
     root += i;
     root += "].";
-
+    
     shader.setVec3((root + "dir"), dir);
     shader.setFloat((root + "brightness"), brightness);
 

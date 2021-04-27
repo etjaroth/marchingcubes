@@ -1,7 +1,10 @@
 #include "ChunkManager.h"
 #include <unordered_set>
 
-ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int r, const char* landscape_generator) {
+ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int r, const char* landscape_generator) :
+	//noise_cache("drawTexture.comp", cubeSize + 1, cubeSize + 1, cubeSize + 1),
+	gen_verticies("genVerticies.comp"),
+	fill_generator(landscape_generator, chunk_sz + 1, chunk_sz + 1, chunk_sz + 1) {
 
 	chunk_size = chunk_sz;
 	set_pos(orgin);
@@ -31,9 +34,11 @@ void ChunkManager::render(Shader* shader) {
 	for (std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction>::iterator chunk = chunk_map.begin(); chunk != chunk_map.end(); chunk++) {
 		chunk->second->renderCubes(shader);
 	}
+	std::cout << std::endl;
 }
 
 void ChunkManager::update_chunks() {
+	std::cout << "update_chunks: " << "(" << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << ")" << std::endl;
 	int diameter = 2 * radius + 1; // (including a point at 0)
 
 	// List legal points
@@ -41,22 +46,29 @@ void ChunkManager::update_chunks() {
 	for (int x = 0; x < diameter; x++) {
 		for (int y = 0; y < diameter; y++) {
 			for (int z = 0; z < diameter; z++) {
-				const int c = 2;
+				const int num = 1;
 				triple<int> point =
-				{ {x + chunk_position.x - c * radius,
-					y + chunk_position.y - c * radius,
-					z + chunk_position.z - c * radius} };
+				{ {x + chunk_position.x - num * radius,
+					y + chunk_position.y - num * radius,
+					z + chunk_position.z - num * radius} };
 
 				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 				legal_points.insert(point);
 
+				int a = x + chunk_position.x - radius; // x + chunk_position.x - num * radius
+				int b = y + chunk_position.y - radius; // y + chunk_position.y - num * radius
+				int c = z + chunk_position.z - radius; // z + chunk_position.z - num * radius
+
+				std::cout << "(" << a << ", " << b << ", " << c << ")" << std::endl;
+
 				if (chunk_map.find(point) == chunk_map.end()) {
 					offset *= chunk_size;
-					chunk_map.insert(std::pair<triple<int>, std::unique_ptr<MarchingCubes>>(point, std::make_unique<MarchingCubes>(chunk_size, offset, shader_file)));
+					chunk_map.insert(std::pair<triple<int>, std::unique_ptr<MarchingCubes>>(point, std::make_unique<MarchingCubes>(chunk_size, offset, &gen_verticies, &fill_generator)));
 				}
 			}
 		}
 	}
+
 
 	// Create/Destroy MarchingCubes at legal/illegal points
 	for (auto chunk = chunk_map.begin(); chunk != chunk_map.end();) {
@@ -71,4 +83,5 @@ void ChunkManager::update_chunks() {
 			chunk = chunk_map.erase(chunk);
 		}
 	}
+	std::cout << legal_points.size() << std::endl;
 }

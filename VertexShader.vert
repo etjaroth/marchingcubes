@@ -14,7 +14,7 @@ uniform mat4 projection;
 uniform mat4 transform;
 
 // Output
-out vec3 normal;
+flat out vec3 normal;
 out vec3 FragPos;
 
 // Material
