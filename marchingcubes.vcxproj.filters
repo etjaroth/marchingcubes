@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Libraries">
+      <UniqueIdentifier>{ded709d5-37b2-4414-a1e0-9e6f7bcefd5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc">
+      <UniqueIdentifier>{cd5a465a-23e1-41bc-bce5-256c787cdddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Model">
+      <UniqueIdentifier>{7fea8f0f-8bad-4e28-804f-fb8de8471d46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering">
+      <UniqueIdentifier>{010b700b-2ae0-46e9-8ef2-15e0023d30ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering\Cameras">
+      <UniqueIdentifier>{f637da16-a0a9-4d7d-a250-51f06003388e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering\Shading">
+      <UniqueIdentifier>{8cdcfbb9-f2db-40b8-a586-a15f220f864e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{3f83f614-f6b8-449a-a4d8-608b18e63dff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Misc">
+      <UniqueIdentifier>{551d5b67-22d3-461d-ada8-4669e475534f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Model">
+      <UniqueIdentifier>{19fb8dc5-82dd-4bcd-b62a-0833dbbb64e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{8c7c8f34-3233-4ba0-91ca-2ccd00cae7f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Testing">
+      <UniqueIdentifier>{548b0f49-bcc8-4166-9051-3a7890af3e60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\World">
+      <UniqueIdentifier>{266cee09-3fda-4fa0-b84f-ba87d226a5eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\World">
+      <UniqueIdentifier>{6ab12926-3b6d-404f-bfee-67c8df793e71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering\Shaders">
+      <UniqueIdentifier>{e65962f9-bcfc-4dd1-be8e-cfc4c29ca269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering\Shaders\Marching Cubes">
+      <UniqueIdentifier>{aee33439-6da8-42ba-8e51-732c7150bb09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering\Cameras">
+      <UniqueIdentifier>{7505f648-fd5d-4f75-8f05-8345bae7f5f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering\Shading">
+      <UniqueIdentifier>{9c85d0e5-5cb6-4450-bddd-b34fd24936c2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="opengltutorial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FastNoise.cpp">
+      <Filter>Source Files\Libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="Stopwatch.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="MinModel.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests.cpp">
+      <Filter>Source Files\Testing</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>Source Files\Rendering\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="FlyCamera.cpp">
+      <Filter>Source Files\Rendering\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="FPSCamera.cpp">
+      <Filter>Source Files\Rendering\Cameras</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files\Rendering\Shading</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files\Rendering\Shading</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeShader.cpp">
+      <Filter>Source Files\Rendering\Shading</Filter>
+    </ClCompile>
+    <ClCompile Include="SSBOComputeShader.cpp">
+      <Filter>Source Files\Rendering\Shading</Filter>
+    </ClCompile>
+    <ClCompile Include="ChunkManager.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="MarchingCubes.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c">
+      <Filter>Source Files\Libraries</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChunkManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FastNoise.h">
+      <Filter>Header Files\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Stopwatch.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Structs.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadSafeQueue.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="MinModel.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="FlyCamera.h">
+      <Filter>Header Files\Rendering\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files\Rendering\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="FPSCamera.h">
+      <Filter>Header Files\Rendering\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeShader.h">
+      <Filter>Header Files\Rendering\Shading</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Header Files\Rendering\Shading</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files\Rendering\Shading</Filter>
+    </ClInclude>
+    <ClInclude Include="SSBOComputeShader.h">
+      <Filter>Header Files\Rendering\Shading</Filter>
+    </ClInclude>
+    <ClInclude Include="MarchingCubes.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="drawTexture.comp">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+    <None Include="VertexShader.vert">
+      <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+    <None Include="genVerticies.comp">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+    <None Include="FragmentShader.frag">
+      <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
