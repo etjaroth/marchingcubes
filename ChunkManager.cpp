@@ -1,8 +1,7 @@
 #include "ChunkManager.h"
 #include <unordered_set>
 
-ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int r, const char* landscape_generator) :
-	//noise_cache("drawTexture.comp", cubeSize + 1, cubeSize + 1, cubeSize + 1),
+ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* landscape_generator) :
 	gen_verticies("genVerticies.comp"),
 	fill_generator(landscape_generator, chunk_sz + 1, chunk_sz + 1, chunk_sz + 1) {
 
@@ -37,25 +36,38 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 
 void ChunkManager::render(Shader* shader) {
 	for (std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction>::iterator chunk = chunk_map.begin(); chunk != chunk_map.end(); chunk++) {
-		//if (glm::dot(chunk->second->getPos() - position, direction) > 0.0f || glm::dot(chunk->second->getPos() - position, direction + glm::vec3(chunk_size)) > 0.0f) {
+
+		// Check if chunk is visable
+		bool corner_visable = false;
+		float angle = 0.0f;
+
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f,       0.0f,       0.0f))       >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, 0.0f,       0.0f))       >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f,       chunk_size, 0.0f))       >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, 0.0f))       >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f,       0.0f,       chunk_size)) >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, 0.0f,       chunk_size)) >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f,       chunk_size, chunk_size)) >= angle;
+		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, chunk_size)) >= angle;
+
+
+		if (corner_visable) {
 			chunk->second->renderCubes(shader);
-		//}
+		}
 	}
 }
 
 void ChunkManager::update_chunks() {
-	int diameter = 2 * radius + 1; // (including a point at 0)
 
 	// List legal points
 	std::unordered_set<triple<int>, tripleHashFunction> legal_points;
-	for (int x = 0; x < diameter; x++) {
-		for (int y = 0; y < diameter; y++) {
-			for (int z = 0; z < diameter; z++) {
-				const int num = 1;
+	for (int x = -radius; x <= radius; x++) {
+		for (int y = -radius; y <= radius; y++) {
+			for (int z = -radius; z <= radius; z++) {
 				triple<int> point =
-				{ {x + chunk_position.x - num * radius,
-					y + chunk_position.y - num * radius,
-					z + chunk_position.z - num * radius} };
+				{ {x + chunk_position.x,
+					y + chunk_position.y,
+					z + chunk_position.z} };
 
 				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 				legal_points.insert(point);

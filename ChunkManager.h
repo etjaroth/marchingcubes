@@ -13,7 +13,7 @@ class ChunkManager
 	unsigned int chunk_size;
 
 	std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction> chunk_map; // 3D vector of pointers to MarchingCubes
-	unsigned int radius; // distance from orgin that chunks are generated
+	int radius; // distance from orgin that chunks are generated
 	const char* shader_file;
 	SSBOComputeShader gen_verticies;
 	ComputeShader fill_generator;
@@ -24,7 +24,7 @@ class ChunkManager
 
 public:
 
-	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int r, const char * landscape_generator);
+	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char * landscape_generator);
 	void set_pos(glm::vec3 pos);
 	void set_direction(glm::vec3 dir);
 
