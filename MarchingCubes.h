@@ -63,4 +63,5 @@ public:
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);
+	glm::vec3 getPos();
 };

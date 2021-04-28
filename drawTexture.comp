@@ -126,7 +126,7 @@ float get_cavenoise(vec3 pos, float freq, float floor_height, float base_elevati
 	float t = floor_height - pos.y; // always positive
 	float skew;
 
-	pos = pos*vec3(0.5, 2.0, 0.5);
+	pos = pos*vec3(0.5, 0.75, 0.5); // lower values stretch the cave
 
 	float noise = get_snoise(pos, 1.0, freq)+0.5;
 
@@ -191,7 +191,7 @@ void main() {
 	float caveNoise = get_cavenoise(noise_coords, 0.05845881, elevation - elevationD, base_elevation);
 
 	float ground = elevation - (noise_coords.y * maxFill);
-	//ground = min(ground, maxFill) * caveNoise;
+	ground = min(ground, maxFill) * caveNoise;
 
 	float fill = min(max(ground, minFill), maxFill);
 

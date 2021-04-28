@@ -10,6 +10,7 @@ ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int 
 	set_pos(orgin);
 	radius = r;
 	shader_file = landscape_generator;
+
 	update_chunks();
 }
 
@@ -30,15 +31,19 @@ void ChunkManager::set_pos(glm::vec3 pos) {
 	}
 }
 
+void ChunkManager::set_direction(glm::vec3 dir) {
+	direction = dir;
+}
+
 void ChunkManager::render(Shader* shader) {
 	for (std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction>::iterator chunk = chunk_map.begin(); chunk != chunk_map.end(); chunk++) {
-		chunk->second->renderCubes(shader);
+		//if (glm::dot(chunk->second->getPos() - position, direction) > 0.0f || glm::dot(chunk->second->getPos() - position, direction + glm::vec3(chunk_size)) > 0.0f) {
+			chunk->second->renderCubes(shader);
+		//}
 	}
-	std::cout << std::endl;
 }
 
 void ChunkManager::update_chunks() {
-	std::cout << "update_chunks: " << "(" << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << ")" << std::endl;
 	int diameter = 2 * radius + 1; // (including a point at 0)
 
 	// List legal points
@@ -58,8 +63,6 @@ void ChunkManager::update_chunks() {
 				int a = x + chunk_position.x - radius; // x + chunk_position.x - num * radius
 				int b = y + chunk_position.y - radius; // y + chunk_position.y - num * radius
 				int c = z + chunk_position.z - radius; // z + chunk_position.z - num * radius
-
-				std::cout << "(" << a << ", " << b << ", " << c << ")" << std::endl;
 
 				if (chunk_map.find(point) == chunk_map.end()) {
 					offset *= chunk_size;

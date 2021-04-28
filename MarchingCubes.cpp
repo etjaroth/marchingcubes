@@ -58,13 +58,11 @@ MarchingCubes::~MarchingCubes() {
 void MarchingCubes::update_cubes() {
 	glBindVertexArray(VAO);
 	if (current_task == tasks::terrain_fills) { // create first fence
-		std::cout << "g";
 		generate_terrain_fills();
 		++current_task;
 	}
 	else if (current_task != tasks::empty) {
 		GLint syncStatus[1] = { GL_UNSIGNALED };
-		syncStatus[0] = GL_SIGNALED;
 		glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
 		bool finished = (syncStatus[0] == GL_SIGNALED);
 
@@ -74,11 +72,9 @@ void MarchingCubes::update_cubes() {
 
 			switch (current_task) {
 			case tasks::buffer:
-				std::cout << "b";
 				++current_task;
 				[[fallthrough]];
 			case tasks::verticies:
-				std::cout << "v";
 				generate_verticies();
 				break;
 			case tasks::done: // check if empty
@@ -87,7 +83,6 @@ void MarchingCubes::update_cubes() {
 				unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
 				glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(unsigned int), indirect_render_data);
 				if (indirect_render_data[0] == 0) {
-					std::cout << "e";
 					current_task = tasks::empty;
 					// Do destructor
 					glDeleteBuffers(1, &INDIRECT_SSBO);
@@ -182,4 +177,8 @@ void MarchingCubes::setPos(glm::vec3 p) {
 	pos.y = (int)(p.y / (realCubeSize - 1));
 	pos.z = (int)(p.z / (realCubeSize - 1));
 	pos *= realCubeSize;
-};
+}
+
+glm::vec3 MarchingCubes::getPos() {
+	return pos;
+}

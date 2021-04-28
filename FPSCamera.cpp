@@ -97,3 +97,7 @@ int FPSCamera::getViewLoc() {
 glm::vec3 FPSCamera::getPos() {
 	return cameraPos;
 };
+
+glm::vec3 FPSCamera::getDirection() {
+	return cameraDirection;
+}

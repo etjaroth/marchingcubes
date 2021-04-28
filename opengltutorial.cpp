@@ -29,12 +29,12 @@ unsigned int screeny = 600;
 float cameraSpeed = 7.0f;
 
 
-//glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1020.0f);
-glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0f, -3.0f);
+glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1020.0f);
+//glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0f, -3.0f);
 
 
 
-FPSCamera camera(cam_spawn, glm::vec3(0, 0, -1.0f), cameraSpeed);
+FPSCamera camera(cam_spawn, glm::vec3(-1.0, 0, -1.0f), cameraSpeed);
 //unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip);
 
 // Callbacks
@@ -88,7 +88,7 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain(31, glm::vec3(0.0f), 1, "drawTexture.comp");
+	ChunkManager terrain(31, glm::vec3(0.0f), 2, "drawTexture.comp");
 
 
 	// Describe Shapes(s)
@@ -133,9 +133,7 @@ int main() {
 		// Lighting
 
 		Light sun = Light();
-		glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime()), -1.0f, (float)sin(glfwGetTime()));
-
-		std::cout << light_dir.x << ", " << light_dir.y << ", " << light_dir.z << std::endl;
+		glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime()*0.1), -1.0f, (float)sin(glfwGetTime()*0.1));
 
 		sun.setPos(camera.getPos());
 		sun.setDir(light_dir);
@@ -143,7 +141,7 @@ int main() {
 		sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
 		sun.useAsDirectionalLight(objectShader, 0);
 
-		// filler lights
+		// filler lights (need at least 1 spotlight and 1 point light)
 		sun.setBrightness(0.0f);
 		sun.setAngle(glm::radians(30.0f));
 		sun.setPointLightFade(1.0f, 0.09f, 0.032f);
@@ -244,11 +242,13 @@ int main() {
 		///////////////////////////////////////////////////////////////////////
 
 		terrain.set_pos(-camera.getPos());
+		//terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
 
 		///////////////////////////////////////////////////////////////////////
 
 		// Display
+
 		glfwSwapBuffers(window);
 		glfwPollEvents(); // Calls functions from inputs
 		should_close = glfwWindowShouldClose(window);

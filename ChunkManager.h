@@ -8,6 +8,7 @@
 class ChunkManager
 {
 	glm::vec3 position;
+	glm::vec3 direction;
 	glm::ivec3 chunk_position;
 	unsigned int chunk_size;
 
@@ -17,11 +18,15 @@ class ChunkManager
 	SSBOComputeShader gen_verticies;
 	ComputeShader fill_generator;
 
+	
+
 	void update_chunks();
 
 public:
+
 	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, unsigned int r, const char * landscape_generator);
 	void set_pos(glm::vec3 pos);
+	void set_direction(glm::vec3 dir);
 
 	void render(Shader* shader);
 };

@@ -40,5 +40,6 @@ public:
 
 	// Misc
 	glm::vec3 getPos();
+	glm::vec3 getDirection();
 };
 
