@@ -15,7 +15,6 @@ struct vertex { // vertex output format
 
 uniform vec3 offset;
 uniform float maxFill = 1.0;
-uniform float minFill = 0.0;
 
 
 struct Biome {
@@ -34,7 +33,7 @@ uniform uint biome_type_B;
 uniform vec3 boundryA;
 uniform vec3 boundryB;
 
-Biome biomes[] =  {{64.0, 32.0, 8.0, 0.002706099, 0.0130321, 0.013718}, // hills
+Biome biomes[] =  {{32.0, 16.0, 4.0, 0.002706099, 0.0130321, 0.013718}, // hills
 					{8.0, 4.0, 2.0, 0.002706099, 0.0130321, 0.013718}, // ???
 					{1.0, 1.0, 1.0, 0.002706099, 0.0130321, 0.013718}}; // ???
 
@@ -174,7 +173,7 @@ void main() {
   //////////////////////////////////////////////////////////////////////////
 
 // Generate Fill
-	float baseAmp = 256.0;
+	float baseAmp = 64.0;
 	float baseFreq = 0.00045881;
 	
 	// Make heightmap
@@ -182,7 +181,7 @@ void main() {
 	// biome changing goes here
 	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
 	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
-	float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
+	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
 	float elevation = base_elevation
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
@@ -193,18 +192,19 @@ void main() {
 	float ground = elevation - (noise_coords.y * maxFill);
 	ground = min(ground, maxFill) * caveNoise;
 
-	float fill = min(max(ground, minFill), maxFill);
+	float fill = min(ground, maxFill);
 
 	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 	
-	//vec4 pixel = vec4(fill, 0.0, 0.0, 1.0);
-
 	float waterlevel = 0.0;
 	if (noise_coords.y < watertable // pixel below waterlevel
 		&& watertable > elevation // waterlevel above bedrock
-		&& noise_coords.y > min(min(watertable-4*(watertable-elevation), watertable-32.0), elevation)) {
-		waterlevel += 1.0;
+		&& noise_coords.y > min(min(watertable-4*(watertable-elevation), watertable-32.0), elevation)) { // waterlevel doesn't go down forever
+		float water_fill = watertable - (noise_coords.y * maxFill);
+		waterlevel += water_fill;
 	}
+
+	waterlevel = (waterlevel > 0 && waterlevel < maxFill) ? 0.5 : waterlevel; // water shouldn't be curved (but the noise that makes it is)
 	
 	//////////////////////////////////////////////////////////////////////////
 
@@ -242,14 +242,12 @@ void main() {
   // output to a specific pixel in the image
 
   vec4 pixel = vec4(fill, material, waterlevel, 1.0);
+  pixel.x = waterlevel > 0.0 && waterlevel < maxFill ? 1.0 : pixel.x; // water surface should be filled
 
-// Dimonds
+// Grid floor
 //vec4 pixel = vec4(0.0, 1.0, 0.0, 0.0);
-//const int s = 8;
-//pixel.x = int(noise_coords.x) % s == 0 && 
-//	      int(noise_coords.y) % s == 0 && 
-//		  int(noise_coords.z) % s == 0 
-//		  ? 1.0 : 0.0;
+//pixel.x = (pixel_coords.y == vec3(0.0).y && (pixel_coords.x % 4 == 0 || pixel_coords.z % 4 == 0)) ? 1.0 : 0.0;
+//pixel.z = (pixel_coords.x == 0.0 || pixel_coords.y == 1.0 || pixel_coords.z == 0.0) ? 1.0 : 0.0;
 
 
   imageStore(img_output, pixel_coords.xyz, pixel);

@@ -57,18 +57,18 @@ const uint edges[12][2] = { // Lines between points
 };
 
 const float edgeMidpoints[12][3] = { // Midpoint cooresponding to edge
-	{0.5f, 0.0f, 0.0f}, // 0
-	{1.0f, 0.5f, 0.0f}, // 1
-	{0.5f, 1.0f, 0.0f}, // 2
-	{0.0f, 0.5f, 0.0f}, // 3
-	{0.5f, 0.0f, 1.0f}, // 4
-	{1.0f, 0.5f, 1.0f}, // 5
-	{0.5f, 1.0f, 1.0f}, // 6
-	{0.0f, 0.5f, 1.0f}, // 7
-	{0.0f, 0.0f, 0.5f}, // 8
-	{1.0f, 0.0f, 0.5f}, // 9
-	{1.0f, 1.0f, 0.5f}, // 10
-	{0.0f, 1.0f, 0.5f} // 11
+	{0.5, 0.0, 0.0}, // 0
+	{1.0, 0.5, 0.0}, // 1
+	{0.5, 1.0, 0.0}, // 2
+	{0.0, 0.5, 0.0}, // 3
+	{0.5, 0.0, 1.0}, // 4
+	{1.0, 0.5, 1.0}, // 5
+	{0.5, 1.0, 1.0}, // 6
+	{0.0, 0.5, 1.0}, // 7
+	{0.0, 0.0, 0.5}, // 8
+	{1.0, 0.0, 0.5}, // 9
+	{1.0, 1.0, 0.5}, // 10
+	{0.0, 1.0, 0.5} // 11
 };
 
 const int cases[256][5][3] = { // List of faces from edges
@@ -332,24 +332,16 @@ const int cases[256][5][3] = { // List of faces from edges
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
-//	// Code from paulbourke.net/geometry/polygonise/
-//	if (f1 < 0.00001 || abs(f1 - f2) < 0.00001)
-//		return v1;
-//	if (f2 < 0.00001)
-//		return v2;
-//
-//	float mu = -f1 / (f2 - f1);
-//	vec3 p;
-//	p.x = v1.x + mu * (v2.x - v1.x);
-//	p.y = v1.y + mu * (v2.y - v1.y);
-//	p.z = v1.z + mu * (v2.z - v1.z);
-//
-//	return p;
+	// Code from paulbourke.net/geometry/polygonise/
+	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
+		return v1;
+	if (abs(isolevel - f2) < 0.00001)
+		return v2;
 
-vec3 u = v1 - v2;
-vec3 v = v2 - v1;
-return 0.5*(f1*v+f2*u+v) + v1;
+	float mu = (isolevel - f1) / (f2 - f1);
+	return v1 + vec3(mu) * (v2 - v1);
 }
 
 void main() {
@@ -361,7 +353,6 @@ void main() {
 	//            so corners outside the texture will just have a fill of 0
 	vec4 corners[8];
 	corners[0] = imageLoad(generated_data, cube_location + ivec3(0, 0, 0));
-
 	corners[1] = imageLoad(generated_data, cube_location + ivec3(1, 0, 0));
 	corners[2] = imageLoad(generated_data, cube_location + ivec3(1, 1, 0));
 	corners[3] = imageLoad(generated_data, cube_location + ivec3(0, 1, 0));
@@ -413,29 +404,48 @@ void main() {
 		return;
 	}
 
+	// Check for water surface
+	// Mark water
+	const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
+	bool is_water_surface = ((case_index == bottom_fill_index) && 
+				(corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0));
 
 	// Build verticies
 	Vertex output_verticies[5][3];
 	for (int triangle_index = 0; triangle_index < triangle_count; ++triangle_index) {
 			for (int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 				Vertex vertex;
-				
 				uint edge_index = cases[case_index][triangle_index][vertex_index];
-
 				vec4 v1 = corners[edges[edge_index][0]];
 				vec3 v1_pos = vertex_pos[edges[edge_index][0]];
 				vec4 v2 = corners[edges[edge_index][1]];
 				vec3 v2_pos = vertex_pos[edges[edge_index][1]];
 
+				vec4 attribute_vec = (v1.x > v2.x) ? v1 : v2;
+
 				vertex.pos = vec4(vec3interpolate(v1_pos, v1.x, v2_pos, v2.x), 1.0);
 				vertex.pos += vec4(offset, 0.0);
 				
 				// Decide material
-				vertex.material = vec4(v2.y, 0.0, 0.0, 0.0);
-				//vertex.material = vec4(offset, 0.0);
-				//vertex.material.x = 1.0;
+				vertex.material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
+				
+				// check if material should be water
+				vertex.material.x = is_water_surface ? 0.0 : vertex.material.x;
 
+				// If the material is water, we want it to ripple with waves
+				// To do that we need to change the position of the verticies in the vertex shader, which changes the normals
+				// To calculate the normals, we need to know where the other two verticies in the triangle are
+				// A number (triangle_index * 3 + vertex_index) gives us enough information to solve for these locations
+				// since we know the water surface is normally a flat square made of 2 triangles
+				// We encode this number in the magnitude of the normal (which is really just the y element since the surface is flat)
+				vertex.normal = vec4(0.0);
 
+				vertex.normal.x += is_water_surface && triangle_index == 0 ? 1.0 : 0.0;
+				vertex.normal.z += is_water_surface && triangle_index == 1 ? 1.0 : 0.0;
+
+				//vertex.normal.y += is_water_surface ? float(3 * triangle_index + vertex_index) : 0.0;
+
+				// Emit vertex
 				output_verticies[triangle_index][vertex_index] = vertex;
 			}
 
@@ -443,11 +453,10 @@ void main() {
 			vec3 orgin = vec3(output_verticies[triangle_index][0].pos);
 			vec3 cross1 = vec3(output_verticies[triangle_index][1].pos) - orgin;
 			vec3 cross2 = vec3(output_verticies[triangle_index][2].pos) - orgin;
-			vec4 normal = vec4(cross(cross1, cross2), 1.0);
-			normal = (normal == vec4(0.0, 0.0, 0.0, 1.0)) ? vec4(1.0, 0.0, 0.0, 1.0) : normal;
-			output_verticies[triangle_index][0].normal = normal;
-			output_verticies[triangle_index][1].normal = normal;
-			output_verticies[triangle_index][2].normal = normal;
+			vec4 normal = vec4(normalize(cross(cross1, cross2)), 1.0);
+			output_verticies[triangle_index][0].normal += normal;
+			output_verticies[triangle_index][1].normal += normal;
+			output_verticies[triangle_index][2].normal += normal;
 	}
 
 

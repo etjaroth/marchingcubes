@@ -29,8 +29,8 @@ unsigned int screeny = 600;
 float cameraSpeed = 7.0f;
 
 
-glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
-//glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0f, -3.0f);
+//glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
+glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
 
 
 
@@ -133,7 +133,7 @@ int main() {
 		// Lighting
 
 		Light sun = Light();
-		glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime()*0.1), -1.0f, (float)sin(glfwGetTime()*0.1));
+		glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 0.1), -1.0f, (float)sin(glfwGetTime() * 0.1));
 
 		sun.setPos(camera.getPos());
 		sun.setDir(light_dir);
@@ -221,6 +221,8 @@ int main() {
 
 		// Perspective
 		objectShader.use();
+		objectShader.setFloat("wavetime", (float)glfwGetTime());
+
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
 		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader

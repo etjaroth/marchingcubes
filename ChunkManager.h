@@ -18,8 +18,6 @@ class ChunkManager
 	SSBOComputeShader gen_verticies;
 	ComputeShader fill_generator;
 
-	
-
 	void update_chunks();
 
 public:
