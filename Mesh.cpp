@@ -46,7 +46,6 @@ void Mesh::setupMesh() {
 };
 
 void Mesh::draw(Shader& shader, Material material) {
-	//std::cout << "Drawing Mesh" << std::endl;
 	shader.use();
 	shader.setVec3("material.ambient", material.ambient);
 	shader.setVec3("material.diffuse", material.diffuse);
@@ -54,7 +53,6 @@ void Mesh::draw(Shader& shader, Material material) {
 	shader.setFloat("material.shininess", material.shininess);
 
 	glBindVertexArray(VAO);
-	//std::cout << VAO << std::endl;
 	glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
 	//glDrawArrays(GL_TRIANGLES, 0, 3600);
 	glBindVertexArray(0);

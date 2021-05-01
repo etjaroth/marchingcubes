@@ -21,7 +21,6 @@ public:
 
 	void push(T item) {
 		std::lock_guard g(mutex);
-		//std::cout << "Got request\n";
 		queue.push(item);
 	};
 

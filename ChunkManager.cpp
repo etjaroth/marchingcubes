@@ -46,6 +46,8 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
+	std::cout << "loop ";
+
 	for (std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction>::iterator chunk = chunk_map.begin(); chunk != chunk_map.end(); chunk++) {
 
 		// Check if chunk is visable
@@ -65,7 +67,11 @@ void ChunkManager::render(Shader* shader) {
 		if (corner_visable) {
 			chunk->second->renderCubes(shader);
 		}
+		else {
+		//std::cout << "-";
+		}
 	}
+	//std::cout << std::endl;
 }
 
 void ChunkManager::update_chunks() {
@@ -94,11 +100,7 @@ void ChunkManager::update_chunks() {
 					y + chunk_position.y + offset.y,
 					z + chunk_position.z + offset.z} };
 
-				std::cout << x << ", " << y << ", " << z << std::endl;
-
-
 				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
-				std::cout << "    " << offset.x << ", " << offset.y << ", " << offset.z << std::endl;
 
 				legal_points.insert(point);
 
@@ -124,5 +126,5 @@ void ChunkManager::update_chunks() {
 			chunk = chunk_map.erase(chunk);
 		}
 	}
-	std::cout << legal_points.size() << std::endl;
+	//std::cout << legal_points.size() << std::endl;
 }

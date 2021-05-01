@@ -5,8 +5,8 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, SSBOComputeShade
 	gen_verticies = gen_verticies_ptr;
 	fillGenerator = fill_generator_ptr;
 
-
-	realCubeSize = cubeSize + 1;
+	cube_dimensions = cubeSize;
+	vertex_cube_dimensions = cube_dimensions + 1;
 	pos = position;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -58,6 +58,7 @@ MarchingCubes::~MarchingCubes() {
 void MarchingCubes::update_cubes() {
 	glBindVertexArray(VAO);
 	if (current_task == tasks::terrain_fills) { // create first fence
+		//std::cout << "g";
 		generate_terrain_fills();
 		++current_task;
 	}
@@ -72,23 +73,27 @@ void MarchingCubes::update_cubes() {
 
 			switch (current_task) {
 			case tasks::buffer:
+				//std::cout << "b";
 				++current_task;
 				[[fallthrough]];
 			case tasks::verticies:
+				//std::cout << "v";
 				generate_verticies();
 				break;
 			case tasks::done: // check if empty
-				glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-				unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
-				glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(unsigned int), indirect_render_data);
-				if (indirect_render_data[0] == 0) {
-					current_task = tasks::empty;
-					// Do destructor
-					glDeleteBuffers(1, &INDIRECT_SSBO);
-					glDeleteBuffers(1, &OUTPUT_SSBO);
-					glDeleteVertexArrays(1, &VAO);
-				}
+				//std::cout << "D";
+				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
+				//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
+				//unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
+				//glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(unsigned int), indirect_render_data);
+				//if (indirect_render_data[0] == 0) {
+				//	current_task = tasks::empty;
+				//	std::cout << "E";
+				//	// Do destructor
+				//	glDeleteBuffers(1, &INDIRECT_SSBO);
+				//	glDeleteBuffers(1, &OUTPUT_SSBO);
+				//	glDeleteVertexArrays(1, &VAO);
+				//}
 				break;
 			}
 		}
@@ -116,7 +121,7 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, realCubeSize, realCubeSize, realCubeSize, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, vertex_cube_dimensions, vertex_cube_dimensions, vertex_cube_dimensions, 0, GL_RGBA, GL_FLOAT, NULL);
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	// Fill texture with render data
@@ -143,13 +148,14 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->fillSSBO(OUTPUT_SSBO, OUTPUT_SSBO_BINDING, realCubeSize-1, realCubeSize-1, realCubeSize-1);
+	gen_verticies->fillSSBO(OUTPUT_SSBO, OUTPUT_SSBO_BINDING, cube_dimensions, cube_dimensions, cube_dimensions);
 	gen_verticies->dontuse();
 	glDeleteTextures(1, &landscape_data); // might still need this?
 }
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	if (current_task == tasks::done || current_task == tasks::empty) {
+	if (current_task == tasks::done) {
+		//std::cout << "=";
 		// Draw
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
@@ -167,16 +173,16 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	}
-	else {
+	else if (current_task != tasks::empty) {
 		update_cubes();
 	}
 };
 
 void MarchingCubes::setPos(glm::vec3 p) {
-	pos.x = (int)(p.x / (realCubeSize - 1));
-	pos.y = (int)(p.y / (realCubeSize - 1));
-	pos.z = (int)(p.z / (realCubeSize - 1));
-	pos *= realCubeSize;
+	pos.x = (int)(p.x / cube_dimensions);
+	pos.y = (int)(p.y / cube_dimensions);
+	pos.z = (int)(p.z / cube_dimensions);
+	pos *= vertex_cube_dimensions;
 }
 
 glm::vec3 MarchingCubes::getPos() {

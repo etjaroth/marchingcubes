@@ -35,10 +35,7 @@ struct tripleHashFunction {
 		std::size_t h = std::hash<tType>()(trip.three[0]);// +0x9e3779b9 + (h << 6) + (h >> 2);
 		h ^= std::hash<tType>()(trip.three[1]) + 0x9e3779b9 + (h << 6) + (h >> 2);
 		h ^= std::hash<tType>()(trip.three[2]) + 0x9e3779b9 + (h << 6) + (h >> 2);
-		//std::cout << "K: " << trip.three[0] << ", " << trip.three[1] << ", " << trip.three[2] << "\n";
-		//std::cout << "H: " << h << "\n";
 		return h;
-		//return 0;
 	}
 };
 

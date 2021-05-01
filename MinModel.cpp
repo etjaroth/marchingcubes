@@ -22,7 +22,6 @@ void MinModel::loadModel(std::string path) {
 	// Check if there is stuff in the nodes
 	glm::vec3 bob;
 	//glm::vec2 minibob;
-	//std::cout << "Testing..." << std::endl;
 	for (Mesh i : meshes) {
 		for (Vertex j : i.vertices) {
 			//if (j.Position == bob) {

@@ -13,7 +13,8 @@ public:
 	glm::ivec3 pos;
 
 	// Shaders
-	int realCubeSize;
+	int cube_dimensions;
+	int vertex_cube_dimensions;
 	//FillCache noise_cache;
 	SSBOComputeShader *gen_verticies;
 	ComputeShader* fillGenerator;

@@ -113,7 +113,28 @@ int main() {
 	unsigned int transformLoc = glGetUniformLocation(objectShader.shaderProgram, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(texturetransformmat));
 
-	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+
+		// Lighting
+
+	Light sun = Light();
+	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 0.1), -1.0f, (float)sin(glfwGetTime() * 0.1));
+	sun.setPos(camera.getPos());
+	sun.setDir(light_dir);
+	sun.setBrightness(1.0f);
+	sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
+	sun.useAsDirectionalLight(objectShader, 0);
+
+	// filler lights (need at least 1 spotlight and 1 point light)
+	sun.setBrightness(0.0f);
+	sun.setAngle(glm::radians(30.0f));
+	sun.setPointLightFade(1.0f, 0.09f, 0.032f);
+	sun.useAsPointLight(objectShader, 0);
+	sun.useAsSpotlight(objectShader, 0);
+
+	objectShader.setVec3("viewPos", camera.getPos());
+
+	//////////////////////////////////////////////////////////////////////
 
 	bool should_close = glfwWindowShouldClose(window);
 	int frameCount = 0;
@@ -128,52 +149,13 @@ int main() {
 		deltatime = nowtime - oldtime; // Change in time
 		oldtime = nowtime;
 
-		//////////////////////////////////////////////////////////////////////
-
 		// Lighting
-
-		Light sun = Light();
-		glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 0.1), -1.0f, (float)sin(glfwGetTime() * 0.1));
-
-		sun.setPos(camera.getPos());
+		
+		light_dir = glm::vec3((float)cos(nowtime * 0.1), -1.0f, (float)sin(nowtime * 0.1));
 		sun.setDir(light_dir);
-		sun.setBrightness(1.0f);
-		sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
-		sun.useAsDirectionalLight(objectShader, 0);
+		
 
-		// filler lights (need at least 1 spotlight and 1 point light)
-		sun.setBrightness(0.0f);
-		sun.setAngle(glm::radians(30.0f));
-		sun.setPointLightFade(1.0f, 0.09f, 0.032f);
-		sun.useAsPointLight(objectShader, 0);
-		sun.useAsSpotlight(objectShader, 0);
-
-		////// Moving Light
-		//float lightspeed = 1.0f;
-		//float lightRadius = 10.0f + 3.0f * (float)cos(glfwGetTime()) * (float)sin(glfwGetTime());
-		//glm::vec3 lightPos = glm::vec3(0.0f, -1.0f, 0.0f);
-		//lightPos.x = lightRadius * (float)sin(glfwGetTime() * lightspeed);
-		//lightPos.z = lightRadius * (float)cos(glfwGetTime() * lightspeed);
-
-		//// Lighting -> objectShader
-		//Light light1 = Light();
-		////light1.setPos(lightPos);
-		//light1.setPos(glm::vec3(1.0f));
-		//light1.setDir(glm::vec3(0.0f, -1.0f, 0.0f));
-		//light1.setAngle(glm::radians(30.0f));
-		//light1.setLighting(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		//light1.setPointLightFade(1.0f, 0.09f, 0.032f);
-		//light1.setBrightness(1.0f);
-		//light1.useAsDirectionalLight(objectShader, 0);
-		//light1.useAsPointLight(objectShader, 0);
-
-
-
-
-		objectShader.setVec3("viewPos", camera.getPos());
-
-		//////////////////////////////////////////////////////////////////////
-
+		
 		// Clear window
 		glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -181,6 +163,7 @@ int main() {
 		//////////////////////////////////////////////////////////////////////
 		// Handle input
 
+		
 		// Keyboard
 				// Misc Important
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) // exit on escape
@@ -219,14 +202,17 @@ int main() {
 
 		//////////////////////////////////////////////////////////////////////
 
+		
 		// Perspective
+		std::cout << "|";
 		objectShader.use();
-		objectShader.setFloat("wavetime", (float)glfwGetTime());
+		std::cout << "{";
+		objectShader.setFloat("wavetime", (float)nowtime);
+		std::cout << "}";
 
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
 		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader
-
 		// Projection Matrix
 		glm::mat4 projection = glm::mat4(1.0f); // Projection Matrix (View -> Clip)
 		if (((float)screenx / (float)screeny) < 1) { std::cout << "Perspective might be disorted" << std::endl; }
@@ -278,6 +264,7 @@ int main() {
 		}
 		clock.start();
 
+		std::cout << std::endl;
 	}
 
 	// Cleanup
