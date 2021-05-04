@@ -117,11 +117,11 @@
     <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c">
       <Filter>Source Files\Libraries</Filter>
     </ClCompile>
+    <ClCompile Include="Heightmap.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChunkManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FastNoise.h">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
@@ -167,6 +167,12 @@
     <ClInclude Include="MarchingCubes.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
+    <ClInclude Include="Heightmap.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="ChunkManager.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="drawTexture.comp">
@@ -180,6 +186,9 @@
     </None>
     <None Include="FragmentShader.frag">
       <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+    <None Include="genHeightmap.comp">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -28,7 +28,6 @@ unsigned int screeny = 600;
 
 float cameraSpeed = 7.0f;
 
-
 //glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
 glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
 
@@ -88,8 +87,7 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain(31, glm::vec3(0.0f), 1, "drawTexture.comp");
-
+	ChunkManager terrain(31, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -133,6 +131,7 @@ int main() {
 	sun.useAsSpotlight(objectShader, 0);
 
 	objectShader.setVec3("viewPos", camera.getPos());
+	objectShader.setMat4("model", glm::mat4(1.0f));
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -204,11 +203,11 @@ int main() {
 
 		
 		// Perspective
-		std::cout << "|";
+		//std::cout << "|";
 		objectShader.use();
-		std::cout << "{";
+		//std::cout << "{";
 		objectShader.setFloat("wavetime", (float)nowtime);
-		std::cout << "}";
+		//std::cout << "}" << std::endl;
 
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
@@ -231,6 +230,7 @@ int main() {
 
 		terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
+		//std::cout << "loop ";
 		terrain.render(&objectShader);
 
 		///////////////////////////////////////////////////////////////////////
@@ -263,8 +263,6 @@ int main() {
 			std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 		}
 		clock.start();
-
-		std::cout << std::endl;
 	}
 
 	// Cleanup

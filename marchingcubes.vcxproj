@@ -156,6 +156,7 @@
     <ClCompile Include="FastNoise.cpp" />
     <ClCompile Include="FlyCamera.cpp" />
     <ClCompile Include="FPSCamera.cpp" />
+    <ClCompile Include="Heightmap.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="MarchingCubes.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="FastNoise.h" />
     <ClInclude Include="FlyCamera.h" />
     <ClInclude Include="FPSCamera.h" />
+    <ClInclude Include="Heightmap.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MarchingCubes.h" />
     <ClInclude Include="Mesh.h" />
@@ -189,6 +191,7 @@
   <ItemGroup>
     <None Include="drawTexture.comp" />
     <None Include="FragmentShader.frag" />
+    <None Include="genHeightmap.comp" />
     <None Include="genVerticies.comp" />
     <None Include="VertexShader.vert" />
   </ItemGroup>

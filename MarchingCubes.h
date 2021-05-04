@@ -11,13 +11,13 @@ class MarchingCubes
 {
 public:
 	glm::ivec3 pos;
-
-	// Shaders
 	int cube_dimensions;
 	int vertex_cube_dimensions;
-	//FillCache noise_cache;
-	SSBOComputeShader *gen_verticies;
+
+	// Shaders
+	ComputeShader* heightmap_generator;
 	ComputeShader* fillGenerator;
+	SSBOComputeShader* gen_verticies;
 
 	// rendering
 	unsigned int  VAO;
@@ -26,12 +26,12 @@ public:
 	unsigned int INDIRECT_SSBO;
 	const int INDIRECT_SSBO_BINDING = 1;
 
-	unsigned int* ssbo_index_ptr;
-
-	// generating terrain
+	// Pipeline Textures
+	GLuint heightmap = 0;
+	GLuint landscape_data = 0;
 	
 	// tasks
-	enum class tasks {terrain_fills=0, buffer, verticies, done, empty};
+	enum class tasks {start=0, heightmap, terrain_fills, verticies, done, empty};
 	friend tasks& operator++(tasks& orig)
 	{
 		if (orig == tasks::done) {
@@ -48,19 +48,19 @@ public:
 		return rVal;
 	}
 
-	tasks current_task;
+	tasks current_task = tasks::start;
 	GLsync fence;
 
-	GLuint landscape_data;
-	const char* texture_shader_file_name;
-
 	void update_cubes();
+	void generate_heightmap();
 	void generate_terrain_fills();
 	//void generate_edges();
 	void generate_verticies();
 
+	void print_task();
+
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, SSBOComputeShader* gen_verticies_ptr, ComputeShader* fill_generator_ptr);
+	MarchingCubes(int cubeSize, glm::ivec3 position, ComputeShader* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);

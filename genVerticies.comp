@@ -408,8 +408,7 @@ void main() {
 	// Check for water surface
 	// Mark water
 	const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
-	bool is_water_surface = ((case_index == bottom_fill_index) && 
-				(corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0));
+	bool is_water_surface = (case_index == bottom_fill_index) && (corners[0].y == 0) && (corners[1].y == 0) && (corners[2].y == 0) && (corners[3].y == 0);
 
 	// Build verticies
 	Vertex output_verticies[5][3];

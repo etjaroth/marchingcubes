@@ -77,12 +77,6 @@ void ComputeShader::dontuse() const {
 void ComputeShader::fillTexture(GLuint tex) {
 	use();
 
-	setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
-	setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
-	setuInt("biome_type_A", 0);
-	setuInt("biome_type_B", 0);
-
-
 	glDispatchCompute((GLuint)tex_x, (GLuint)tex_y, (GLuint)tex_z);
 
 	// make sure writing to image has finished before read
