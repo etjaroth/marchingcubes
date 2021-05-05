@@ -3,20 +3,15 @@
 
 ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
 	gen_verticies("genVerticies.comp"),
-	heightmap_generator(heightmap_shader, chunk_sz + 1, 1, chunk_sz + 1),
+	heightmap_generator(chunk_sz + 1, heightmap_shader),
 	fill_generator(fill_shader, chunk_sz + 1, chunk_sz + 1, chunk_sz + 1) {
 
 	chunk_size = chunk_sz;
 	set_pos(orgin);
 	radius = r;
 
-	heightmap_generator.use();
-	heightmap_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
-	heightmap_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
-	heightmap_generator.setuInt("biome_type_A", 0);
-	heightmap_generator.setuInt("biome_type_B", 0);
-	heightmap_generator.dontuse();
-
+	
+	// To be depricated
 	fill_generator.use();
 	fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
 	fill_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
@@ -55,6 +50,11 @@ void ChunkManager::set_pos(glm::vec3 pos) {
 	}
 }
 
+ChunkManager::~ChunkManager() {
+	// Marching cubes need to be destructed before heightmap_generator
+	chunk_map.clear();
+}
+
 void ChunkManager::set_direction(glm::vec3 dir) {
 	direction = dir;
 }
@@ -82,10 +82,9 @@ void ChunkManager::render(Shader* shader) {
 			chunk->second->renderCubes(shader);
 		}
 		else {
-		//std::cout << "-";
 		}
 	}
-	//std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void ChunkManager::update_chunks() {
@@ -116,10 +115,7 @@ void ChunkManager::update_chunks() {
 		offset.z = 0.0;
 	}
 
-	/*std::cout << "Coord: " << chunk_position.x + offset.x << ", " << chunk_position.y + offset.y << ", " << chunk_position.z + offset.z << std::endl;
-	std::cout << "       " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
-	std::cout << "       " << offset.x << ", " << offset.y << ", " << offset.z << std::endl;
-	std::cout << "----------" << std::endl;*/
+	std::cout << "Offset: " << offset.x << ", " << offset.y << ", " << offset.z << std::endl;
 
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius; y <= radius; y++) {
@@ -128,9 +124,6 @@ void ChunkManager::update_chunks() {
 				{ {x + chunk_position.x + offset.x,
 					y + chunk_position.y + offset.y,
 					z + chunk_position.z + offset.z} };
-
-				//if (y == 0)
-					//std::cout << x + chunk_position.x + offset.x << ", " << y + chunk_position.y + offset.y << ", " << z + chunk_position.z + offset.z << std::endl;
 
 				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 
@@ -160,5 +153,4 @@ void ChunkManager::update_chunks() {
 			chunk = chunk_map.erase(chunk);
 		}
 	}
-	//std::cout << legal_points.size() << std::endl;
 }

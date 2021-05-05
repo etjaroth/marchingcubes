@@ -155,5 +155,8 @@ void main() {
 	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 
 	vec4 pixel = vec4(base_elevation, elevation, elevationD, watertable);
+
+	pixel = vec4(0.0, 4 * sin(0.5 * noise_coords.x) + cos(0.5 * noise_coords.z) + 2.0, 0.0, -100);
+
 	imageStore(img_output, pixel_coords.xz, pixel);
 }

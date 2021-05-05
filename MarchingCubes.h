@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "ComputeShader.h"
 #include "SSBOComputeShader.h"
-
+#include "Heightmap.h"
 
 
 
@@ -15,7 +15,7 @@ public:
 	int vertex_cube_dimensions;
 
 	// Shaders
-	ComputeShader* heightmap_generator;
+	Heightmap* heightmap_generator;
 	ComputeShader* fillGenerator;
 	SSBOComputeShader* gen_verticies;
 
@@ -50,6 +50,7 @@ public:
 
 	tasks current_task = tasks::start;
 	GLsync fence;
+	bool fence_is_active = false;
 
 	void update_cubes();
 	void generate_heightmap();
@@ -57,10 +58,15 @@ public:
 	//void generate_edges();
 	void generate_verticies();
 
+	bool fence_is_done();
+	void set_fence();
+	void free_fence();
+
 	void print_task();
 
+
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, ComputeShader* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr);
+	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);

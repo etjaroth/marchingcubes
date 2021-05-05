@@ -1,7 +1,7 @@
 #include "MarchingCubes.h"
 #include <assert.h>
 
-MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, ComputeShader* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr) {
+MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr) {
 	gen_verticies = gen_verticies_ptr;
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
@@ -9,9 +9,6 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, ComputeShader* h
 	cube_dimensions = cubeSize;
 	vertex_cube_dimensions = cube_dimensions + 1;
 	pos = position;
-
-	//if (pos.y / cube_dimensions == 0)
-	std::cout << "Loading: " << pos.x / cube_dimensions << ", " << pos.y / cube_dimensions << ", " << pos.z / cube_dimensions << std::endl;
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -48,17 +45,18 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, ComputeShader* h
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	current_task = tasks::start;
-	fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	set_fence();
 }
 
 
 MarchingCubes::~MarchingCubes() {
 	if (current_task != tasks::empty) {
+		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 		glDeleteBuffers(1, &INDIRECT_SSBO);
 		glDeleteBuffers(1, &OUTPUT_SSBO);
 		glDeleteVertexArrays(1, &VAO);
-		glDeleteSync(fence);
 	}
+	free_fence();
 }
 
 void MarchingCubes::update_cubes() {
@@ -66,17 +64,16 @@ void MarchingCubes::update_cubes() {
 	if (current_task != tasks::empty) {
 		bool finished = true;
 		if (current_task != tasks::start) {
-			GLint syncStatus[1] = { GL_UNSIGNALED };
-			glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
-			finished = (syncStatus[0] == GL_SIGNALED);
+			finished = fence_is_done();
 		}
 
+		std::cout << finished << " ";
+
 		if (finished) {
-			glDeleteSync(fence); // fence is guarenteed to be set
+			free_fence();
 			
 			// do next task
 			++current_task;
-			print_task();
 			switch (current_task) {
 			case tasks::heightmap:
 				generate_heightmap();
@@ -117,27 +114,22 @@ void MarchingCubes::update_cubes() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::generate_heightmap() {
-	fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	//fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-	// Prepare render texture
-	glGenTextures(1, &heightmap);
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, heightmap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, vertex_cube_dimensions, vertex_cube_dimensions, 0, GL_RGBA, GL_FLOAT, NULL);
-	glBindImageTexture(1, heightmap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
 
-	heightmap_generator->use();
-	heightmap_generator->setVec3("offset", glm::vec3(pos));
-	heightmap_generator->fillTexture(heightmap);
-	heightmap_generator->dontuse();
+	if (heightmap_generator->is_generated(coord)) {
+		//glDeleteSync(fence);
+	}
+	else {
+		heightmap_generator->generate_heightmap(coord);
+	}
+
+	heightmap = heightmap_generator->get_heightmap(coord);
 }
 
 void MarchingCubes::generate_terrain_fills() {
-	fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	set_fence();
 
 	// Prepare render texture
 	glGenTextures(1, &landscape_data);
@@ -162,7 +154,7 @@ void MarchingCubes::generate_terrain_fills() {
 	fillGenerator->fillTexture(landscape_data);
 	fillGenerator->dontuse();
 
-	glDeleteTextures(1, &heightmap);
+	//glDeleteTextures(1, &heightmap);
 }
 
 //void MarchingCubes::generate_edges() {}
@@ -170,7 +162,7 @@ void MarchingCubes::generate_terrain_fills() {
 void MarchingCubes::generate_verticies() {
 	glBindTexture(GL_TEXTURE_3D, landscape_data);
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	set_fence();
 
 	// Set initial count and indirect render information
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
@@ -189,8 +181,8 @@ void MarchingCubes::generate_verticies() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
+	print_task();
 	if (current_task == tasks::done) {
-		//std::cout << "=";
 		// Draw
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
@@ -222,7 +214,29 @@ glm::vec3 MarchingCubes::getPos() {
 	return pos;
 }
 
+bool MarchingCubes::fence_is_done() {
+	GLint syncStatus[1] = { GL_UNSIGNALED };
+	glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
+	return (syncStatus[0] == GL_SIGNALED);
+}
+
+void MarchingCubes::set_fence() {
+	if (!fence_is_active) {
+		fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	}
+}
+
+void MarchingCubes::free_fence() {
+	if (fence_is_active) {
+		glDeleteSync(fence);
+	}
+}
+
+
 void MarchingCubes::print_task() {
+	//return;
+
+
 	if (current_task == tasks::start) {
 		std::cout << "S";
 	}

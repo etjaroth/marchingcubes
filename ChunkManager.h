@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "ComputeShader.h"
 #include "SSBOComputeShader.h"
+#include "Heightmap.h"
 
 class ChunkManager
 {
@@ -15,7 +16,7 @@ class ChunkManager
 	std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction> chunk_map; // 3D vector of pointers to MarchingCubes
 	int radius; // distance from orgin that chunks are generated
 	SSBOComputeShader gen_verticies;
-	ComputeShader heightmap_generator;
+	Heightmap heightmap_generator;
 	ComputeShader fill_generator;
 
 	void update_chunks();
@@ -23,6 +24,7 @@ class ChunkManager
 public:
 
 	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader);
+	~ChunkManager();
 	void set_pos(glm::vec3 pos);
 	void set_direction(glm::vec3 dir);
 

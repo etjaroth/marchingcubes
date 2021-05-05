@@ -64,9 +64,6 @@
     <Filter Include="Source Files\Rendering\Shading">
       <UniqueIdentifier>{9c85d0e5-5cb6-4450-bddd-b34fd24936c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Rendering\Shaders\drawNormals">
-      <UniqueIdentifier>{e3ad4288-9370-4703-a318-1265e9de65f5}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="opengltutorial.cpp">

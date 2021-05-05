@@ -182,21 +182,21 @@ void main() {
 
 
 	// Get heightmap / water heightmap
-//	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
-//	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
-//	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
-//	float elevation = base_elevation
-//				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
-//				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
-//				 + elevationD;
-//	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
+	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
+	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
+	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
+	float elevation = base_elevation
+				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
+				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
+				 + elevationD;
+	float watertable = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z) + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 
-	ivec2 column = pixel_coords.xz;
-	vec4 heightmap_data = imageLoad(heightmap, column);
-	float base_elevation = heightmap_data.x;
-	float elevation = heightmap_data.y;
-	float elevationD = heightmap_data.z;
-	float watertable = heightmap_data.w;
+//	ivec2 column = pixel_coords.xz;
+//	vec4 heightmap_data = imageLoad(heightmap, column);
+//	float base_elevation = heightmap_data.x;
+//	float elevation = heightmap_data.y;
+//	float elevationD = heightmap_data.z;
+//	float watertable = heightmap_data.w;
 
 	// Make terrain more interesting
 	//float caveNoise = get_cavenoise(noise_coords, 0.05845881, elevation - elevationD, base_elevation);
