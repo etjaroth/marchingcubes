@@ -230,7 +230,6 @@ int main() {
 
 		terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
-		//std::cout << "loop ";
 		terrain.render(&objectShader);
 
 		///////////////////////////////////////////////////////////////////////

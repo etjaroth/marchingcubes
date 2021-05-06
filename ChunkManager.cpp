@@ -10,6 +10,7 @@ ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const 
 	set_pos(orgin);
 	radius = r;
 
+
 	
 	// To be depricated
 	fill_generator.use();
@@ -75,7 +76,7 @@ void ChunkManager::render(Shader* shader) {
 		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, chunk_size, chunk_size)) >= angle;
 		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, chunk_size)) >= angle;
 
-		corner_visable = true;
+		//corner_visable = true;
 
 
 		if (corner_visable) {
@@ -84,7 +85,6 @@ void ChunkManager::render(Shader* shader) {
 		else {
 		}
 	}
-	std::cout << std::endl;
 }
 
 void ChunkManager::update_chunks() {
@@ -114,8 +114,6 @@ void ChunkManager::update_chunks() {
 	else {
 		offset.z = 0.0;
 	}
-
-	std::cout << "Offset: " << offset.x << ", " << offset.y << ", " << offset.z << std::endl;
 
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius; y <= radius; y++) {

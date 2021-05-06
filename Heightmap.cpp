@@ -20,7 +20,6 @@ Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : 
 }
 
 Heightmap::~Heightmap() {
-	std::cout << "================" << std::endl;
 	for (std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
 		std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator prev = i++;
 		delete_heightmap(glm::ivec2(prev->first.three[0], prev->first.three[2]));

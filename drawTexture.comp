@@ -152,24 +152,24 @@ void main() {
   ivec3 pixel_coords = ivec3(gl_GlobalInvocationID);
   vec3 noise_coords = pixel_coords + offset;
 
-  // Set biome
-  if (noise_coords.x > boundryA.x){// || noise_coords.y > boundryA.y || noise_coords.z > boundryA.z) {
-	if (noise_coords.x > boundryB.x){// || noise_coords.y > boundryB.y || noise_coords.z > boundryB.z) {
-		biome = biomes[biome_type_B];
-		biomeMode = 1;
-	} else {
-		biome.ampB = (biomes[biome_type_A].ampB + biomes[biome_type_B].ampB)/2.0;
-		biome.ampC = (biomes[biome_type_A].ampC + biomes[biome_type_B].ampC)/2.0;
-		biome.ampD = (biomes[biome_type_A].ampD + biomes[biome_type_B].ampD)/2.0;
-		biome.freqB = (biomes[biome_type_A].freqB + biomes[biome_type_B].freqB)/2.0;
-		biome.freqC = (biomes[biome_type_A].freqC + biomes[biome_type_B].freqC)/2.0;
-		biome.freqD = (biomes[biome_type_A].freqD + biomes[biome_type_B].freqD)/2.0;
-		biomeMode = -1;
-	}
-  } else {
-	biome = biomes[biome_type_A];
-	biomeMode = 0;
-  }
+//  // Set biome
+//  if (noise_coords.x > boundryA.x){// || noise_coords.y > boundryA.y || noise_coords.z > boundryA.z) {
+//	if (noise_coords.x > boundryB.x){// || noise_coords.y > boundryB.y || noise_coords.z > boundryB.z) {
+//		biome = biomes[biome_type_B];
+//		biomeMode = 1;
+//	} else {
+//		biome.ampB = (biomes[biome_type_A].ampB + biomes[biome_type_B].ampB)/2.0;
+//		biome.ampC = (biomes[biome_type_A].ampC + biomes[biome_type_B].ampC)/2.0;
+//		biome.ampD = (biomes[biome_type_A].ampD + biomes[biome_type_B].ampD)/2.0;
+//		biome.freqB = (biomes[biome_type_A].freqB + biomes[biome_type_B].freqB)/2.0;
+//		biome.freqC = (biomes[biome_type_A].freqC + biomes[biome_type_B].freqC)/2.0;
+//		biome.freqD = (biomes[biome_type_A].freqD + biomes[biome_type_B].freqD)/2.0;
+//		biomeMode = -1;
+//	}
+//  } else {
+//	biome = biomes[biome_type_A];
+//	biomeMode = 0;
+//  }
 
   //////////////////////////////////////////////////////////////////////////
 
@@ -181,26 +181,26 @@ void main() {
 	
 
 
-	// Get heightmap / water heightmap
-	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
-	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
-	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
-	float elevation = base_elevation
-				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
-				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
-				 + elevationD;
-	float watertable = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z) + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
+//	// Get heightmap / water heightmap
+//	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
+//	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
+//	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
+//	float elevation = base_elevation
+//				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
+//				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
+//				 + elevationD;
+//	float watertable = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z) + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 
-//	ivec2 column = pixel_coords.xz;
-//	vec4 heightmap_data = imageLoad(heightmap, column);
-//	float base_elevation = heightmap_data.x;
-//	float elevation = heightmap_data.y;
-//	float elevationD = heightmap_data.z;
-//	float watertable = heightmap_data.w;
+	ivec2 column = pixel_coords.xz;
+	vec4 heightmap_data = imageLoad(heightmap, column);
+	float base_elevation = heightmap_data.x;
+	float elevation = heightmap_data.y;
+	float elevationD = heightmap_data.z;
+	float watertable = heightmap_data.w;
 
 	// Make terrain more interesting
-	//float caveNoise = get_cavenoise(noise_coords, 0.05845881, elevation - elevationD, base_elevation);
-	float caveNoise = 1.0;
+	float caveNoise = get_cavenoise(noise_coords, 0.05845881, elevation, base_elevation);
+	//float caveNoise = 1.0;
 
 	// Calculate fill
 	float ground = elevation - (noise_coords.y * maxFill);
@@ -209,18 +209,20 @@ void main() {
 	
 	// Make water surface
 	float waterlevel = 0.0;
-	if (noise_coords.y < watertable // pixel below waterlevel
+	float water_fill = watertable - (noise_coords.y * maxFill);
+
+	waterlevel += 
+		(noise_coords.y < watertable // pixel below waterlevel
 		&& watertable > elevation // waterlevel above bedrock
-		&& noise_coords.y > min(min(watertable - 4 * (watertable - elevation), watertable - 32.0), elevation)) { // prevent waterlevel from going down forever
-		float water_fill = watertable - (noise_coords.y * maxFill);
-		waterlevel += water_fill;
-	}
+		&& noise_coords.y > min(min(watertable - 4 * (watertable - elevation), watertable - 32.0), elevation))
+		? water_fill : 0.0;
+
 	bool is_water_surface = (waterlevel > 0 && waterlevel < maxFill);
 	waterlevel = is_water_surface ? 0.5 : waterlevel; // water shouldn't be curved (but the noise that makes it is)
 	
 	//////////////////////////////////////////////////////////////////////////
 
-	// decide material
+	// decide material (very expensive)
 	float material = 1.0;
 	if (is_water_surface) {
 		material = 0.0;

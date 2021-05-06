@@ -147,16 +147,15 @@ void main() {
 	// biome changing goes here
 	float base_elevation = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), baseAmp, baseFreq);
 	float elevationD = get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampD, biome.freqD);
-//	//float extra_roughness = get_snoise(1000*vec3(noise_coords.x, 0.0, noise_coords.z), 3.0, biome.freqD);
+	float extra_roughness = get_snoise(vec3(noise_coords.x + sin(noise_coords.z), 0.0, noise_coords.z + sin(noise_coords.x)), 1.0, 0.1);
 	float elevation = base_elevation
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampB, biome.freqB)
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
-				 + elevationD;
+				 + elevationD
+				 + extra_roughness;
 	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
 
 	vec4 pixel = vec4(base_elevation, elevation, elevationD, watertable);
-
-	pixel = vec4(0.0, 4 * sin(0.5 * noise_coords.x) + cos(0.5 * noise_coords.z) + 2.0, 0.0, -100);
 
 	imageStore(img_output, pixel_coords.xz, pixel);
 }

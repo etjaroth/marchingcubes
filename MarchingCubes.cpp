@@ -26,11 +26,12 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, 0);
 
-
 	// Set Vertex Attributes
+	
+	
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, OUTPUT_SSBO); // Just a reminder that we can do this
+	glBindBuffer(GL_ARRAY_BUFFER, OUTPUT_SSBO);
 
 	// Vertex Position
 	const unsigned int stride = 3 * 4 * sizeof(float);
@@ -43,6 +44,7 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, (void*)(8 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
 
 	current_task = tasks::start;
 	set_fence();
@@ -54,7 +56,7 @@ MarchingCubes::~MarchingCubes() {
 		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 		glDeleteBuffers(1, &INDIRECT_SSBO);
 		glDeleteBuffers(1, &OUTPUT_SSBO);
-		glDeleteVertexArrays(1, &VAO);
+		//glDeleteVertexArrays(1, &VAO);
 	}
 	free_fence();
 }
@@ -66,8 +68,6 @@ void MarchingCubes::update_cubes() {
 		if (current_task != tasks::start) {
 			finished = fence_is_done();
 		}
-
-		std::cout << finished << " ";
 
 		if (finished) {
 			free_fence();
@@ -234,7 +234,7 @@ void MarchingCubes::free_fence() {
 
 
 void MarchingCubes::print_task() {
-	//return;
+	return;
 
 
 	if (current_task == tasks::start) {
