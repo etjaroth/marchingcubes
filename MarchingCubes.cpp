@@ -157,11 +157,38 @@ void MarchingCubes::generate_terrain_fills() {
 	//glDeleteTextures(1, &heightmap);
 }
 
-//void MarchingCubes::generate_edges() {}
+void MarchingCubes::generate_edges() {
+	glBindTexture(GL_TEXTURE_3D, landscape_data);
+	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	set_fence();
+
+	// Create SSBO (edge_data)
+	glGenBuffers(1, &edge_data);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
+
+	GLint ENOUGH_MEMORY_FOR_ALL_CASES = 4 * sizeof(int);
+	ENOUGH_MEMORY_FOR_ALL_CASES *= vertex_cube_dimensions * vertex_cube_dimensions * vertex_cube_dimensions * (3 * 4); // verticies are 3 vec4s (12 bytes)
+	glBufferData(GL_SHADER_STORAGE_BUFFER, ENOUGH_MEMORY_FOR_ALL_CASES, NULL, GL_DYNAMIC_DRAW);
+
+	// Set initial count and indirect render information
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
+	unsigned int render_data_init[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(unsigned int), render_data_init, GL_DYNAMIC_DRAW);
+
+	// Generate vertex data
+	gen_edges->use();
+	gen_edges->setVec3("pos", glm::vec3(pos));
+	gen_edges->fillSSBO(edge_data, edge_data_binding, cube_dimensions, cube_dimensions, cube_dimensions);
+	gen_edges->dontuse();
+}
 
 void MarchingCubes::generate_verticies() {
 	glBindTexture(GL_TEXTURE_3D, landscape_data);
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
+//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
 	set_fence();
 
 	// Set initial count and indirect render information

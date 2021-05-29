@@ -17,6 +17,7 @@ public:
 	// Shaders
 	Heightmap* heightmap_generator;
 	ComputeShader* fillGenerator;
+	SSBOComputeShader* gen_edges;
 	SSBOComputeShader* gen_verticies;
 
 	// rendering
@@ -28,6 +29,8 @@ public:
 
 	// Pipeline Textures
 	GLuint heightmap = 0;
+	GLuint edge_data = 0;
+	unsigned int edge_data_binding = 2;
 	GLuint landscape_data = 0;
 	
 	// tasks
@@ -55,7 +58,7 @@ public:
 	void update_cubes();
 	void generate_heightmap();
 	void generate_terrain_fills();
-	//void generate_edges();
+	void generate_edges();
 	void generate_verticies();
 
 	bool fence_is_done();

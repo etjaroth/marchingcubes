@@ -177,5 +177,5 @@ void main()
 
     FragPos = (model * vertex_position).xyz;
     normal = normalize(normal);
-    gl_Position = projection * view * vec4(FragPos, 1.0); // matrix multiplication is read from right to left
+    gl_Position = projection * view * vec4(FragPos, 1.0);
 }

@@ -81,13 +81,11 @@ int main() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
-	glFrontFace(GL_CW);
 
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain(31, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain(32-1, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");

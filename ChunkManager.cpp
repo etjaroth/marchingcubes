@@ -85,6 +85,7 @@ void ChunkManager::render(Shader* shader) {
 		else {
 		}
 	}
+	//std::cout << "==========" << std::endl;
 }
 
 void ChunkManager::update_chunks() {

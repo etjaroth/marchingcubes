@@ -335,19 +335,18 @@ const int cases[256][5][3] = { // List of faces from edges
 
 const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
-	// Code from paulbourke.net/geometry/polygonise/
+	// Code adapted from paulbourke.net/geometry/polygonise/
 	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
 		return v1;
 	if (abs(isolevel - f2) < 0.00001)
 		return v2;
 
-	float mu = (isolevel - f1) / (f2 - f1);
-	return v1 + vec3(mu) * (v2 - v1);
+	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
 }
 
 void main() {
-	ivec3 cube_location = ivec3(gl_WorkGroupSize) * ivec3(gl_GlobalInvocationID) + ivec3(gl_LocalInvocationID);
-	vec3 offset = vec3(cube_location) + pos;
+	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
+	const vec3 offset = vec3(cube_location) + pos;
 
 	// Load cube corners
 	//    Note: "Load operations from any texel that is outside of the boundaries of the bound image will return all zeros"
@@ -377,7 +376,6 @@ void main() {
 
 
 	// Count triangles (shockingly hard)
-	int triangle_count = 0;
 //	for (uint triangle_index = 0; triangle_index < 5; ++triangle_index) {
 //		if (cases[case_index][triangle_index][0] != IV) { // if triangle contains verticies
 //			triangle_count += 1;
@@ -394,12 +392,11 @@ void main() {
 	//   We divide by 2 to get 1 if valid or 0 if invalid
 	//   We :( because we had to do all this to count triangles at a reasonable framerate
 	// Note that we only have to do all this because we use triangle_count in an atomic add
-	int a = (((cases[case_index][0][0] + 1) / (cases[case_index][0][0] + 1)) + 1) / 2;
-	int b = (((cases[case_index][1][0] + 1) / (cases[case_index][1][0] + 1)) + 1) / 2;
-	int c = (((cases[case_index][2][0] + 1) / (cases[case_index][2][0] + 1)) + 1) / 2;
-	int d = (((cases[case_index][3][0] + 1) / (cases[case_index][3][0] + 1)) + 1) / 2;
-	int e = (((cases[case_index][4][0] + 1) / (cases[case_index][4][0] + 1)) + 1) / 2;
-	triangle_count = a + b + c + d + e;
+	const int triangle_count = ((((cases[case_index][0][0] + 1) / (cases[case_index][0][0] + 1)) + 1) / 2) + 
+								((((cases[case_index][1][0] + 1) / (cases[case_index][1][0] + 1)) + 1) / 2) + 
+								((((cases[case_index][2][0] + 1) / (cases[case_index][2][0] + 1)) + 1) / 2) + 
+								((((cases[case_index][3][0] + 1) / (cases[case_index][3][0] + 1)) + 1) / 2) + 
+								((((cases[case_index][4][0] + 1) / (cases[case_index][4][0] + 1)) + 1) / 2);
 
 	if (triangle_count == 0) {
 		return;
@@ -407,30 +404,27 @@ void main() {
 
 	// Check for water surface
 	// Mark water
-	const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
-	bool is_water_surface = (case_index == bottom_fill_index) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
+	//const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
+	bool is_water_surface = (case_index == 51) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
 
 	// Build verticies
-	Vertex output_verticies[5][3];
-	for (int triangle_index = 0; triangle_index < triangle_count; ++triangle_index) {
+	const uint starting_index = atomicAdd(count, 3 * triangle_count * sizeofVertex) / sizeofVertex; // get safe, writeable section of SSBO [starting_index, starting_index+triangle_count]
+	for (int triangle_index = 0; triangle_index < 5; ++triangle_index) {
+		if (!(triangle_index < triangle_count)) {break;}
+		const uint index = starting_index + (3 * triangle_index);
+
 			for (int vertex_index = 0; vertex_index < 3; ++vertex_index) {
-				Vertex vertex;
-				uint edge_index = cases[case_index][triangle_index][vertex_index];
-				vec4 v1 = corners[edges[edge_index][0]];
-				vec3 v1_pos = vertex_pos[edges[edge_index][0]];
-				vec4 v2 = corners[edges[edge_index][1]];
-				vec3 v2_pos = vertex_pos[edges[edge_index][1]];
+				const uint edge_index = cases[case_index][triangle_index][vertex_index];
+				const vec4 attribute_vec = (corners[edges[edge_index][0]].x > corners[edges[edge_index][1]].x) ? corners[edges[edge_index][0]] : corners[edges[edge_index][1]];
 
-				vec4 attribute_vec = (v1.x > v2.x) ? v1 : v2;
-
-				vertex.pos = vec4(vec3interpolate(v1_pos, v1.x, v2_pos, v2.x), 1.0);
-				vertex.pos += vec4(offset, 0.0);
+				verticies[index + vertex_index].pos = vec4(vec3interpolate(vertex_pos[edges[edge_index][0]], corners[edges[edge_index][0]].x, vertex_pos[edges[edge_index][1]], corners[edges[edge_index][1]].x), 1.0);
+				verticies[index + vertex_index].pos += vec4(offset, 0.0);
 				
 				// Decide material
-				vertex.material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
+				verticies[index + vertex_index].material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
 				
 				// check if material should be water
-				vertex.material.x = is_water_surface ? 0.0 : vertex.material.x;
+				verticies[index + vertex_index].material.x = is_water_surface ? 0.0 : verticies[index + vertex_index].material.x;
 
 				// If the material is water, we want it to ripple with waves
 				// To do that we need to change the position of the verticies in the vertex shader, which changes the normals
@@ -438,41 +432,16 @@ void main() {
 				// A number (triangle_index * 3 + vertex_index) gives us enough information to solve for these locations
 				// since we know the water surface is normally a flat square made of 2 triangles
 				// We encode this number in the magnitude of the normal (which is really just the y element since the surface is flat)
-				vertex.normal = vec4(0.0);
-				vertex.normal.y = is_water_surface ? float(3 * triangle_index + vertex_index) : 0.0;
-				vertex.normal.y = is_water_surface ? 4.0 : vertex.normal.y;
-
-				// Emit vertex
-				output_verticies[triangle_index][vertex_index] = vertex;
+				verticies[index + vertex_index].normal = vec4(0.0);
+				verticies[index + vertex_index].normal.y = is_water_surface ? float(3 * triangle_index + vertex_index) : 0.0;
+				verticies[index + vertex_index].normal.y = is_water_surface ? 4.0 : verticies[index + vertex_index].normal.y;
 			}
 
 			// Calculate triangle normal
-			vec3 orgin = vec3(output_verticies[triangle_index][0].pos);
-			vec3 cross1 = vec3(output_verticies[triangle_index][1].pos) - orgin;
-			vec3 cross2 = vec3(output_verticies[triangle_index][2].pos) - orgin;
-			vec4 normal = vec4(normalize(cross(cross1, cross2)), 1.0);
-			output_verticies[triangle_index][0].normal += normal;
-			output_verticies[triangle_index][1].normal += normal;
-			output_verticies[triangle_index][2].normal += normal;
-	}
-
-	//
-
-	// Output
-	uint data_size = 3 * triangle_count * sizeofVertex;
-	uint starting_index_bytes = atomicAdd(count, data_size);
-	uint starting_index = starting_index_bytes / sizeofVertex;
-	//uint starting_index = starting_index_bytes / sizeofVec4;
-	// count is in bytes, but starting_index is an index of an array
-
-	for (uint triangle_index = 0; triangle_index < triangle_count; ++triangle_index) {
-		for (uint vertex_index = 0; vertex_index < 3; ++vertex_index) { // Triangle
-			uint real_index = starting_index;
-			real_index += 3 * triangle_index;
-			real_index += vertex_index;
-
-			verticies[real_index] = output_verticies[triangle_index][vertex_index];
-
-		}
+			vec3 orgin = vec3(verticies[index].pos);
+			vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
+			verticies[index].normal += normal;
+			verticies[index + 1].normal += normal;
+			verticies[index + 2].normal += normal;
 	}
 }
