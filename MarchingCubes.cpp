@@ -1,7 +1,7 @@
 #include "MarchingCubes.h"
 #include <assert.h>
 
-int MarchingCubes::max_stage_count = 2;
+int MarchingCubes::max_stage_count = 4;
 int MarchingCubes::stage_count = 0;
 
 MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr) {

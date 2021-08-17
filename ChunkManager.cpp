@@ -11,7 +11,7 @@ ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const 
 	radius = r;
 
 
-	
+
 	// To be depricated
 	fill_generator.use();
 	fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
@@ -61,8 +61,26 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
-	for (std::unordered_map<triple<int>, std::unique_ptr<MarchingCubes>, tripleHashFunction>::iterator chunk = chunk_map.begin(); chunk != chunk_map.end(); chunk++) {
 
+	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
+
+	// Sort chunks by distance to the player so that closer chunks are loaded first
+	std::sort(chunk_list.begin(), chunk_list.end(),
+		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a, 
+			const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& b) -> bool
+		{
+			const glm::vec3 va = (float)(this->chunk_size) * glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
+			const glm::vec3 vb = (float)(this->chunk_size) * glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
+
+			const glm::vec3 dist_a = va - this->position;
+			const glm::vec3 dist_b = vb - this->position;
+
+			return glm::length(dist_a)
+				< glm::length(dist_b);
+		});
+
+
+	for (std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
 		// Check if chunk is visable
 		bool corner_visable = false;
 		float angle = 0.0f;
@@ -76,7 +94,7 @@ void ChunkManager::render(Shader* shader) {
 		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, chunk_size, chunk_size)) >= angle;
 		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, chunk_size)) >= angle;
 
-		//corner_visable = true;
+		corner_visable = true;
 
 
 		if (corner_visable) {
@@ -117,7 +135,7 @@ void ChunkManager::update_chunks() {
 	}
 
 	for (int x = -radius; x <= radius; x++) {
-		for (int y = -radius; y <= radius; y++) {
+		for (int y = -radius / 2; y <= radius / 2; y++) {
 			for (int z = -radius; z <= radius; z++) {
 				triple<int> point =
 				{ {x + chunk_position.x + offset.x,
@@ -130,9 +148,9 @@ void ChunkManager::update_chunks() {
 
 				if (chunk_map.find(point) == chunk_map.end()) {
 					offset *= chunk_size;
-					chunk_map.insert(std::pair<triple<int>, 
-						std::unique_ptr<MarchingCubes>>(point, 
-							std::make_unique<MarchingCubes>(chunk_size, offset, &heightmap_generator, &fill_generator, &gen_verticies)));
+					chunk_map.insert(std::pair<triple<int>,
+						std::shared_ptr<MarchingCubes>>(point,
+							std::make_shared<MarchingCubes>(chunk_size, offset, &heightmap_generator, &fill_generator, &gen_verticies)));
 				}
 			}
 		}
