@@ -1,6 +1,9 @@
 #include "MarchingCubes.h"
 #include <assert.h>
 
+int MarchingCubes::max_stage_count = 2;
+int MarchingCubes::stage_count = 0;
+
 MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr) {
 	gen_verticies = gen_verticies_ptr;
 	heightmap_generator = heightmap_generator_ptr;
@@ -27,8 +30,8 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, 0);
 
 	// Set Vertex Attributes
-	
-	
+
+
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, OUTPUT_SSBO);
@@ -44,7 +47,7 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, (void*)(8 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
+
 
 	current_task = tasks::start;
 	set_fence();
@@ -58,6 +61,9 @@ MarchingCubes::~MarchingCubes() {
 		glDeleteBuffers(1, &OUTPUT_SSBO);
 		//glDeleteVertexArrays(1, &VAO);
 	}
+	if (assigned_stage) {
+		--stage_count;
+	}
 	free_fence();
 }
 
@@ -68,12 +74,20 @@ void MarchingCubes::update_cubes() {
 		if (current_task != tasks::start) {
 			finished = fence_is_done();
 		}
+		if (current_task == tasks::waiting) {
+			if (stage_count < max_stage_count) {
+				++stage_count;
+				assigned_stage = true;
+			}
+			finished = assigned_stage;
+		}
 
 		if (finished) {
 			free_fence();
-			
+
 			// do next task
 			++current_task;
+
 			switch (current_task) {
 			case tasks::heightmap:
 				generate_heightmap();
@@ -85,6 +99,8 @@ void MarchingCubes::update_cubes() {
 				generate_verticies();
 				break;
 			case tasks::done: // check if empty
+				--stage_count;
+				assigned_stage = false;
 				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
 				//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
 				//unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
@@ -141,7 +157,7 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, vertex_cube_dimensions, vertex_cube_dimensions, vertex_cube_dimensions, 0, GL_RGBA, GL_FLOAT, NULL);
-	
+
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
@@ -187,8 +203,8 @@ void MarchingCubes::generate_edges() {
 void MarchingCubes::generate_verticies() {
 	glBindTexture(GL_TEXTURE_3D, landscape_data);
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
-//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
+	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
+	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
 	set_fence();
 
 	// Set initial count and indirect render information

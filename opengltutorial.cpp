@@ -85,7 +85,7 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain(32-1, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain(32-1, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");

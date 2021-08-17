@@ -34,7 +34,11 @@ public:
 	GLuint landscape_data = 0;
 	
 	// tasks
-	enum class tasks {start=0, heightmap, terrain_fills, verticies, done, empty};
+	enum class tasks {start=0, heightmap, terrain_fills, waiting, verticies, done, empty};
+	static int max_stage_count; // limits the amount of verticies stages at any one time
+	static int stage_count;
+	bool assigned_stage = false;
+
 	friend tasks& operator++(tasks& orig)
 	{
 		if (orig == tasks::done) {
