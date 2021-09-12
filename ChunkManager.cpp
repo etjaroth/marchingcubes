@@ -107,9 +107,10 @@ void ChunkManager::render(Shader* shader) {
 }
 
 void ChunkManager::update_chunks() {
-
 	// List legal points
 	std::unordered_set<triple<int>, tripleHashFunction> legal_points;
+
+	std::cout << "\n\nUpdating chunks: " << chunk_map.size() << std::endl;
 
 	// Account for the giant cell at (0, 0, 0)
 	glm::vec3 offset = glm::vec3(0.0f);

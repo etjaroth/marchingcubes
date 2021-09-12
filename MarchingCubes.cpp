@@ -59,7 +59,14 @@ MarchingCubes::~MarchingCubes() {
 		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 		glDeleteBuffers(1, &INDIRECT_SSBO);
 		glDeleteBuffers(1, &OUTPUT_SSBO);
-		//glDeleteVertexArrays(1, &VAO);
+
+		if (edge_data != 0) {
+			glDeleteTextures(1, &edge_data);
+		}
+
+		if (current_task == tasks::verticies) {
+			glDeleteTextures(1, &landscape_data);
+		}
 	}
 	if (assigned_stage) {
 		--stage_count;

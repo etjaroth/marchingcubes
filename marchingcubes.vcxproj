@@ -192,6 +192,7 @@
     <None Include="drawTexture.comp" />
     <None Include="FragmentShader.frag" />
     <None Include="genHeightmap.comp" />
+    <None Include="genIndices.comp" />
     <None Include="genVerticies.comp" />
     <None Include="VertexShader.vert" />
   </ItemGroup>

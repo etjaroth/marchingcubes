@@ -21,7 +21,7 @@ public:
 	SSBOComputeShader* gen_verticies;
 
 	// rendering
-	unsigned int  VAO;
+	unsigned int VAO;
 	unsigned int OUTPUT_SSBO;
 	const int OUTPUT_SSBO_BINDING = 0;
 	unsigned int INDIRECT_SSBO;
@@ -33,9 +33,22 @@ public:
 	unsigned int edge_data_binding = 2;
 	GLuint landscape_data = 0;
 	
-	// tasks
+	// Task                             Shader Name          Task Number    Limit       Cost    Pipe
+	// Generate heightmap               genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2
+	// Generate marching cube voxels    drawTexture.comp     2              Infinity    Low?    ETex3, 0Tex2 -> Tex3
+	// Generate verticies               genVerticies.comp    4              2           High    2Tex3 -> SSBO
+	// 
+	// Pipe Legend:
+	// E...    empty (required to be created for this stage)
+	// #...    ... is from task number #
+	// ...     is a Tex2, Tex3, or a SSBO
+	// Tex2    2d texture
+	// Tex3    3D texture
+	// SSBO    Shader Storeage Buffer Object
+	// Note: Input is listed in the same order as its stage's output
+
 	enum class tasks {start=0, heightmap, terrain_fills, waiting, verticies, done, empty};
-	static int max_stage_count; // limits the amount of verticies stages at any one time
+	static int max_stage_count; // limits the amount of verticies stages at any one time. Static so that the max number of stages can be changed in a menu
 	static int stage_count;
 	bool assigned_stage = false;
 

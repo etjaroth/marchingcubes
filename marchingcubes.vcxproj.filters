@@ -187,5 +187,8 @@
     <None Include="genHeightmap.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
     </None>
+    <None Include="genIndices.comp">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
   </ItemGroup>
 </Project>
