@@ -1,9 +1,6 @@
 #version 460
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(rgba32f, binding = 0) uniform image3D generated_data;
-layout(rgba32f, binding = 1) uniform image3D verticies;
-
-uniform ivec3 chunk_size;
 
 #define IV -2
 
@@ -18,7 +15,7 @@ uint sizeofVec4 = 4 * 4;
 uint sizeofVertex = 3 * sizeofVec4;
 
 layout (binding=0, std140) buffer shader_output {
-	int indices[];
+	Vertex verticies[];
 };
 
 layout (binding=1, std140) buffer indirect_render_data {
@@ -35,14 +32,14 @@ uniform float minFill = 0.0;
 ///////////////////////////////////////////////////////////////////////////////
 
 const ivec3 vertex_pos[8] = { // Points on a cube
-	ivec3(0, 0, 0), // 0
-	ivec3(1, 0, 0), // 1
-	ivec3(1, 1, 0), // 2
-	ivec3(0, 1, 0), // 3
-	ivec3(0, 0, 1), // 4
-	ivec3(1, 0, 1), // 5
-	ivec3(1, 1, 1), // 6
-	ivec3(0, 1, 1)  // 7
+	ivec3(0, 0, 0),
+	ivec3(1, 0, 0),
+	ivec3(1, 1, 0),
+	ivec3(0, 1, 0),
+	ivec3(0, 0, 1),
+	ivec3(1, 0, 1),
+	ivec3(1, 1, 1),
+	ivec3(0, 1, 1)
 };
 
 const uint edges[12][2] = { // Lines between points
@@ -332,13 +329,41 @@ vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
 }
 
+vec4 corners[8];
+
+void add_vertex(uint starting_index, uint case_index, bool is_water_surface, int i, int vertex_index) {
+	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
+	const vec3 offset = vec3(cube_location) + pos;
+	const uint index = starting_index + i;
+	const uint edge_index = cases[case_index][i + vertex_index];
+	const vec4 attribute_vec = (corners[edges[edge_index][0]].x > corners[edges[edge_index][1]].x) ? corners[edges[edge_index][0]] : corners[edges[edge_index][1]];
+
+	verticies[index + vertex_index].pos = vec4(vec3interpolate(vertex_pos[edges[edge_index][0]], corners[edges[edge_index][0]].x, vertex_pos[edges[edge_index][1]], corners[edges[edge_index][1]].x), 1.0);
+	verticies[index + vertex_index].pos += vec4(offset, 0.0);
+				
+	// Decide material
+	verticies[index + vertex_index].material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
+				
+	// check if material should be water
+	verticies[index + vertex_index].material.x = is_water_surface ? 0.0 : verticies[index + vertex_index].material.x;
+	// If the material is water, we want it to ripple with waves
+	// To do that we need to change the position of the verticies in the vertex shader, which changes the normals
+	// To calculate the normals, we need to know where the other two verticies in the triangle are
+	// A number (triangle_index * 3 + vertex_index) gives us enough information to solve for these locations
+	// since we know the water surface is normally a flat square made of 2 triangles
+	// We encode this number in the magnitude of the normal (which is really just the y element since the surface is flat)
+	verticies[index + vertex_index].normal = vec4(0.0);
+	verticies[index + vertex_index].normal.y = is_water_surface ? float(i + vertex_index) : 0.0;
+	verticies[index + vertex_index].normal.y = is_water_surface ? 4.0 : verticies[index + vertex_index].normal.y;
+}
+
 void main() {
 	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
+	const vec3 offset = vec3(cube_location) + pos;
 
 	// Load cube corners
 	//    Note: "Load operations from any texel that is outside of the boundaries of the bound image will return all zeros"
 	//            so corners outside the texture will just have a fill of 0
-	vec4 corners[8];
 	corners[0] = imageLoad(generated_data, cube_location + ivec3(0, 0, 0));
 	corners[1] = imageLoad(generated_data, cube_location + ivec3(1, 0, 0));
 	corners[2] = imageLoad(generated_data, cube_location + ivec3(1, 1, 0));
@@ -348,6 +373,7 @@ void main() {
 	corners[6] = imageLoad(generated_data, cube_location + ivec3(1, 1, 1));
 	corners[7] = imageLoad(generated_data, cube_location + ivec3(0, 1, 1));
 
+	// Input format: fill, material, waterlevel, 1.0
 	
 	uint case_index = 0;
 	case_index = 0; // Cube vertex existence in binary
@@ -359,6 +385,12 @@ void main() {
 	case_index += (corners[5].x > 0 ? 32 : 0);
 	case_index += (corners[6].x > 0 ? 64 : 0);
 	case_index += (corners[7].x > 0 ? 128 : 0);
+
+	// Count triangles (shockingly hard)
+//	for (uint triangle_index = 0; triangle_index < 5; ++triangle_index) {
+//		if (cases[case_index][triangle_index][0] != IV) { // if triangle contains verticies
+//			triangle_count += 1;
+//	}
 
 	// Equivilent to for loop above, because that loop is apparently ridiculusly expensive
 	// This only works because IV == -2
@@ -383,20 +415,26 @@ void main() {
 		return;
 	}
 
+	// Check for water surface
+	// Mark water
+	//const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
+	bool is_water_surface = (case_index == 51) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
+
 	// Build verticies
 	const uint starting_index = atomicAdd(count, 3 * triangle_count * sizeofVertex) / sizeofVertex; // get safe, writeable section of SSBO [starting_index, starting_index+triangle_count]
 	for (int i = 0; i < 16; i += 3) {
 		if (cases[case_index][i] == IV) {break;}
-		
 		const uint index = starting_index + i;
-		const uint edge1_index = cases[case_index][i];
-		const uint edge2_index = cases[case_index][i+1];
-		const uint edge3_index = cases[case_index][i+2];
 		
-		//imageLoad(verticies, 
-	}
-}
+		add_vertex(starting_index, case_index, is_water_surface, i, 0);
+		add_vertex(starting_index, case_index, is_water_surface, i, 1);
+		add_vertex(starting_index, case_index, is_water_surface, i, 2);
 
-void add_index(uint case_index, uint triangle_no, uint vertex_no) {
-	indices[];
+		// Calculate triangle normal
+		const vec3 orgin = vec3(verticies[index].pos);
+		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
+		verticies[index].normal += normal;
+		verticies[index + 1].normal += normal;
+		verticies[index + 2].normal += normal;
+	}
 }

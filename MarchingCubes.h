@@ -33,42 +33,38 @@ public:
 	unsigned int edge_data_binding = 2;
 	GLuint landscape_data = 0;
 	
-	// Task                             Shader Name          Task Number    Limit       Cost    Pipe
-	// Generate heightmap               genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2
-	// Generate marching cube voxels    drawTexture.comp     2              Infinity    Low?    ETex3, 0Tex2 -> Tex3
-	// Generate verticies               genVerticies.comp    4              2           High    2Tex3 -> SSBO
-	// 
-	// Pipe Legend:
-	// E...    empty (required to be created for this stage)
-	// #...    ... is from task number #
-	// ...     is a Tex2, Tex3, or a SSBO
-	// Tex2    2d texture
-	// Tex3    3D texture
-	// SSBO    Shader Storeage Buffer Object
-	// Note: Input is listed in the same order as its stage's output
+	// Task                                              Shader Name         Task Number    Limit       Cost    Pipe                                                
+	//                                                                                                                                              
+	// OLD:                                                                                                                                         
+	// start                                                                  0              Infinity    N/A     N/A                                
+	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
+	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
+	// wait                                                                   3              Infinity    N/A     N/A                                
+	// Generate verticies                                genVerticies.comp    4              2           High    2Tex3 -> SSBO                      
+	// done                                                                   5              Infinity    N/A     N/A                                
+	//                                                                                                                                              
+	// NEW:                                                                                                                                         
+	// start                                                                  0              Infinity    N/A     N/A                                
+	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
+	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
+	// Mark verticies for generation, output indicies    genIndicies.comp     3              Infinity    Low?    ESSBO, ESSBO, 2Tex3 -> SSBO, SSBO  
+	// Generate verticies                                genVerticies.comp    4              2           Low?    ESSBO, 3SSBO, 3SSBO -> 3SSBO, 3SSBO
+	// done                                                                   5              Infinity    N/A     N/A                                
+	//                                                                                                                                              
+	// Pipe Legend:                                                                                                                                 
+	// E...    empty (required to be created for this stage)                                                                                        
+	// #...    ... is from task number #                                                                                                            
+	// ...     is a Tex2, Tex3, or a SSBO                                                                                                           
+	// Tex2    2d texture                                                                                                                           
+	// Tex3    3D texture                                                                                                                           
+	// SSBO    Shader Storeage Buffer Object                                                                                                        
+	// Note: Input is listed in the same order as its stage's output                                                                                
 
-	enum class tasks {start=0, heightmap, terrain_fills, waiting, verticies, done, empty};
-	static int max_stage_count; // limits the amount of verticies stages at any one time. Static so that the max number of stages can be changed in a menu
-	static int stage_count;
-	bool assigned_stage = false;
+	unsigned int current_step = 0;
+	bool waiting = false;
+	static unsigned int task_queue[6];
+	static unsigned int task_queue_max[6];
 
-	friend tasks& operator++(tasks& orig)
-	{
-		if (orig == tasks::done) {
-			return orig;
-		}
-		orig = static_cast<tasks>((int)orig + 1);
-		return orig;
-	};
-
-	friend tasks operator++(tasks& orig, int)
-	{
-		tasks rVal = orig;
-		++orig;
-		return rVal;
-	}
-
-	tasks current_task = tasks::start;
 	GLsync fence;
 	bool fence_is_active = false;
 
