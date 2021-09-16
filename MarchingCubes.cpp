@@ -125,8 +125,6 @@ void MarchingCubes::update_cubes() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::generate_heightmap() {
-	//fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
 	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
 
 	if (heightmap_generator->is_generated(coord)) {
@@ -140,7 +138,6 @@ void MarchingCubes::generate_heightmap() {
 }
 
 void MarchingCubes::generate_terrain_fills() {
-	//set_fence();
 
 	// Prepare render texture
 	glGenTextures(1, &landscape_data);
@@ -171,7 +168,6 @@ void MarchingCubes::generate_terrain_fills() {
 void MarchingCubes::generate_edges() {
 	glBindTexture(GL_TEXTURE_3D, landscape_data);
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	//set_fence();
 
 	// Create SSBO (edge_data)
 	glGenBuffers(1, &edge_data);
@@ -200,7 +196,6 @@ void MarchingCubes::generate_verticies() {
 	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
 	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
-	//set_fence();
 
 	// Set initial count and indirect render information
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);

@@ -9,7 +9,7 @@
 
 class MarchingCubes
 {
-public:
+private:
 	glm::ivec3 pos;
 	int cube_dimensions;
 	int vertex_cube_dimensions;
@@ -32,6 +32,7 @@ public:
 	GLuint edge_data = 0;
 	unsigned int edge_data_binding = 2;
 	GLuint landscape_data = 0;
+	const unsigned int vertex_data_size = 32 * 32 * 32 * 4;
 	
 	// Task                                              Shader Name         Task Number    Limit       Cost    Pipe                                                
 	//                                                                                                                                              
