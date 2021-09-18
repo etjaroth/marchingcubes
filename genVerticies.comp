@@ -18,13 +18,6 @@ layout (binding=0, std140) buffer vertex_output {
 	Vertex verticies[];
 };
 
-layout (binding=1, std140) buffer indirect_render_data {
-	uint count; // atomic counter
-	uint instanceCount; // 1 (1 instance of terrain)
-	uint first; // 0 (no offset)
-	uint baseInstance; // 0 (not important?)
-};
-
 uniform vec3 pos = vec3(0.0);
 uniform float maxFill = 1.0;
 uniform float minFill = 0.0;

@@ -3,6 +3,7 @@
 
 ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
 	gen_verticies("genVerticies.comp"),
+	gen_indicies("genIndices.comp"),
 	heightmap_generator(chunk_sz + 1, heightmap_shader),
 	fill_generator(fill_shader, chunk_sz + 1, chunk_sz + 1, chunk_sz + 1) {
 
@@ -61,7 +62,6 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
-
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
@@ -151,7 +151,7 @@ void ChunkManager::update_chunks() {
 					offset *= chunk_size;
 					chunk_map.insert(std::pair<triple<int>,
 						std::shared_ptr<MarchingCubes>>(point,
-							std::make_shared<MarchingCubes>(chunk_size, offset, &heightmap_generator, &fill_generator, &gen_verticies)));
+							std::make_shared<MarchingCubes>(chunk_size, offset, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
 				}
 			}
 		}

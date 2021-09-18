@@ -5,8 +5,6 @@
 #include "SSBOComputeShader.h"
 #include "Heightmap.h"
 
-
-
 class MarchingCubes
 {
 private:
@@ -21,18 +19,25 @@ private:
 	SSBOComputeShader* gen_verticies;
 
 	// rendering
-	unsigned int VAO;
-	unsigned int OUTPUT_SSBO;
-	const int OUTPUT_SSBO_BINDING = 0;
-	unsigned int INDIRECT_SSBO;
-	const int INDIRECT_SSBO_BINDING = 1;
+	GLuint VAO;
 
-	// Pipeline Textures
-	GLuint heightmap = 0;
-	GLuint edge_data = 0;
-	unsigned int edge_data_binding = 2;
-	GLuint landscape_data = 0;
-	const unsigned int vertex_data_size = 32 * 32 * 32 * 4;
+	GLuint VERTEX_SSBO;
+	const int VERTEX_SSBO_BINDING = 0;
+	unsigned int VERTEX_SSBO_SIZE;
+	const unsigned int SIZEOF_VERTEX = 4 * sizeof(float) * 3;
+
+	GLuint EBO;
+	const int EBO_BINDING = 1;
+
+	GLuint INDIRECT_SSBO; // Holds the information needed for indirect rendering
+	const int INDIRECT_SSBO_BINDING = 2;
+
+	// Pipeline Textures (temporary)
+	GLuint HEIGHTMAP = 0;
+	const int HEIGHTMAP_UNIT = 1;
+
+	GLuint LANDSCAPE_DATA = 0;
+	const int LANDSCAPE_DATA_UNIT = 0;
 	
 	// Task                                              Shader Name         Task Number    Limit       Cost    Pipe                                                
 	//                                                                                                                                              
@@ -49,7 +54,7 @@ private:
 	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
 	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
 	// Mark verticies for generation, output indicies    genIndicies.comp     3              Infinity    Low?    ESSBO, ESSBO, 2Tex3 -> SSBO, SSBO  
-	// Generate verticies                                genVerticies.comp    4              2           Low?    ESSBO, 3SSBO, 3SSBO -> 3SSBO, 3SSBO
+	// Generate verticies                                genVerticies.comp    4              Infinity?   Low?    ESSBO, 3SSBO, 3SSBO -> 3SSBO, 3SSBO
 	// done                                                                   5              Infinity    N/A     N/A                                
 	//                                                                                                                                              
 	// Pipe Legend:                                                                                                                                 
@@ -61,20 +66,22 @@ private:
 	// SSBO    Shader Storeage Buffer Object                                                                                                        
 	// Note: Input is listed in the same order as its stage's output                                                                                
 
+	// Pipeline Variables
 	unsigned int current_step = 0;
 	bool waiting = false;
 	static unsigned int task_queue[6];
 	static unsigned int task_queue_max[6];
-
+		// Fence
 	GLsync fence;
 	bool fence_is_active = false;
 
+	// Render Pipeline Functions
 	void update_cubes();
 	void generate_heightmap();
 	void generate_terrain_fills();
-	void generate_edges();
+	void generate_indices();
 	void generate_verticies();
-
+		// Fence
 	bool fence_is_done();
 	void set_fence();
 	void free_fence();
@@ -83,7 +90,7 @@ private:
 
 
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr);
+	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);
