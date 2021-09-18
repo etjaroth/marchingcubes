@@ -82,11 +82,13 @@ void main() {
 
 	Vertex vertex;
 	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
+	vertex.pos = vec4(vertex.pos.x, vertex.pos.z, vertex.pos.y, vertex.pos.w);
+	//vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
 	//vertex.pos = vec4(true_point_a, 1.0);
 	//vertex.normal = vec4(true_point_a, 1.0);
 	//vertex.material = vec4(true_point_a, 1.0);
 	
-	//vertex.normal = vec4(0.0, 1.0, 0.0, 0.0);
+	vertex.normal = vec4(0.0, 1.0, 0.0, 0.0);
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
 
 	//Output vertex

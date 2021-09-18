@@ -440,6 +440,11 @@ void main() {
 		indices[starting_index + i + 1] = i1;
 		indices[starting_index + i + 2] = i2;
 
+		// Calculate triangle normal
+		const vec3 orgin = vec3(verticies[index].pos);
+		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
+
+		// Mark Vertices
 		verticies[i0] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
 		verticies[i1] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
 		verticies[i2] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
