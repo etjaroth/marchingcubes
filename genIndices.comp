@@ -8,8 +8,14 @@ layout(rgba32f, binding = 0) uniform image3D generated_data;
 uint sizeofVec4 = 4 * 4;
 uint sizeofVertex = 3 * sizeofVec4;
 
+struct Vertex { // Shold be identical to Vertex in genVerticies.comp
+	vec4 pos;
+	vec4 normal;
+	vec4 material;
+};
+
 layout (binding=0, std140) buffer vertex_output {
-	float verticies[]; // actually a bool
+	Vertex verticies[]; // actually a bool
 };
 
 layout (binding=1, std430) buffer indices_output {
@@ -27,6 +33,7 @@ layout (binding=2, std140) buffer indirect_render_data {
 uniform vec3 pos = vec3(0.0);
 uniform float maxFill = 1.0;
 uniform float minFill = 0.0;
+uniform ivec3 chunk_size;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -339,7 +346,7 @@ unsigned int get_index_of_edge(ivec3 p1, ivec3 p2) {
 	ivec3 coord = min(p1, p2);
 	
 	// which we can treat as a 1d-array
-	index = coord.x + coord.y * 32 + coord.z * 1024; // 1024 = 33*33
+	index = coord.x + coord.y * chunk_size.x + coord.z * chunk_size.x * chunk_size.y; // 1024 = 33*33
 	
 	// Now we just mix it in with the other edges
 	index = 3 * index + axis_id;
@@ -385,17 +392,17 @@ void main() {
 	// Explination:
 	//   For this, call cases[case_index][n][0] C. C is [0, 12] if valid, or -2 if invalid.
 	//   We want to convert C to 1 if valid or 0 if invalid (because we want to count the number of triangles)
-	//   We add 1 to cause (C is [0, 12] or -2) -> (C is [1, 13] or -1) (want to make division by 0 legal)
-	//   We divide that value by its self to get 1 if valid, or -1 if invalid
+	//   We add 1 to cause: (C is [0, 12] or -2) -> (C is [1, 13] or -1) (want to make division by 0 legal)
+	//   We divide that value by its absolute value to get 1 if valid, or -1 if invalid
 	//   We add 1 to that to get 2 if valid, or 0 if invalid
 	//   We divide by 2 to get 1 if valid or 0 if invalid
 	//   We :( because we had to do all this to count triangles at a reasonable framerate
 	// Note that we only have to do all this because we use triangle_count in an atomicAdd?
-	int triangle_count = ((((cases[case_index][0] + 1) / (cases[case_index][0] + 1)) + 1) / 2) + 
-								((((cases[case_index][3] + 1) / (cases[case_index][3] + 1)) + 1) / 2) + 
-								((((cases[case_index][6] + 1) / (cases[case_index][6] + 1)) + 1) / 2) + 
-								((((cases[case_index][9] + 1) / (cases[case_index][9] + 1)) + 1) / 2) + 
-								((((cases[case_index][12] + 1) / (cases[case_index][12] + 1)) + 1) / 2);
+	const uint triangle_count = ((((cases[case_index][0] + 1) / abs(cases[case_index][0] + 1)) + 1) / 2) + 
+								((((cases[case_index][3] + 1) / abs(cases[case_index][3] + 1)) + 1) / 2) + 
+								((((cases[case_index][6] + 1) / abs(cases[case_index][6] + 1)) + 1) / 2) + 
+								((((cases[case_index][9] + 1) / abs(cases[case_index][9] + 1)) + 1) / 2) + 
+								((((cases[case_index][12] + 1) / abs(cases[case_index][12] + 1)) + 1) / 2);
 
 
 	if (triangle_count == 0) {
@@ -426,16 +433,12 @@ void main() {
 		uint i2 = get_index_of_edge(a2, b2);
 
 		// Store index
-//		indices[starting_index + i] = i0;
-//		indices[starting_index + i + 1] = i1;
-//		indices[starting_index + i + 2] = i2;
-		indices[starting_index + i] = case_index;
-		indices[starting_index + i + 1] = triangle_count;
-		indices[starting_index + i + 2] = cases[case_index][6] + 2;
+		indices[starting_index + i] = i0;
+		indices[starting_index + i + 1] = i1;
+		indices[starting_index + i + 2] = i2;
 
-		const uint vertex_size = 48; // see genVerticies.comp
-		verticies[i0 * vertex_size] = 1.0;
-		verticies[i1 * vertex_size] = 1.0;
-		verticies[i2 * vertex_size] = 1.0;
+		verticies[i0] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i1] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i2] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
 	}
 }

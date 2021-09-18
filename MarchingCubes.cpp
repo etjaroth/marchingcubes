@@ -1,5 +1,6 @@
 #include "MarchingCubes.h"
 #include <assert.h>
+#include <iomanip> // for printing prescision floats
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
 unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, 2, UINT_MAX };
@@ -9,8 +10,8 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
-	gen_verticies = gen_verticies_ptr;
 	gen_edges = gen_indices_ptr;
+	gen_verticies = gen_verticies_ptr;
 
 	cube_dimensions = cubeSize;
 	vertex_cube_dimensions = cube_dimensions + 1;
@@ -91,6 +92,7 @@ void MarchingCubes::update_cubes() {
 				generate_indices();
 				break;
 			case 4:
+				std::cout << "\n\n\nVertex!\n\n\n" << std::endl;
 				generate_verticies();
 				break;
 			case 5:
@@ -182,28 +184,9 @@ void MarchingCubes::generate_indices() {
 
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
+	gen_edges->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 1));
 	gen_edges->fillSSBO(EBO, EBO_BINDING, cube_dimensions, cube_dimensions, cube_dimensions);
 	gen_edges->dontuse();
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, EBO);
-	unsigned int data2[131072];
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 131072 * sizeof(unsigned int), data2);
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-	unsigned int data3[5] = { 0, 1, 2, 3, 4 };
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 5 * sizeof(unsigned int), data3);
-	
-		std::cout << "Data: " << data3[0] << ", " << data3[1] << ", " << data3[2] << ", " << data3[3] << ", " << data3[4] << std::endl;
-	if (data3[0] != 0) {
-		std::cout << "Indicies: " << std::endl;
-		const int n = 2400;
-		for (int i = 0; i < n; ++i) {
-			std::cout << data2[i] << ((i == (n - 1)) ? "" : ", ");
-		}
-		std::cout << "\n\n==========\n" << std::endl;
-	}
 }
 
 void MarchingCubes::generate_verticies() {
@@ -213,9 +196,39 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE/SIZEOF_VERTEX, 0, 0);
+	gen_verticies->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 1));
+	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
+	bool b = fence_is_done();
 	glDeleteTextures(1, &LANDSCAPE_DATA);
+
+	if (b) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VERTEX_SSBO);
+		float data2[131072];
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 131072 * sizeof(float), data2);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
+		unsigned int data3[5] = { 0, 1, 2, 3, 4 };
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 5 * sizeof(unsigned int), data3);
+
+		std::cout << "Data: " << data3[0] << ", " << data3[1] << ", " << data3[2] << ", " << data3[3] << ", " << data3[4] << std::endl;
+
+		std::cout << std::fixed;
+		std::cout << std::setprecision(4);
+		if (data3[0] != 0) {
+			std::cout << "Verticies: " << std::endl;
+			const int n = 1200;
+			for (int i = 0; i < n; ++i) {
+				if (i % 12 == 0) { std::cout << "\n|"; }
+				else { std::cout << " "; }
+				std::cout << (i % 4 == 0 ? "| " : ((i == (n - 1) || i == 0) ? "" : ", ")) << data2[i];
+				
+			}
+			std::cout << "\n\n==========\n" << std::endl;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
