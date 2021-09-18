@@ -38,30 +38,33 @@ uniform ivec3 chunk_size;
 ///////////////////////////////////////////////////////////////////////////////
 
 const ivec3 vertex_pos[8] = { // Points on a cube
-	ivec3(0, 0, 0),
-	ivec3(1, 0, 0),
-	ivec3(1, 1, 0),
-	ivec3(0, 1, 0),
-	ivec3(0, 0, 1),
-	ivec3(1, 0, 1),
-	ivec3(1, 1, 1),
-	ivec3(0, 1, 1)
+	ivec3(0, 0, 0), // 0
+	ivec3(1, 0, 0), // 1
+	ivec3(1, 1, 0), // 2
+	ivec3(0, 1, 0), // 3
+	ivec3(0, 0, 1), // 4
+	ivec3(1, 0, 1), // 5
+	ivec3(1, 1, 1), // 6
+	ivec3(0, 1, 1)  // 7
 };
 
 const uint edges[12][2] = { // Lines between points
 	{0, 1}, // 0
 	{1, 2}, // 1
-	{2, 3}, // 2
-	{3, 0}, // 3
+	{3, 2}, // 2
+	{0, 3}, // 3
 	{4, 5}, // 4
 	{5, 6}, // 5
-	{6, 7}, // 6
-	{7, 4}, // 7
+	{7, 6}, // 6
+	{4, 7}, // 7
 	{0, 4}, // 8
 	{1, 5}, // 9
 	{2, 6}, // 10
 	{3, 7}  // 11
 };
+
+
+
 
 const int cases[256][15] = { // List of faces from edges
 	{IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},	// index number as binary represents
@@ -334,29 +337,29 @@ unsigned int get_index_of_edge(ivec3 p1, ivec3 p2) {
 	//     If n == 0, the edge is along the x-axis
 	//     If n == 1, the edge is along the y-axis
 	//     If n == 2, the edge is along the z-axis
-	ivec3 axis = abs(p1 - p2);
+	ivec3 axis = p2 - p1;
 
-	// If we assume that p1 and p2 are no more than 1 apart (which they should be)
-	// we know it has a magnitude of 1, which means that axis is either [1, 0, 0], [0, 1, 0] or [0, 0, 1]
+	// If we assume that p1 and p2 are adjacent, with p1.x <= p2.x, p1.y <= p2.y, p1,z <= p2.z (which they should be)
+	// Then we know it has a magnitude of 1, which means that axis is either [1, 0, 0], [0, 1, 0] or [0, 0, 1]
 	int axis_id = axis.y + axis.z * 2; // ommited "axis.x * 0 + "
 
 	// Now we can imagine the edges as three seperate grids with known sizes
-	// Since we know the grid has 33x33x33 verticies, we know it has 32x32x32 edges
+	// Since we know the grid has chunk_size + ivec3(1) verticies, we know it has chunk_size edges
 	// We can now treat each set of edges as a 3D array...
+	
 	ivec3 coord = min(p1, p2);
 	
-	// which we can treat as a 1d-array
-	index = coord.x + coord.y * chunk_size.x + coord.z * chunk_size.x * chunk_size.y; // 1024 = 33*33
+	// ... which we can treat as a 1d-array
+	index = coord.x + coord.y * chunk_size.x + coord.z * chunk_size.x * chunk_size.y;
 	
 	// Now we just mix it in with the other edges
 	index = 3 * index + axis_id;
-
 	return index;
 }
 
 void main() {
 	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
-	const vec3 offset = vec3(cube_location) + pos;
+	//const vec3 offset = vec3(cube_location) + pos;
 
 	// Load cube corners
 	//    Note: "Load operations from any texel that is outside of the boundaries of the bound image will return all zeros"
@@ -387,7 +390,7 @@ void main() {
 //			triangle_count += 1;
 //	}
 
-	// The following is equivilent to for loop above, because that loop is apparently REALLY expensive
+	// The following is equivilent to for loop above, because that loop is REALLY expensive
 	// This only works because IV is defined as -2
 	// Explination:
 	//   For this, call cases[case_index][n][0] C. C is [0, 12] if valid, or -2 if invalid.
@@ -410,7 +413,7 @@ void main() {
 	}
 	
 	// list indices
-	const uint starting_index = atomicAdd(count, 3 * triangle_count);
+	const uint starting_index = atomicAdd(count, 3 * triangle_count + 0);
 
 	for (uint i = 0; i < 13; i += 3) {
 		if (cases[case_index][i] == IV) {return;}
@@ -420,13 +423,13 @@ void main() {
 		int edge_index1 = cases[case_index][i + 1];
 		int edge_index2 = cases[case_index][i + 2];
 
-		ivec3 a0 = vertex_pos[edges[edge_index0][0]];
-		ivec3 a1 = vertex_pos[edges[edge_index1][0]];
-		ivec3 a2 = vertex_pos[edges[edge_index2][0]];
+		ivec3 a0 = vertex_pos[edges[edge_index0][0]] + cube_location;
+		ivec3 a1 = vertex_pos[edges[edge_index1][0]] + cube_location;
+		ivec3 a2 = vertex_pos[edges[edge_index2][0]] + cube_location;
 
-		ivec3 b0 = vertex_pos[edges[edge_index0][1]];
-		ivec3 b1 = vertex_pos[edges[edge_index1][1]];
-		ivec3 b2 = vertex_pos[edges[edge_index2][1]];
+		ivec3 b0 = vertex_pos[edges[edge_index0][1]] + cube_location;
+		ivec3 b1 = vertex_pos[edges[edge_index1][1]] + cube_location;
+		ivec3 b2 = vertex_pos[edges[edge_index2][1]] + cube_location;
 
 		uint i0 = get_index_of_edge(a0, b0);
 		uint i1 = get_index_of_edge(a1, b1);

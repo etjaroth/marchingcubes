@@ -70,7 +70,7 @@ void main() {
     const uint sindex = index - (z * (chunk_size.x * chunk_size.y));
 
 	// Get back points from the edge
-	const ivec3 point_a = 6 * ivec3(sindex % chunk_size.x, sindex / chunk_size.x, z);
+	const ivec3 point_a = ivec3(sindex % chunk_size.x, sindex / chunk_size.x, z);
 	const ivec3 point_b = point_a + axies[index % 3]; // see genIndices
 
 	const vec3 true_point_a = vec3(point_a) + pos;
@@ -81,12 +81,13 @@ void main() {
 	// Input format: fill, material, waterlevel, 1.0
 
 	Vertex vertex;
-	//vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
-	vertex.pos = vec4(true_point_a, 1.0);
-	vertex.normal = vec4(0.0, 1.0, 0.0, 0.0);
-	//vertex.normal = vec4(true_point_b, 1.0);
+	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
+	//vertex.pos = vec4(true_point_a, 1.0);
+	//vertex.normal = vec4(true_point_a, 1.0);
+	//vertex.material = vec4(true_point_a, 1.0);
+	
+	//vertex.normal = vec4(0.0, 1.0, 0.0, 0.0);
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
-	//vertex.material = vec4(axies[index % 3], 1.0);
 
 	//Output vertex
 	verticies[index] = vertex;

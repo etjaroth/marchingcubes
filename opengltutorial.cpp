@@ -80,7 +80,7 @@ int main() {
 	glEnable(GL_BLEND); // Transparencey isn't perfect
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 
 	glEnable(GL_MULTISAMPLE);
 
@@ -226,7 +226,7 @@ int main() {
 
 		///////////////////////////////////////////////////////////////////////
 
-		terrain.set_pos(-camera.getPos());
+		//terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
 		std::cout << std::endl;

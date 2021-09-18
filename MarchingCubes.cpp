@@ -36,7 +36,7 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 
 	// Vertex Position
-	const unsigned int stride = 3 * 4 * sizeof(float);
+	const unsigned int stride = 3 * 4 * sizeof(GLfloat);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride, (void*)0);
 	glEnableVertexAttribArray(0);
 	// Vertex Normal
@@ -203,14 +203,17 @@ void MarchingCubes::generate_verticies() {
 	glDeleteTextures(1, &LANDSCAPE_DATA);
 
 	if (b) {
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VERTEX_SSBO);
-		float data2[131072];
+		//glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
+		unsigned int data2[131072];
+		//float data2[131072];
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 131072 * sizeof(float), data2);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-		unsigned int data3[5] = { 0, 1, 2, 3, 4 };
+		float data3[5] = { 0, 1, 2, 3, 4 };
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 5 * sizeof(unsigned int), data3);
 
 		std::cout << "Data: " << data3[0] << ", " << data3[1] << ", " << data3[2] << ", " << data3[3] << ", " << data3[4] << std::endl;
@@ -223,7 +226,7 @@ void MarchingCubes::generate_verticies() {
 			for (int i = 0; i < n; ++i) {
 				if (i % 12 == 0) { std::cout << "\n|"; }
 				else { std::cout << " "; }
-				std::cout << (i % 4 == 0 ? "| " : ((i == (n - 1) || i == 0) ? "" : ", ")) << data2[i];
+				std::cout << (i % 3 == 0 ? "| " : ((i == (n - 1) || i == 0) ? "" : ", ")) << data2[i];
 				
 			}
 			std::cout << "\n\n==========\n" << std::endl;
@@ -242,9 +245,14 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+		//unsigned int data[1] = {32*32*32*32};
+		//glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
 
 		shader->use();
+		//glPointSize(10.0f);
 		//glDrawArraysIndirect(GL_TRIANGLES, 0);
+		//glDrawArraysIndirect(GL_POINTS, 0);
+		
 		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
 		shader->dontuse();
 
