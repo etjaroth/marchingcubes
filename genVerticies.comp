@@ -25,6 +25,9 @@ uniform ivec3 chunk_size;
 
 const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
+	//return (v1+v2)/2.0;
+
+
 	// Code adapted from paulbourke.net/geometry/polygonise/
 	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
 		return v1;
@@ -60,18 +63,42 @@ vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 //	verticies[index + vertex_index].normal.y = is_water_surface ? 4.0 : verticies[index + vertex_index].normal.y;
 //}
 
+vec3 index_to_points(uint index) {
+    uint d = index % 3;
+    uint i = (index - d)/3;
+
+	vec3 v;
+
+    v.z = i / (chunk_size.x * chunk_size.y);
+    i -= v.z * chunk_size.x * chunk_size.y;
+    v.y = i / chunk_size.x;
+    v.x = i % chunk_size.x;
+
+    return v;
+}
+
 void main() {
-	uint index = gl_GlobalInvocationID.x;
-	const float start = verticies[index].pos.x;
-	//if (start == 0) {return;} // We don't need or want a vertex on this edge
+	uint idx = gl_GlobalInvocationID.x;
 
 	const ivec3 axies[3] = {ivec3(1, 0, 0), ivec3(0, 1, 0), ivec3(0, 0, 1)};
-	const uint z = index / (chunk_size.x * chunk_size.y);
-    const uint sindex = index - (z * (chunk_size.x * chunk_size.y));
+	uint axis_id = idx % 3;
+
+	uint i = (idx - axis_id)/3;
+
+	// index = 3*i + axis_index
+	// index - axis_index = 3 * i
+	// (index - axis_index)/3 = i
+
+	const float start = verticies[idx].pos.x;
+	if (start == 0) {return;} // We don't need or want a vertex on this edge
+	
+	
+	const uint z = i / (chunk_size.x * chunk_size.y);
+    i -= (z * (chunk_size.x * chunk_size.y));
 
 	// Get back points from the edge
-	const ivec3 point_a = ivec3(sindex % chunk_size.x, sindex / chunk_size.x, z);
-	const ivec3 point_b = point_a + axies[index % 3]; // see genIndices
+	const ivec3 point_a = ivec3(i % chunk_size.x, i / chunk_size.x, z);
+	const ivec3 point_b = point_a + axies[axis_id]; // see genIndices
 
 	const vec3 true_point_a = vec3(point_a) + pos;
 	const vec3 true_point_b = vec3(point_b) + pos;
@@ -82,7 +109,7 @@ void main() {
 
 	Vertex vertex;
 	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
-	vertex.pos = vec4(vertex.pos.x, vertex.pos.z, vertex.pos.y, vertex.pos.w);
+	//vertex.pos = vec4(vertex.pos.x, vertex.pos.z, vertex.pos.y, vertex.pos.w);
 	//vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
 	//vertex.pos = vec4(true_point_a, 1.0);
 	//vertex.normal = vec4(true_point_a, 1.0);
@@ -92,5 +119,5 @@ void main() {
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
 
 	//Output vertex
-	verticies[index] = vertex;
+	verticies[idx] = vertex;
 }

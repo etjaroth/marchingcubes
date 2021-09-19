@@ -19,7 +19,7 @@ layout (binding=0, std140) buffer vertex_output {
 };
 
 layout (binding=1, std430) buffer indices_output {
-	unsigned int indices[];
+	uint indices[];
 };
 
 layout (binding=2, std140) buffer indirect_render_data {
@@ -327,9 +327,7 @@ const int cases[256][15] = { // List of faces from edges
 
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned int get_index_of_edge(ivec3 p1, ivec3 p2) {
-	unsigned int index = 0;
-
+uint get_index_of_edge(ivec3 p1, ivec3 p2) {
 	// Indexing the Edges of a 3D Grid
 	// There are three axies an edge can lie along: the x-axis, the y-axis, and the z-axis
 	// We want an easy way to tell which direction an edge is aligned along based on its index.
@@ -341,16 +339,19 @@ unsigned int get_index_of_edge(ivec3 p1, ivec3 p2) {
 
 	// If we assume that p1 and p2 are adjacent, with p1.x <= p2.x, p1.y <= p2.y, p1,z <= p2.z (which they should be)
 	// Then we know it has a magnitude of 1, which means that axis is either [1, 0, 0], [0, 1, 0] or [0, 0, 1]
-	int axis_id = axis.y + axis.z * 2; // ommited "axis.x * 0 + "
+	uint axis_id = axis.y + axis.z * 2; // ommited "axis.x * 0 + "
 
 	// Now we can imagine the edges as three seperate grids with known sizes
 	// Since we know the grid has chunk_size + ivec3(1) verticies, we know it has chunk_size edges
 	// We can now treat each set of edges as a 3D array...
 	
-	ivec3 coord = min(p1, p2);
+	ivec3 //coord = min(p1, p2);
+	coord = p1;
 	
 	// ... which we can treat as a 1d-array
-	index = coord.x + coord.y * chunk_size.x + coord.z * chunk_size.x * chunk_size.y;
+	uint index = (coord.z * chunk_size.x * chunk_size.y) + 
+			(coord.y * chunk_size.x) +
+			 coord.x;
 	
 	// Now we just mix it in with the other edges
 	index = 3 * index + axis_id;

@@ -184,7 +184,7 @@ void MarchingCubes::generate_indices() {
 
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
-	gen_edges->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 1));
+	gen_edges->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 0));
 	gen_edges->fillSSBO(EBO, EBO_BINDING, cube_dimensions, cube_dimensions, cube_dimensions);
 	gen_edges->dontuse();
 }
@@ -196,7 +196,7 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 1));
+	gen_verticies->setiVec3("chunk_size", glm::ivec3(cube_dimensions - 0));
 	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
 	bool b = fence_is_done();
@@ -213,7 +213,7 @@ void MarchingCubes::generate_verticies() {
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-		float data3[5] = { 0, 1, 2, 3, 4 };
+		unsigned int data3[5] = { 0, 1, 2, 3, 4 };
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 5 * sizeof(unsigned int), data3);
 
 		std::cout << "Data: " << data3[0] << ", " << data3[1] << ", " << data3[2] << ", " << data3[3] << ", " << data3[4] << std::endl;
@@ -244,16 +244,52 @@ void MarchingCubes::renderCubes(Shader* shader) {
 
 		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+		const unsigned int render_mode = 2;
+
+		unsigned int data[1] = { 32 * 32 * 32 * 32 };
+		switch (render_mode) {
+		case 0:
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			shader->use();
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+			shader->dontuse();
+			break;
+		case 1:
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
+
+			shader->use();
+			glPointSize(10.0f);
+			glDrawArraysIndirect(GL_POINTS, 0);
+			shader->dontuse();
+			break;
+		case 2:
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			shader->use();
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+			
+
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
+
+			
+			glPointSize(10.0f);
+			glDrawArraysIndirect(GL_POINTS, 0);
+			shader->dontuse();
+			break;
+		}
+
+		
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-		unsigned int data[1] = {32*32*32*32};
-		glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
+		//unsigned int data[1] = {32*32*32*32};
+		//glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
 
 		shader->use();
-		glPointSize(10.0f);
-		//glDrawArraysIndirect(GL_TRIANGLES, 0);
-		glDrawArraysIndirect(GL_POINTS, 0);
+		//glPointSize(10.0f);
+		//glDrawArraysIndirect(GL_POINTS, 0);
 		
-		//glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
 		shader->dontuse();
 
 		glBindVertexArray(0);

@@ -139,32 +139,32 @@ void main()
     //////////////////////////////////////////////////////////////////////////
 
     // Waves
-    if (material == 0) {
-        Shininess = 32.0;
+    //if (material == 0) {
+        //Shininess = 32.0;
         
         
-        vertex_position.y += wave(vertex_position.xz);
-        vec3 color = normal.xyz;
+        //vertex_position.y += wave(vertex_position.xz);
+        //vec3 color = normal.xyz;
 
         // Recalculate normal
 
         // Find other verticies in triangle
-        vec3 orgin = vec3(vertex_position.x, 0.0, vertex_position.z);
-        orgin = vertex_position.xyz;
+        //vec3 orgin = vec3(vertex_position.x, 0.0, vertex_position.z);
+        //orgin = vertex_position.xyz;
 
         //int index = int(normal.y);
-        int index = 0; // this actually makes it look nicer
+        //int index = 0; // this actually makes it look nicer
 
-        vec3 v1 = wave_triangle_verticies[index][0];
-        vec3 v2 = wave_triangle_verticies[index][1];
-        v1.y += wave(v1.xz + orgin.xz);
-        v2.y += wave(v2.xz + orgin.xz);
+        //vec3 v1 = wave_triangle_verticies[index][0];
+        //vec3 v2 = wave_triangle_verticies[index][1];
+        //v1.y += wave(v1.xz + orgin.xz);
+        //v2.y += wave(v2.xz + orgin.xz);
         
-		vec3 cross1 = v1;
-		vec3 cross2 = v2;
-		normal = cross(cross1, cross2);
+		//vec3 cross1 = v1;
+		//vec3 cross2 = v2;
+		//normal = cross(cross1, cross2);
 
-    }
+  //  }
     
     //////////////////////////////////////////////////////////////////////////
 

@@ -26,7 +26,7 @@
 unsigned int screenx = 800;
 unsigned int screeny = 600;
 
-float cameraSpeed = 7.0f;
+float cameraSpeed = 17.0f;
 
 //glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
 glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
@@ -37,6 +37,7 @@ FPSCamera camera(cam_spawn, glm::vec3(0.0f, 0.0f, -1.0f), cameraSpeed);
 //unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip);
 
 // Callbacks
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void error_callback(int error, const char* description);
@@ -154,7 +155,8 @@ int main() {
 
 		
 		// Clear window
-		glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		//glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA, f makes the literal a float instead of a double
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//////////////////////////////////////////////////////////////////////
@@ -229,7 +231,7 @@ int main() {
 		//terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
-		std::cout << std::endl;
+		
 
 		///////////////////////////////////////////////////////////////////////
 
@@ -247,7 +249,7 @@ int main() {
 		if (fpsCounter.get_time() >= 1.0)
 		{
 			// Print the frame count
-			std::cout << "FPS: " << frameCount << "\n" << std::endl;
+			//std::cout << "FPS: " << frameCount << "\n" << std::endl;
 
 			fpsCounter.reset();
 			frameCount = 0;
