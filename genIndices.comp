@@ -446,8 +446,8 @@ void main() {
 		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
 
 		// Create water
-		//float waterlevel = (() && ());
-		float waterlevel = 0.0;
+		bool is_water_surface = (case_index == 51) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
+		float waterlevel = is_water_surface ? 1.0 : 0.0;
 
 		// Mark Vertices
 		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));

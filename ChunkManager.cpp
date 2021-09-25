@@ -138,7 +138,7 @@ void ChunkManager::update_chunks() {
 	std::cout << "Player is at: " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
 	std::cout << "Legal Points: " << std::endl;
 	for (int x = -radius; x <= radius; x++) {
-		for (int y = -radius / 2; y <= radius / 2; y++) {
+		for (int y = -radius; y <= radius; y++) {
 			for (int z = -radius; z <= radius; z++) {
 				triple<int> point =
 				{ {x + chunk_position.x + offset.x,
@@ -174,4 +174,5 @@ void ChunkManager::update_chunks() {
 			chunk = chunk_map.erase(chunk);
 		}
 	}
+
 }

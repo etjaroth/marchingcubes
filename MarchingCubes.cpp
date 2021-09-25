@@ -3,10 +3,11 @@
 #include <iomanip> // for printing prescision floats
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
-unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, 2, UINT_MAX };
+unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
 
 MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
 	task_queue[current_step] += 1;
+
 
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
@@ -52,35 +53,13 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 
 
 MarchingCubes::~MarchingCubes() {
-
-	switch (current_step) {
-	case 0:
-		break;
-	case 1:
-		glDeleteTextures(1, &HEIGHTMAP);
-		break;
-	case 2:
-		glDeleteTextures(1, &HEIGHTMAP);
-		glDeleteTextures(1, &LANDSCAPE_DATA);
-		break;
-	case 3:
-		glDeleteTextures(1, &LANDSCAPE_DATA);
-		glDeleteBuffers(1, &INDIRECT_SSBO);
-		glDeleteBuffers(1, &EBO);
-		break;
-	case 4:
-		glDeleteTextures(1, &LANDSCAPE_DATA);
-		glDeleteBuffers(1, &INDIRECT_SSBO);
-		glDeleteBuffers(1, &EBO);
-		glDeleteBuffers(1, &VERTEX_SSBO);
-		break;
-	case 5:
-		break;
-	}
-
+	glDeleteTextures(1, &LANDSCAPE_DATA);
+	glDeleteBuffers(1, &INDIRECT_SSBO);
+	glDeleteBuffers(1, &EBO);
+	glDeleteBuffers(1, &VERTEX_SSBO);
+	glDeleteVertexArrays(1, &VAO);
 
 	if (!waiting) {
-		assert(current_step <= 6);
 		task_queue[current_step] -= 1;
 	}
 
@@ -89,7 +68,6 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::update_cubes() {
 	glBindVertexArray(VAO);
-
 	if (waiting || fence_is_done()) {
 		if (!waiting) {
 			task_queue[current_step] -= 1;
@@ -97,8 +75,13 @@ void MarchingCubes::update_cubes() {
 
 			set_fence();
 		}
+		
+		//std::cout << task_queue[current_step] << ", " << task_queue_max[current_step] <<std::endl;
 
 		if (task_queue[current_step] < task_queue_max[current_step]) {
+			//std::cout << "    passed" << std::endl;
+			task_queue[current_step] += 1;
+
 			switch (current_step) {
 			case 0:
 				// Should never happen since current_step starts at 0 and we just added 1
@@ -179,7 +162,9 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side, verticies_on_side, verticies_on_side, 0, GL_RGBA, GL_FLOAT, NULL);
+	//const int verticies_on_side_with_buffer = verticies_on_side + 2;
+	const int verticies_on_side_with_buffer = verticies_on_side;
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
 
 	glBindImageTexture(0, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
@@ -240,7 +225,6 @@ void MarchingCubes::generate_verticies() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	print_task();
 	if (current_step == 5) {
 		// Draw
 		glBindVertexArray(VAO);
@@ -345,10 +329,10 @@ void MarchingCubes::free_fence() {
 
 
 void MarchingCubes::print_task() {
+	//return;
+
+	std::cout << current_step << ", ";
 	return;
-
-	std::cout << current_step;
-
 	//switch (current_step) {
 	//case 0:
 	//	std::cout << "S";

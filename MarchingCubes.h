@@ -19,14 +19,14 @@ private:
 	SSBOComputeShader* gen_verticies;
 
 	// rendering
-	GLuint VAO;
+	GLuint VAO = 0;
 
-	GLuint VERTEX_SSBO;
+	GLuint VERTEX_SSBO = 0;
 	const int VERTEX_SSBO_BINDING = 0;
 	unsigned int VERTEX_SSBO_SIZE;
 	const unsigned int SIZEOF_VERTEX = 4 * sizeof(float) * 3;
 
-	GLuint EBO;
+	GLuint EBO = 0;
 	const int EBO_BINDING = 1;
 	unsigned int EBO_SIZE = 0;
 

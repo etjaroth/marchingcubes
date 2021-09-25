@@ -106,7 +106,31 @@ void main() {
 
 	Vertex vertex;
 	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
-	vertex.normal = vec4(0.0, 1.0, 0.0, 0.0);
+
+	// Calculate normal
+	// Sample a[dir][positive/negative]
+	float axp = imageLoad(generated_data, point_a + ivec3(1, 0, 0)).x;
+	float axn = imageLoad(generated_data, point_a + ivec3(-1, 0, 0)).x;
+	float ayp = imageLoad(generated_data, point_a + ivec3(0, 1, 0)).x;
+	float ayn = imageLoad(generated_data, point_a + ivec3(0, -1, 0)).x;
+	float azp = imageLoad(generated_data, point_a + ivec3(0, 0, 1)).x;
+	float azn = imageLoad(generated_data, point_a + ivec3(0, 0, -1)).x;
+
+	// Sample b[dir][positive/negative]
+	float bxp = imageLoad(generated_data, point_b + ivec3(1, 0, 0)).x;
+	float bxn = imageLoad(generated_data, point_b + ivec3(-1, 0, 0)).x;
+	float byp = imageLoad(generated_data, point_b + ivec3(0, 1, 0)).x;
+	float byn = imageLoad(generated_data, point_b + ivec3(0, -1, 0)).x;
+	float bzp = imageLoad(generated_data, point_b + ivec3(0, 0, 1)).x;
+	float bzn = imageLoad(generated_data, point_b + ivec3(0, 0, -1)).x;
+	
+	// Compute gradient (normal)
+	vec3 gradienta = vec3(axp - axn, ayp - ayn, azp - ayn);
+	vec3 gradientb = vec3(bxp - bxn, byp - byn, bzp - byn);
+
+
+
+	vertex.normal = -vec4(normalize(vec3interpolate(gradienta, data_a.x, gradientb, data_b.x)), 0.0);
 
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
 	vertex.material.x = (waterlevel == 1.0) ? 0.0 : vertex.material.x;

@@ -273,6 +273,7 @@ void main() {
 //pixel.x = (pixel_coords.y == 0 && (pixel_coords.x % 4 == 0 || pixel_coords.z % 4 == 0)) ? 1.0 : 0.0;
 //pixel.z = (pixel_coords.x == 0.0 || pixel_coords.y == 1.0 || pixel_coords.z == 0.0) ? 1.0 : 0.0;
 //vec4 pixel = vec4(b ? 1.0 : 0.0, b ? 1.0 : 3.0, 0.0, 1.0);
+
 //pixel.x = (pixel_coords.x % 8 == 0 || pixel_coords.y % 8 == 0 || pixel_coords.z % 8 == 0) ? 1.0 : 0.0;
 
   imageStore(img_output, pixel_coords.xyz, pixel);
