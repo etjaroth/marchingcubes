@@ -445,9 +445,13 @@ void main() {
 		const vec3 orgin = vec3(verticies[index].pos);
 		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
 
+		// Create water
+		//float waterlevel = (() && ());
+		float waterlevel = 0.0;
+
 		// Mark Vertices
-		verticies[i0] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
-		verticies[i1] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
-		verticies[i2] = Vertex(vec4(1.0, 0.0, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
 	}
 }

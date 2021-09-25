@@ -135,6 +135,8 @@ void ChunkManager::update_chunks() {
 		offset.z = 0.0;
 	}
 
+	std::cout << "Player is at: " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
+	std::cout << "Legal Points: " << std::endl;
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius / 2; y <= radius / 2; y++) {
 			for (int z = -radius; z <= radius; z++) {
@@ -146,12 +148,13 @@ void ChunkManager::update_chunks() {
 				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 
 				legal_points.insert(point);
+				std::cout << point.three[0] << ", " << point.three[1] << ", " << point.three[2] << std::endl;
 
 				if (chunk_map.find(point) == chunk_map.end()) {
-					offset *= chunk_size;
+					glm::ivec3 offset2 = static_cast<int>(chunk_size) * offset;
 					chunk_map.insert(std::pair<triple<int>,
 						std::shared_ptr<MarchingCubes>>(point,
-							std::make_shared<MarchingCubes>(chunk_size, offset, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
+							std::make_shared<MarchingCubes>(chunk_size, offset2, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
 				}
 			}
 		}

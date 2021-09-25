@@ -265,15 +265,15 @@ void main() {
 
   bool b = (pixel_coords.y > sin(pixel_coords.x));
 
-  //vec4 pixel = vec4(fill, material, waterlevel, 1.0);
+  vec4 pixel = vec4(fill, material, waterlevel, 1.0);
   //pixel.x = waterlevel > 0.0 && waterlevel < maxFill ? 1.0 : pixel.x; // water surface should be filled
 
 // Grid floor
-vec4 pixel = vec4(0.0, 1.0, 0.0, 0.0);
+//vec4 pixel = vec4(0.0, 1.0, 0.0, 0.0);
 //pixel.x = (pixel_coords.y == 0 && (pixel_coords.x % 4 == 0 || pixel_coords.z % 4 == 0)) ? 1.0 : 0.0;
 //pixel.z = (pixel_coords.x == 0.0 || pixel_coords.y == 1.0 || pixel_coords.z == 0.0) ? 1.0 : 0.0;
 //vec4 pixel = vec4(b ? 1.0 : 0.0, b ? 1.0 : 3.0, 0.0, 1.0);
-pixel.x = (pixel_coords.x % 4 == 0 || pixel_coords.y % 4 == 0 || pixel_coords.z % 4 == 0) ? 1.0 : 0.0;
+//pixel.x = (pixel_coords.x % 8 == 0 || pixel_coords.y % 8 == 0 || pixel_coords.z % 8 == 0) ? 1.0 : 0.0;
 
   imageStore(img_output, pixel_coords.xyz, pixel);
 }

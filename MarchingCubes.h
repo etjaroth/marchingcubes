@@ -9,8 +9,8 @@ class MarchingCubes
 {
 private:
 	glm::ivec3 pos;
-	int cube_dimensions;
-	int vertex_cube_dimensions;
+	int verticies_on_side;
+	int edges_on_side;
 
 	// Shaders
 	Heightmap* heightmap_generator;
@@ -28,6 +28,7 @@ private:
 
 	GLuint EBO;
 	const int EBO_BINDING = 1;
+	unsigned int EBO_SIZE = 0;
 
 	GLuint INDIRECT_SSBO; // Holds the information needed for indirect rendering
 	const int INDIRECT_SSBO_BINDING = 2;
@@ -41,15 +42,6 @@ private:
 	
 	// Task                                              Shader Name         Task Number    Limit       Cost    Pipe                                                
 	//                                                                                                                                              
-	// OLD:                                                                                                                                         
-	// start                                                                  0              Infinity    N/A     N/A                                
-	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
-	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
-	// wait                                                                   3              Infinity    N/A     N/A                                
-	// Generate verticies                                genVerticies.comp    4              2           High    2Tex3 -> SSBO                      
-	// done                                                                   5              Infinity    N/A     N/A                                
-	//                                                                                                                                              
-	// NEW:                                                                                                                                         
 	// start                                                                  0              Infinity    N/A     N/A                                
 	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
 	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
@@ -87,7 +79,6 @@ private:
 	void free_fence();
 
 	void print_task();
-
 
 public:
 	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr);
