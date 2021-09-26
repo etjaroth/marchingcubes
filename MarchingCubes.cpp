@@ -16,6 +16,8 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 
 	verticies_on_side = cubeSize;
 	edges_on_side = verticies_on_side - 1;
+	verticies_on_side_with_buffer = verticies_on_side + 2;
+
 	pos = position;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -24,7 +26,7 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glGenBuffers(1, &VERTEX_SSBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
-	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * cubeSize * cubeSize * cubeSize * 100;
+	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
 	/*std::cout << "VERTEX_SSBO Size: " << VERTEX_SSBO_SIZE / sizeof(float) << " -> " 
 		<< (VERTEX_SSBO_SIZE / sizeof(float)) / 12 << std::endl;*/
@@ -67,7 +69,7 @@ MarchingCubes::~MarchingCubes() {
 }
 
 void MarchingCubes::update_cubes() {
-	glBindVertexArray(VAO);
+	//glBindVertexArray(VAO);
 	if (waiting || fence_is_done()) {
 		if (!waiting) {
 			task_queue[current_step] -= 1;
@@ -93,7 +95,8 @@ void MarchingCubes::update_cubes() {
 				generate_terrain_fills();
 				break;
 			case 3:
-				glDeleteTextures(1, &HEIGHTMAP);
+				//glDeleteTextures(1, &HEIGHTMAP);
+				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 				generate_indices();
 				break;
 			case 4:
@@ -131,6 +134,7 @@ void MarchingCubes::update_cubes() {
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
@@ -139,13 +143,12 @@ void MarchingCubes::update_cubes() {
 
 //////////////////////////////////////////////////////////////////////////////
 
+const int buffer = 2;
+
 void MarchingCubes::generate_heightmap() {
 	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
 
-	if (heightmap_generator->is_generated(coord)) {
-		//glDeleteSync(fence);
-	}
-	else {
+	if (!heightmap_generator->is_generated(coord)) {
 		heightmap_generator->generate_heightmap(coord);
 	}
 
@@ -198,7 +201,7 @@ void MarchingCubes::generate_indices() {
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
-	EBO_SIZE = VERTEX_SSBO_SIZE / SIZEOF_VERTEX * 4;
+	EBO_SIZE = verticies_on_side * verticies_on_side * verticies_on_side * 15;
 	glBufferData(GL_SHADER_STORAGE_BUFFER,
 		(EBO_SIZE) * sizeof(unsigned int),
 		NULL, GL_STATIC_DRAW);
@@ -206,13 +209,21 @@ void MarchingCubes::generate_indices() {
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
 	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side - 0));
-	gen_edges->fillSSBO(EBO, EBO_BINDING, verticies_on_side, verticies_on_side, verticies_on_side);
+	const int fillsize = verticies_on_side;
+	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
 	gen_edges->dontuse();
 }
 
 void MarchingCubes::generate_verticies() {
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
-	glBindImageTexture(0, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 
 	// Generate vertex data
 	gen_verticies->use();
@@ -237,7 +248,7 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		// 1 draws verticies only
 		// 2 draws both
 		const unsigned int render_mode = 0;
-		unsigned int data[1] = { 32 * 32 * 32 * 32 };
+		unsigned int data[1] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side};
 		switch (render_mode) {
 		case 0:
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);

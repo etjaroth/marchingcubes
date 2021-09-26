@@ -1,17 +1,18 @@
 #include "ChunkManager.h"
 #include <unordered_set>
 
+//const int buffer = 2;
+const int buffer = 0;
+
 ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
 	gen_verticies("genVerticies.comp"),
 	gen_indicies("genIndices.comp"),
-	heightmap_generator(chunk_sz + 1, heightmap_shader),
-	fill_generator(fill_shader, chunk_sz + 1, chunk_sz + 1, chunk_sz + 1) {
+	heightmap_generator(chunk_sz + buffer, heightmap_shader),
+	fill_generator(fill_shader, chunk_sz + buffer, chunk_sz + buffer, chunk_sz + buffer) {
 
 	chunk_size = chunk_sz;
 	set_pos(orgin);
 	radius = r;
-
-
 
 	// To be depricated
 	fill_generator.use();
@@ -69,14 +70,38 @@ void ChunkManager::render(Shader* shader) {
 		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a, 
 			const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& b) -> bool
 		{
-			const glm::vec3 va = (float)(this->chunk_size) * glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
+			/*const glm::vec3 va = (float)(this->chunk_size) * glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
 			const glm::vec3 vb = (float)(this->chunk_size) * glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
 
 			const glm::vec3 dist_a = va - this->position;
 			const glm::vec3 dist_b = vb - this->position;
 
 			return glm::length(dist_a)
-				< glm::length(dist_b);
+				< glm::length(dist_b);*/
+			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
+			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
+			if (fa.y < fb.y) {
+				return true;
+			}
+			else if (fa.y == fb.y) {
+				if (fa.x < fb.x) {
+					return true;
+				}
+				else if (fa.x == fb.x) {
+					if (fa.z < fb.z) {
+						return true;
+					}
+					else {
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+			else {
+				return false;
+			}
 		});
 
 
@@ -110,7 +135,7 @@ void ChunkManager::update_chunks() {
 	// List legal points
 	std::unordered_set<triple<int>, tripleHashFunction> legal_points;
 
-	std::cout << "\n\nUpdating chunks: " << chunk_map.size() << std::endl;
+	//std::cout << "\n\nUpdating chunks: " << chunk_map.size() << std::endl;
 
 	// Account for the giant cell at (0, 0, 0)
 	glm::vec3 offset = glm::vec3(0.0f);
@@ -135,8 +160,8 @@ void ChunkManager::update_chunks() {
 		offset.z = 0.0;
 	}
 
-	std::cout << "Player is at: " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
-	std::cout << "Legal Points: " << std::endl;
+	//std::cout << "Player is at: " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
+	//std::cout << "Legal Points: " << std::endl;
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius; y <= radius; y++) {
 			for (int z = -radius; z <= radius; z++) {
@@ -145,16 +170,17 @@ void ChunkManager::update_chunks() {
 					y + chunk_position.y + offset.y,
 					z + chunk_position.z + offset.z} };
 
-				glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
+				glm::ivec3 offset2 = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 
 				legal_points.insert(point);
-				std::cout << point.three[0] << ", " << point.three[1] << ", " << point.three[2] << std::endl;
+				//std::cout << point.three[0] << ", " << point.three[1] << ", " << point.three[2] << std::endl;
 
 				if (chunk_map.find(point) == chunk_map.end()) {
-					glm::ivec3 offset2 = static_cast<int>(chunk_size) * offset;
+					//glm::ivec3 offset3 = static_cast<int>(chunk_size - 1) * offset2; // temporary?
+					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
 					chunk_map.insert(std::pair<triple<int>,
 						std::shared_ptr<MarchingCubes>>(point,
-							std::make_shared<MarchingCubes>(chunk_size, offset2, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
+							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
 				}
 			}
 		}
@@ -164,8 +190,6 @@ void ChunkManager::update_chunks() {
 	// Create/Destroy MarchingCubes at legal/illegal points
 	for (auto chunk = chunk_map.begin(); chunk != chunk_map.end();) {
 		triple<int> point = chunk->first;
-		glm::ivec3 offset = glm::ivec3(point.three[0], point.three[1], point.three[2]);
-		offset *= chunk_size;
 
 		if (legal_points.find(point) != legal_points.end()) {
 			++chunk;

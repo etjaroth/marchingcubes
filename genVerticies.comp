@@ -94,11 +94,14 @@ void main() {
     i -= (z * (chunk_size.x * chunk_size.y));
 
 	// Get back points from the edge
-	const ivec3 point_a = ivec3(i % chunk_size.x, i / chunk_size.x, z);
-	const ivec3 point_b = point_a + axies[axis_id]; // see genIndices
+	ivec3 point_a = ivec3(i % chunk_size.x, i / chunk_size.x, z);
+	ivec3 point_b = point_a + axies[axis_id]; // see genIndices
 
 	const vec3 true_point_a = vec3(point_a) + pos;
 	const vec3 true_point_b = vec3(point_b) + pos;
+
+	//point_a += ivec3(1);
+	//point_b += ivec3(1);
 
 	vec4 data_a = imageLoad(generated_data, point_a);
 	vec4 data_b = imageLoad(generated_data, point_b);

@@ -11,6 +11,7 @@ private:
 	glm::ivec3 pos;
 	int verticies_on_side;
 	int edges_on_side;
+	int verticies_on_side_with_buffer;
 
 	// Shaders
 	Heightmap* heightmap_generator;
