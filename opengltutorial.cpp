@@ -89,7 +89,7 @@ int main() {
 
 	// Generate terrain
 	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -231,6 +231,7 @@ int main() {
 		terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
+		std::cout << std::endl;
 
 		///////////////////////////////////////////////////////////////////////
 

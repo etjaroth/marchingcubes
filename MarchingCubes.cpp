@@ -4,6 +4,8 @@
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
 unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
+// start, heightmap, scalar field, indicies, verticies, done
+// 0      1          2             3         4          5
 
 MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
 	task_queue[current_step] += 1;
@@ -28,10 +30,10 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
-	/*std::cout << "VERTEX_SSBO Size: " << VERTEX_SSBO_SIZE / sizeof(float) << " -> " 
+	/*std::cout << "VERTEX_SSBO Size: " << VERTEX_SSBO_SIZE / sizeof(float) << " -> "
 		<< (VERTEX_SSBO_SIZE / sizeof(float)) / 12 << std::endl;*/
 
-	// be polite
+		// be polite
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
 
@@ -60,6 +62,9 @@ MarchingCubes::~MarchingCubes() {
 	glDeleteBuffers(1, &EBO);
 	glDeleteBuffers(1, &VERTEX_SSBO);
 	glDeleteVertexArrays(1, &VAO);
+	if (HEIGHTMAP != 0) {
+		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+	}
 
 	if (!waiting) {
 		task_queue[current_step] -= 1;
@@ -70,19 +75,25 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::update_cubes() {
 	//glBindVertexArray(VAO);
-	if (waiting || fence_is_done()) {
+	//print_task();
+	//std::cout << task_queue[0] << " " << task_queue[1] << " " << task_queue[2] << " " << task_queue[3] << " " << task_queue[4] << " " << task_queue[5] << std::endl;
+	bool f = fence_is_done();
+	//std::cout << "    " << waiting << " | " << current_step << " | " << f << std::endl;
+
+	if (waiting || f) {
 		if (!waiting) {
 			task_queue[current_step] -= 1;
 			++current_step;
 
 			set_fence();
 		}
-		
+
 		//std::cout << task_queue[current_step] << ", " << task_queue_max[current_step] <<std::endl;
 
 		if (task_queue[current_step] < task_queue_max[current_step]) {
 			//std::cout << "    passed" << std::endl;
 			task_queue[current_step] += 1;
+			waiting = false;
 
 			switch (current_step) {
 			case 0:
@@ -96,25 +107,38 @@ void MarchingCubes::update_cubes() {
 				break;
 			case 3:
 				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+				HEIGHTMAP = 0;
 				generate_indices();
 				break;
 			case 4:
 			{
-				//unsigned int data[5] = { 0, 1, 0, 0, 0 };
-				//glGetBufferSubData(INDIRECT_SSBO, 0, 5 * sizeof(unsigned int), data);
+				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+				unsigned int data[5] = { 0, 1, 0, 0, 5 };
+				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(unsigned int), data);
+
+				if (data[4] == 5) {
+					std::cout << "Read failed" << std::endl;
+				}
 				//std::cout << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ", " << data[4] << std::endl;
-				//if (data[0] != 0) { // If there are no verticies to be generated
-				//	free_fence();
-				//	current_step = 6;
-				//	glDeleteTextures(1, &LANDSCAPE_DATA);
-				//	glDeleteBuffers(1, &INDIRECT_SSBO);
-				//	glDeleteBuffers(1, &EBO);
-				//}
-				//else {
+				if (data[0] == 0) { // If there are no verticies to be generated
+					std::cout << "Deleting empty chunk" << std::endl;
+					
+					free_fence();
+					//glDeleteTextures(1, &LANDSCAPE_DATA);
+					glDeleteBuffers(1, &INDIRECT_SSBO);
+					glDeleteBuffers(1, &EBO);
+					glDeleteBuffers(1, &VERTEX_SSBO);
+					glDeleteVertexArrays(1, &VAO);
+
+					task_queue[current_step] -= 1;
+					current_step = 6;
+
+				}
+				else {
 					generate_verticies();
-				//}
+				}
 			}
-				break;
+			break;
 			case 5:
 				glDeleteTextures(1, &LANDSCAPE_DATA);
 				break;
@@ -122,12 +146,15 @@ void MarchingCubes::update_cubes() {
 		}
 		else {
 			waiting = true;
-			return;
 		}
 	}
 	else {
-		return; // Wait for the graphics card to finish
+		// Wait for the graphics card to finish
 	}
+
+	//std::cout << task_queue[0] << " " << task_queue[1] << " " << task_queue[2] << " " << task_queue[3] << " " << task_queue[4] << " " << task_queue[5] << std::endl;
+	//std::cout << "    " << waiting << " | " << current_step << " | " << fence_is_done() << std::endl;
+	//std::cout << "==========" << std::endl;
 
 	// Be polite
 	glBindTexture(GL_TEXTURE_3D, 0);
@@ -136,6 +163,7 @@ void MarchingCubes::update_cubes() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 }
@@ -170,6 +198,7 @@ void MarchingCubes::generate_terrain_fills() {
 
 	glBindImageTexture(0, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
+	// Heightmap
 	glActiveTexture(GL_TEXTURE0 + HEIGHTMAP_UNIT);
 	glBindImageTexture(HEIGHTMAP_UNIT, HEIGHTMAP, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
@@ -182,10 +211,12 @@ void MarchingCubes::generate_terrain_fills() {
 }
 
 void MarchingCubes::generate_indices() {
+	// Scalar Field
 	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
+	// Indirect SSBO
 	// Set initial count and indirect render information
 	glGenBuffers(1, &INDIRECT_SSBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
@@ -193,9 +224,11 @@ void MarchingCubes::generate_indices() {
 	unsigned int data[5] = { 0, 1, 0, 0, 0 };
 	glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(unsigned int), data, GL_STATIC_DRAW);
 
+	// Vertex SSBO
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 
+	// Indicies
 	// Generate data
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
@@ -214,13 +247,16 @@ void MarchingCubes::generate_indices() {
 }
 
 void MarchingCubes::generate_verticies() {
+	// Scalar field
 	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
+	// EBO
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
 
+	// Vertex SSBO
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 
@@ -247,10 +283,11 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		// 1 draws verticies only
 		// 2 draws both
 		const unsigned int render_mode = 0;
-		unsigned int data[1] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side};
+		unsigned int data[1] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side };
 		switch (render_mode) {
 		case 0:
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(unsigned int), data);
 			shader->use();
 			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
 			shader->dontuse();
@@ -279,18 +316,6 @@ void MarchingCubes::renderCubes(Shader* shader) {
 			shader->dontuse();
 			break;
 		}
-
-
-		//glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-		////unsigned int data[1] = {32*32*32*32};
-		////glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
-
-		//shader->use();
-		////glPointSize(10.0f);
-		////glDrawArraysIndirect(GL_POINTS, 0);
-
-		//glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
-		//shader->dontuse();
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -341,8 +366,8 @@ void MarchingCubes::free_fence() {
 void MarchingCubes::print_task() {
 	//return;
 
-	std::cout << current_step << ", ";
-	return;
+	std::cout << current_step << " ";
+	//return;
 	//switch (current_step) {
 	//case 0:
 	//	std::cout << "S";
