@@ -99,23 +99,6 @@ const vec3 wave_triangle_verticies[6][2] = {
 
 const vec3 index_colors[6] = {vec3(1,0,0), vec3(0,1,0), vec3(0,0,1), vec3(0,1,1), vec3(1,0,1), vec3(1,1,0)};
 
-// Water suface index chart
-//      -x ->
-//  z  ________________________
-//  |  |\  3                5 |
-//  v  |  \                   |
-//     | 2  \                 |
-//     |      \               |
-//     |        \             |
-//     |          \           |
-//     |            \         |
-//     |              \       |
-//     |                \  4  |
-//     |                  \   |
-//     | 0               1  \ |
-//     ''''''''''''''''''''''''
-
-
 const float wavelength = 2.0;
 const float waveamp = 0.5;
 const float wavespeed = 1.0;
@@ -124,9 +107,37 @@ float wave(vec2 v) {
     return waveamp * 0.5 * (sin(v.x / wavelength + wavespeed * wavetime) + cos(v.y / wavelength + wavespeed * wavetime));
 }
 
+vec2 wave_derivitive(vec2 v) {
+    // wave(v) = f(x, y) = waveamp * 0.5 * (sin(v.x / wavelength + wavespeed * wavetime) + cos(v.y / wavelength + wavespeed * wavetime))
+    // df/dx = (0.5 * waveamp * cos((x / wavelength) + wavetime * wavespeed)) / wavelength
+    // df/dy = - (0.5 * waveamp * cos((y / wavelength) + wavetime * wavespeed)) / wavelength
+
+    const float c = wavetime * wavespeed;
+    return 0.5 * waveamp * vec2(cos((v.x / wavelength) + c), -cos((v.y + wavelength) + c)) / wavelength;
+}
+
+vec3 find_wave_normal(vec2 pos) {
+    
+    vec3 normal;
+
+
+    return normal;
+}
+
 vec3 apply_wave(vec3 v) {
     v.y += wave(v.xz);
     return v;
+}
+
+const float isolevel = 0.0;
+vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
+	// Code adapted from paulbourke.net/geometry/polygonise/
+	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
+		return v1;
+	if (abs(isolevel - f2) < 0.00001)
+		return v2;
+
+	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
 }
 
 void main()
@@ -147,23 +158,11 @@ void main()
         //vec3 color = normal.xyz;
 
         // Recalculate normal
-
-        // Find other verticies in triangle
-//        vec3 orgin = vec3(vertex_position.x, 0.0, vertex_position.z);
-//        orgin = vertex_position.xyz;
-//
-//        int index = int(normal.y);
-//        int index = 0; // this actually makes it look nicer
-//
-//        vec3 v1 = wave_triangle_verticies[index][0];
-//        vec3 v2 = wave_triangle_verticies[index][1];
-//        v1.y += wave(v1.xz + orgin.xz);
-//        v2.y += wave(v2.xz + orgin.xz);
-//        
-//		vec3 cross1 = v1;
-//		vec3 cross2 = v2;
-//		normal = cross(cross1, cross2);
-
+        const vec3 pos = vertex_position.xyz;
+        const vec2 der = wave_derivitive(vertex_position.xz);
+        vec3 tangent_x = vec3(1.0, der.x, 0.0);
+        vec3 tangent_z = vec3(0.0, der.y, 1.0);
+        normal = -normalize(cross(tangent_x, tangent_z));
     }
     
     //////////////////////////////////////////////////////////////////////////

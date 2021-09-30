@@ -78,17 +78,22 @@ void ChunkManager::render(Shader* shader) {
 
 			return glm::length(dist_a)
 				< glm::length(dist_b);*/
+
 			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
 			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
-			if (fa.y < fb.y) {
+
+			float arrA[3] = {fa.y, fa.x, fa.z};
+			float arrB[3] = {fb.y, fb.x, fb.z};
+
+			if (arrA[0] < arrB[0]) {
 				return true;
 			}
-			else if (fa.y == fb.y) {
-				if (fa.x < fb.x) {
+			else if (arrA[0] == arrB[0]) {
+				if (arrA[1] < arrB[1]) {
 					return true;
 				}
-				else if (fa.x == fb.x) {
-					if (fa.z < fb.z) {
+				else if (arrA[1] == arrB[1]) {
+					if (arrA[2] < arrB[2]) {
 						return true;
 					}
 					else {

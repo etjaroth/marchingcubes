@@ -415,9 +415,10 @@ void main() {
 	}
 	
 	// list indices
-	const uint starting_index = atomicAdd(count, 3 * triangle_count + 0);
+	const uint starting_index = atomicAdd(count, 3 * triangle_count);
 
-	for (uint i = 0; i < 13; i += 3) {
+	for (uint j = 0; j < 5; j += 1) {
+		const uint i = 3 * j;
 		if (cases[case_index][i] == IV) {return;}
 		const uint index = starting_index + i;
 

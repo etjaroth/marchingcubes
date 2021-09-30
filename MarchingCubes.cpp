@@ -95,7 +95,6 @@ void MarchingCubes::update_cubes() {
 				generate_terrain_fills();
 				break;
 			case 3:
-				//glDeleteTextures(1, &HEIGHTMAP);
 				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 				generate_indices();
 				break;
@@ -307,7 +306,7 @@ void MarchingCubes::setPos(glm::vec3 p) {
 	pos.x = (int)(p.x / verticies_on_side);
 	pos.y = (int)(p.y / verticies_on_side);
 	pos.z = (int)(p.z / verticies_on_side);
-	pos *= verticies_on_side; // NOTE: This used to be (verticies_on_side + 1)
+	pos *= verticies_on_side - 1; // NOTE: This used to be (verticies_on_side + 1)
 }
 
 glm::vec3 MarchingCubes::getPos() {

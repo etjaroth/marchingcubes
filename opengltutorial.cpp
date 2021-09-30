@@ -89,7 +89,7 @@ int main() {
 
 	// Generate terrain
 	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((8) + 1, glm::vec3(0.0f), 5, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -118,7 +118,7 @@ int main() {
 		// Lighting
 
 	Light sun = Light();
-	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 0.1), -1.0f, (float)sin(glfwGetTime() * 0.1));
+	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 1), -1.0f, (float)sin(glfwGetTime() * 1));
 	sun.setPos(camera.getPos());
 	sun.setDir(light_dir);
 	sun.setBrightness(1.0f);

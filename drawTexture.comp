@@ -226,7 +226,7 @@ void main() {
 	float material = 1.0;
 	if (is_water_surface) {
 		material = 0.0;
-		//fill = 1.0;
+		fill = 1.0;
 	} else {
 		float down = elevation - noise_coords.y;
 		if (down < 0) {
@@ -275,7 +275,8 @@ void main() {
 //pixel.z = (pixel_coords.x == 0.0 || pixel_coords.y == 1.0 || pixel_coords.z == 0.0) ? 1.0 : 0.0;
 //vec4 pixel = vec4(b ? 1.0 : 0.0, b ? 1.0 : 3.0, 0.0, 1.0);
 
-//pixel.x = (pixel_coords.x % 8 == 0 || pixel_coords.y % 8 == 0 || pixel_coords.z % 8 == 0) ? 1.0 : 0.0;
+uint m = 3;
+//pixel.x = (pixel_coords.x % m == 0 && pixel_coords.y % m == 0 && pixel_coords.z % m == 0) ? pixel.x : 0.0;
 
   imageStore(img_output, pixel_coords.xyz, pixel);
 }
