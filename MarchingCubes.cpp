@@ -140,7 +140,6 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::update_cubes() {
 	bool task_complete = fence_is_done();
-	std::cout << waiting << task_complete << current_step << std::endl;
 	if (waiting) {
 		if (task_queue[current_step] < task_queue_max[current_step]) {
 			set_fence();
@@ -221,81 +220,6 @@ void MarchingCubes::update_cubes() {
 		}
 	}
 
-	//print_task();
-
-	//if (waiting || f) {
-	//	if (f && !waiting) {
-	//		task_queue[current_step] -= 1;
-	//		++current_step;
-	//	}
-
-	//	bool b = task_queue[current_step] < task_queue_max[current_step];
-	//	//std::cout << waiting << f << b << ':' << current_step << std::endl;
-
-	//	if (b && f) {
-	//		set_fence();
-	//		task_queue[current_step] += 1;
-	//		waiting = false;
-
-	//		switch (current_step) {
-	//		case 0:
-	//			// Should never happen since current_step starts at 0 and we just added 1
-	//			break;
-	//		case 1:
-	//			generate_heightmap();
-	//			break;
-	//		case 2:
-	//			generate_terrain_fills();
-	//			break;
-	//		case 3:
-	//			heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
-	//			HEIGHTMAP = 0;
-	//			generate_indices();
-	//			break;
-	//		case 4:
-	//		{
-	//			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-	//			GLuint data[5] = { 1, 1, 0, 0, 5 };
-	//			glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
-
-	//			if (data[4] == 5) {
-	//				//std::cout << "Read failed" << std::endl;
-	//			}
-	//			//std::cout << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ", " << data[4] << std::endl;
-	//			if (data[0] == 0) { // If there are no verticies to be generated
-	//				
-	//				free_fence();
-	//				//glDeleteTextures(1, &LANDSCAPE_DATA);
-	//				glDeleteBuffers(1, &INDIRECT_SSBO);
-	//				glDeleteBuffers(1, &EBO);
-	//				glDeleteBuffers(1, &VERTEX_SSBO);
-	//				glDeleteVertexArrays(1, &VAO);
-
-	//				task_queue[current_step] -= 1;
-	//				current_step = 6;
-
-	//			}
-	//			else {
-	//				generate_verticies();
-	//			}
-	//		}
-	//		break;
-	//		case 5:
-	//			//glDeleteTextures(1, &LANDSCAPE_DATA);
-	//			break;
-	//		case 6:
-	//			std::cout << "Something went wrong" << std::endl;
-	//			break;
-	//		}
-	//	}
-	//	else {
-	//		waiting = true;
-	//	}
-	//}
-	//else {
-	//	// Wait for the graphics card to finish
-	//}
-
 	// Be polite
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindVertexArray(0);
@@ -332,6 +256,7 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	//const int verticies_on_side_with_buffer = verticies_on_side + 2;
 	const int verticies_on_side_with_buffer = verticies_on_side;
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
