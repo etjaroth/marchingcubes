@@ -63,6 +63,9 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
+	std::cout << '[' << std::endl;
+
+
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
@@ -134,6 +137,7 @@ void ChunkManager::render(Shader* shader) {
 		}
 	}
 	//std::cout << "==========" << std::endl;
+	std::cout << ']' << std::endl;
 }
 
 void ChunkManager::update_chunks() {

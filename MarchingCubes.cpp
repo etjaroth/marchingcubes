@@ -3,13 +3,67 @@
 #include <iomanip> // for printing prescision floats
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
-unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
+unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, 8, 8, 8, 8, UINT_MAX };
 // start, heightmap, scalar field, indicies, verticies, done
 // 0      1          2             3         4          5
 
+std::string glGetErrorString(GLenum err)
+{
+	switch (err)
+	{
+		// opengl 2 errors (8)
+	case GL_NO_ERROR:
+		return "GL_NO_ERROR";
+
+	case GL_INVALID_ENUM:
+		return "GL_INVALID_ENUM";
+
+	case GL_INVALID_VALUE:
+		return "GL_INVALID_VALUE";
+
+	case GL_INVALID_OPERATION:
+		return "GL_INVALID_OPERATION";
+
+	case GL_STACK_OVERFLOW:
+		return "GL_STACK_OVERFLOW";
+
+	case GL_STACK_UNDERFLOW:
+		return "GL_STACK_UNDERFLOW";
+
+	case GL_OUT_OF_MEMORY:
+		return "GL_OUT_OF_MEMORY";
+
+		// opengl 3 errors (1)
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "GL_INVALID_FRAMEBUFFER_OPERATION";
+
+		// gles 2, 3 and gl 4 error are handled by the switch above
+	default:
+		return "Unknown_Error " + std::to_string((unsigned int)err);
+	}
+}
+
+void gl_flush_errors() {
+	while (glGetError() != GL_NO_ERROR) {}
+};
+
+void gl_print_errors() {
+	return;
+
+	std::cout << "GL_Errors:" << std::endl;
+	while (true) {
+		GLenum err = glGetError();
+		if (err == GL_NO_ERROR) {
+			break;
+		}
+		else {
+			std::cout << "    " << glGetErrorString(err) << std::endl;
+		}
+	}
+}
+
 MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
 	task_queue[current_step] += 1;
-
 
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
@@ -25,11 +79,22 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	///////////////////////////////////////////////////////////////////////////
 
 	// Init SSBOs (output holds verticies, index holds number of verticies)
+	//std::cout << "================================" << std::endl;
+	gl_flush_errors();
 	glGenBuffers(1, &VERTEX_SSBO);
+	gl_print_errors();
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+	gl_print_errors();
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
+	gl_print_errors();
 	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
+	gl_print_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
+	std::cout << "    Size: " << size / sizeof(unsigned int) / 12 << std::endl;
+	//std::cout << "================================" << std::endl;
 	/*std::cout << "VERTEX_SSBO Size: " << VERTEX_SSBO_SIZE / sizeof(float) << " -> "
 		<< (VERTEX_SSBO_SIZE / sizeof(float)) / 12 << std::endl;*/
 
@@ -74,24 +139,11 @@ MarchingCubes::~MarchingCubes() {
 }
 
 void MarchingCubes::update_cubes() {
-	//glBindVertexArray(VAO);
-	//print_task();
-	//std::cout << task_queue[0] << " " << task_queue[1] << " " << task_queue[2] << " " << task_queue[3] << " " << task_queue[4] << " " << task_queue[5] << std::endl;
-	bool f = fence_is_done();
-	//std::cout << "    " << waiting << " | " << current_step << " | " << f << std::endl;
-
-	if (waiting || f) {
-		if (!waiting) {
-			task_queue[current_step] -= 1;
-			++current_step;
-
-			set_fence();
-		}
-
-		//std::cout << task_queue[current_step] << ", " << task_queue_max[current_step] <<std::endl;
-
+	bool task_complete = fence_is_done();
+	std::cout << waiting << task_complete << current_step << std::endl;
+	if (waiting) {
 		if (task_queue[current_step] < task_queue_max[current_step]) {
-			//std::cout << "    passed" << std::endl;
+			set_fence();
 			task_queue[current_step] += 1;
 			waiting = false;
 
@@ -113,22 +165,25 @@ void MarchingCubes::update_cubes() {
 			case 4:
 			{
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-				unsigned int data[5] = { 0, 1, 0, 0, 5 };
-				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(unsigned int), data);
+				GLuint data[5] = { 1, 1, 0, 0, 5 };
+				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
 
 				if (data[4] == 5) {
-					std::cout << "Read failed" << std::endl;
+					//std::cout << "Read failed" << std::endl;
 				}
 				//std::cout << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ", " << data[4] << std::endl;
 				if (data[0] == 0) { // If there are no verticies to be generated
-					std::cout << "Deleting empty chunk" << std::endl;
-					
 					free_fence();
 					//glDeleteTextures(1, &LANDSCAPE_DATA);
 					glDeleteBuffers(1, &INDIRECT_SSBO);
 					glDeleteBuffers(1, &EBO);
 					glDeleteBuffers(1, &VERTEX_SSBO);
 					glDeleteVertexArrays(1, &VAO);
+
+					INDIRECT_SSBO = 0;
+					EBO = 0;
+					VERTEX_SSBO = 0;
+					VAO = 0;
 
 					task_queue[current_step] -= 1;
 					current_step = 6;
@@ -140,21 +195,106 @@ void MarchingCubes::update_cubes() {
 			}
 			break;
 			case 5:
-				glDeleteTextures(1, &LANDSCAPE_DATA);
+				//glDeleteTextures(1, &LANDSCAPE_DATA);
+				break;
+			case 6:
+				std::cout << "Something went wrong" << std::endl;
 				break;
 			}
 		}
 		else {
-			waiting = true;
+			// wait for empty slot
+			return;
 		}
 	}
 	else {
-		// Wait for the graphics card to finish
+		if (task_complete) {
+			task_queue[current_step] -= 1;
+			++current_step;
+			waiting = true;
+			free_fence();
+			update_cubes();
+		}
+		else {
+			// wait for shader to finish
+			return;
+		}
 	}
 
-	//std::cout << task_queue[0] << " " << task_queue[1] << " " << task_queue[2] << " " << task_queue[3] << " " << task_queue[4] << " " << task_queue[5] << std::endl;
-	//std::cout << "    " << waiting << " | " << current_step << " | " << fence_is_done() << std::endl;
-	//std::cout << "==========" << std::endl;
+	//print_task();
+
+	//if (waiting || f) {
+	//	if (f && !waiting) {
+	//		task_queue[current_step] -= 1;
+	//		++current_step;
+	//	}
+
+	//	bool b = task_queue[current_step] < task_queue_max[current_step];
+	//	//std::cout << waiting << f << b << ':' << current_step << std::endl;
+
+	//	if (b && f) {
+	//		set_fence();
+	//		task_queue[current_step] += 1;
+	//		waiting = false;
+
+	//		switch (current_step) {
+	//		case 0:
+	//			// Should never happen since current_step starts at 0 and we just added 1
+	//			break;
+	//		case 1:
+	//			generate_heightmap();
+	//			break;
+	//		case 2:
+	//			generate_terrain_fills();
+	//			break;
+	//		case 3:
+	//			heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+	//			HEIGHTMAP = 0;
+	//			generate_indices();
+	//			break;
+	//		case 4:
+	//		{
+	//			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+	//			GLuint data[5] = { 1, 1, 0, 0, 5 };
+	//			glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
+
+	//			if (data[4] == 5) {
+	//				//std::cout << "Read failed" << std::endl;
+	//			}
+	//			//std::cout << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ", " << data[4] << std::endl;
+	//			if (data[0] == 0) { // If there are no verticies to be generated
+	//				
+	//				free_fence();
+	//				//glDeleteTextures(1, &LANDSCAPE_DATA);
+	//				glDeleteBuffers(1, &INDIRECT_SSBO);
+	//				glDeleteBuffers(1, &EBO);
+	//				glDeleteBuffers(1, &VERTEX_SSBO);
+	//				glDeleteVertexArrays(1, &VAO);
+
+	//				task_queue[current_step] -= 1;
+	//				current_step = 6;
+
+	//			}
+	//			else {
+	//				generate_verticies();
+	//			}
+	//		}
+	//		break;
+	//		case 5:
+	//			//glDeleteTextures(1, &LANDSCAPE_DATA);
+	//			break;
+	//		case 6:
+	//			std::cout << "Something went wrong" << std::endl;
+	//			break;
+	//		}
+	//	}
+	//	else {
+	//		waiting = true;
+	//	}
+	//}
+	//else {
+	//	// Wait for the graphics card to finish
+	//}
 
 	// Be polite
 	glBindTexture(GL_TEXTURE_3D, 0);
@@ -219,10 +359,11 @@ void MarchingCubes::generate_indices() {
 	// Indirect SSBO
 	// Set initial count and indirect render information
 	glGenBuffers(1, &INDIRECT_SSBO);
+	//std::cout << "Making: " << INDIRECT_SSBO << std::endl;
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
 	unsigned int data[5] = { 0, 1, 0, 0, 0 };
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(unsigned int), data, GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(GLuint), data, GL_STATIC_DRAW);
 
 	// Vertex SSBO
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
@@ -235,7 +376,7 @@ void MarchingCubes::generate_indices() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
 	EBO_SIZE = verticies_on_side * verticies_on_side * verticies_on_side * 15;
 	glBufferData(GL_SHADER_STORAGE_BUFFER,
-		(EBO_SIZE) * sizeof(unsigned int),
+		(EBO_SIZE) * sizeof(GLuint),
 		NULL, GL_STATIC_DRAW);
 
 	gen_edges->use();
@@ -271,10 +412,26 @@ void MarchingCubes::generate_verticies() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	if (current_step == 5) {
-		// Draw
-		glBindVertexArray(VAO);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
+	gl_print_errors();
+
+	if (current_step == 5) {
+		std::cout << '<';
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		// Draw
+
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
@@ -283,26 +440,34 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		// 1 draws verticies only
 		// 2 draws both
 		const unsigned int render_mode = 0;
-		unsigned int data[1] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side };
+		unsigned int data[5] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side, 0, 0, 0, 0 };
 		switch (render_mode) {
 		case 0:
-			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-			glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(unsigned int), data);
+		{
+			//std::cout << "--------------------------------" << std::endl;
+			//std::cout << "{" << VAO << ", " << INDIRECT_SSBO << ", " << VERTEX_SSBO << ", " << EBO << "}" << std::endl;
+			GLint size = 0;
+			glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+			gl_print_errors();
+			//std::cout << "_" << size / sizeof(unsigned int) / 12 << "_";
 			shader->use();
+			//std::cout << " <";
 			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+			gl_print_errors();
+			//std::cout << "> ";
 			shader->dontuse();
+			//std::cout << "> ";
+			//std::cout << "--------------------------------" << std::endl;
 			break;
+		}
 		case 1:
-			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
 			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
-
 			shader->use();
 			glPointSize(10.0f);
 			glDrawArraysIndirect(GL_POINTS, 0);
 			shader->dontuse();
 			break;
 		case 2:
-			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
 			shader->use();
 			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
 
@@ -321,6 +486,8 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
+		std::cout << '>' << std::endl;
 	}
 	else if (current_step != 6) {
 		update_cubes();

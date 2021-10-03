@@ -10,6 +10,8 @@ class SSBOComputeShader
 
 public:
     SSBOComputeShader(const char* filename);
+    ~SSBOComputeShader();
+
     void use() const;
     void dontuse() const;
 

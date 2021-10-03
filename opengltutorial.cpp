@@ -89,7 +89,7 @@ int main() {
 
 	// Generate terrain
 	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -231,7 +231,7 @@ int main() {
 		terrain.set_pos(-camera.getPos());
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
-		std::cout << std::endl;
+		std::cout << "\n" << std::endl;
 
 		///////////////////////////////////////////////////////////////////////
 
@@ -242,7 +242,6 @@ int main() {
 		should_close = glfwWindowShouldClose(window);
 
 		///////////////////////////////////////////////////////////////////////
-
 		// Measure fps
 		frameCount++;
 		// If a second has passed.
@@ -259,8 +258,10 @@ int main() {
 		const unsigned int max_framerate = 120; // why does this give ~63fps?
 		clock.stop();
 		unsigned int sleep = (1000 / max_framerate - clock.get_time());
+
 		if (sleep < 100) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+
 		}
 		clock.start();
 	}

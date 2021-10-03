@@ -62,6 +62,10 @@ SSBOComputeShader::SSBOComputeShader(const char* shader_file) {
 	glUseProgram(shader_program); // All shader calls will use shader_program
 }
 
+SSBOComputeShader::~SSBOComputeShader() {
+	glDeleteProgram(shader_program);
+}
+
 void SSBOComputeShader::use() const {
 	glUseProgram(shader_program);
 }
