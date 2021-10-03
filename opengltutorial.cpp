@@ -42,8 +42,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void error_callback(int error, const char* description);
 
 int main() {
-	unsigned char a = 51;
-	std::cout << ~a << std::endl;
 
 	// Setup
 		// GLFW Initilisation
@@ -89,7 +87,7 @@ int main() {
 
 	// Generate terrain
 	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((32) + 1, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 4, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");

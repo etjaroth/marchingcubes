@@ -1,8 +1,8 @@
 #include "ChunkManager.h"
 #include <unordered_set>
 
-//const int buffer = 2;
-const int buffer = 0;
+const int buffer = 2;
+//const int buffer = 0;
 
 ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
 	gen_verticies("genVerticies.comp"),

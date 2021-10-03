@@ -150,7 +150,7 @@ float get_cavenoise(vec3 pos, float freq, float floor_height, float base_elevati
 void main() {
   // get index in global work group i.e x,y position
   ivec3 pixel_coords = ivec3(gl_GlobalInvocationID);
-  vec3 noise_coords = pixel_coords + offset;
+  vec3 noise_coords = pixel_coords + offset + vec3(1.0);
 
 //  // Set biome
 //  if (noise_coords.x > boundryA.x){// || noise_coords.y > boundryA.y || noise_coords.z > boundryA.z) {

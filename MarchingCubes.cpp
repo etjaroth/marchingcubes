@@ -3,7 +3,7 @@
 #include <iomanip> // for printing prescision floats
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
-unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, 8, 8, 8, 8, UINT_MAX };
+unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
 // start, heightmap, scalar field, indicies, verticies, done
 // 0      1          2             3         4          5
 
@@ -79,24 +79,14 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	///////////////////////////////////////////////////////////////////////////
 
 	// Init SSBOs (output holds verticies, index holds number of verticies)
-	//std::cout << "================================" << std::endl;
-	gl_flush_errors();
 	glGenBuffers(1, &VERTEX_SSBO);
-	gl_print_errors();
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
-	gl_print_errors();
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
-	gl_print_errors();
 	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
-	gl_print_errors();
 
 	GLint size = 0;
 	glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
-	std::cout << "    Size: " << size / sizeof(unsigned int) / 12 << std::endl;
-	//std::cout << "================================" << std::endl;
-	/*std::cout << "VERTEX_SSBO Size: " << VERTEX_SSBO_SIZE / sizeof(float) << " -> "
-		<< (VERTEX_SSBO_SIZE / sizeof(float)) / 12 << std::endl;*/
 
 		// be polite
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -164,16 +154,12 @@ void MarchingCubes::update_cubes() {
 			case 4:
 			{
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-				GLuint data[5] = { 1, 1, 0, 0, 5 };
+				GLuint data[5] = { 0, 1, 0, 0, 5 };
 				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
 
-				if (data[4] == 5) {
-					//std::cout << "Read failed" << std::endl;
-				}
-				//std::cout << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ", " << data[4] << std::endl;
 				if (data[0] == 0) { // If there are no verticies to be generated
 					free_fence();
-					//glDeleteTextures(1, &LANDSCAPE_DATA);
+					glDeleteTextures(1, &LANDSCAPE_DATA);
 					glDeleteBuffers(1, &INDIRECT_SSBO);
 					glDeleteBuffers(1, &EBO);
 					glDeleteBuffers(1, &VERTEX_SSBO);
@@ -257,8 +243,8 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	//const int verticies_on_side_with_buffer = verticies_on_side + 2;
-	const int verticies_on_side_with_buffer = verticies_on_side;
+	const int verticies_on_side_with_buffer = verticies_on_side + 2;
+	//const int verticies_on_side_with_buffer = verticies_on_side;
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
 
 	glBindImageTexture(0, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -284,7 +270,6 @@ void MarchingCubes::generate_indices() {
 	// Indirect SSBO
 	// Set initial count and indirect render information
 	glGenBuffers(1, &INDIRECT_SSBO);
-	//std::cout << "Making: " << INDIRECT_SSBO << std::endl;
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
 	unsigned int data[5] = { 0, 1, 0, 0, 0 };
@@ -306,7 +291,7 @@ void MarchingCubes::generate_indices() {
 
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
-	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side - 0));
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 2));
 	const int fillsize = verticies_on_side;
 	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
 	gen_edges->dontuse();
@@ -329,7 +314,7 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side));
+	gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 2));
 	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
 }
@@ -350,7 +335,6 @@ void MarchingCubes::renderCubes(Shader* shader) {
 	gl_print_errors();
 
 	if (current_step == 5) {
-		std::cout << '<';
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
 
@@ -369,20 +353,9 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		switch (render_mode) {
 		case 0:
 		{
-			//std::cout << "--------------------------------" << std::endl;
-			//std::cout << "{" << VAO << ", " << INDIRECT_SSBO << ", " << VERTEX_SSBO << ", " << EBO << "}" << std::endl;
-			GLint size = 0;
-			glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-			gl_print_errors();
-			//std::cout << "_" << size / sizeof(unsigned int) / 12 << "_";
 			shader->use();
-			//std::cout << " <";
 			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
-			gl_print_errors();
-			//std::cout << "> ";
 			shader->dontuse();
-			//std::cout << "> ";
-			//std::cout << "--------------------------------" << std::endl;
 			break;
 		}
 		case 1:
@@ -411,8 +384,6 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-
-		std::cout << '>' << std::endl;
 	}
 	else if (current_step != 6) {
 		update_cubes();
