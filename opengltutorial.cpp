@@ -29,7 +29,8 @@ unsigned int screeny = 600;
 float cameraSpeed = 20.0f;
 
 //glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
-glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
+//glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
+glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, 0.0f);
 
 
 
@@ -87,7 +88,7 @@ int main() {
 
 	// Generate terrain
 	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 4, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((8) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
 
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -141,6 +142,7 @@ int main() {
 	Stopwatch fpsCounter = Stopwatch();
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
+	bool update_terrain = true;
 	while (!should_close) // Loop
 	{
 		// DeltaTime
@@ -162,7 +164,7 @@ int main() {
 
 		//////////////////////////////////////////////////////////////////////
 		// Handle input
-
+		
 		
 		// Keyboard
 				// Misc Important
@@ -170,11 +172,17 @@ int main() {
 			glfwSetWindowShouldClose(window, true);
 		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
 			camera = FPSCamera(cam_spawn, glm::vec3(0, 0, -1.0f), cameraSpeed);
+		if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+			camera = FPSCamera(camera.getPos(), glm::vec3(0, 0, -1.0f), cameraSpeed);
 		// Misc Unimportant
 		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+			update_terrain = true;
+		if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+			update_terrain = false;
 		// Fps Movement
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -226,7 +234,9 @@ int main() {
 
 		///////////////////////////////////////////////////////////////////////
 
-		terrain.set_pos(-camera.getPos());
+		if (update_terrain) {
+			terrain.set_pos(-camera.getPos());
+		}
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
 		std::cout << "\n" << std::endl;

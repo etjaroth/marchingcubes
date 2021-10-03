@@ -7,6 +7,8 @@ struct heightmap_tile {
 	unsigned int refrence_count;
 };
 
+const int buffer = 4;
+
 Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : heightmap_generator(heightmap_shader, vertex_cube_dimension, 1, vertex_cube_dimension) {
 	vertex_cube_dimensions = vertex_cube_dimension;
 

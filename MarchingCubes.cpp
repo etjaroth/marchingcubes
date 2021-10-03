@@ -7,6 +7,8 @@ unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, 
 // start, heightmap, scalar field, indicies, verticies, done
 // 0      1          2             3         4          5
 
+const int buffer = 2; // needs to be the same as buffer in ChunkManager.cpp and as int(2*overlap) in genHeightmap, and drawTexture
+
 std::string glGetErrorString(GLenum err)
 {
 	switch (err)
@@ -49,7 +51,6 @@ void gl_flush_errors() {
 
 void gl_print_errors() {
 	return;
-
 	std::cout << "GL_Errors:" << std::endl;
 	while (true) {
 		GLenum err = glGetError();
@@ -72,7 +73,7 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 
 	verticies_on_side = cubeSize;
 	edges_on_side = verticies_on_side - 1;
-	verticies_on_side_with_buffer = verticies_on_side + 2;
+	verticies_on_side_with_buffer = verticies_on_side + buffer;
 
 	pos = position;
 
@@ -154,10 +155,11 @@ void MarchingCubes::update_cubes() {
 			case 4:
 			{
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-				GLuint data[5] = { 0, 1, 0, 0, 5 };
+				GLuint data[5] = { 1, 1, 0, 0, 5 };
 				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
 
 				if (data[0] == 0) { // If there are no verticies to be generated
+					//std::cout << pos.x / verticies_on_side << ", " << pos.y / verticies_on_side << ", " << pos.z / verticies_on_side << std::endl;
 					free_fence();
 					glDeleteTextures(1, &LANDSCAPE_DATA);
 					glDeleteBuffers(1, &INDIRECT_SSBO);
@@ -207,6 +209,9 @@ void MarchingCubes::update_cubes() {
 	}
 
 	// Be polite
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -220,7 +225,7 @@ void MarchingCubes::update_cubes() {
 
 //////////////////////////////////////////////////////////////////////////////
 
-const int buffer = 2;
+
 
 void MarchingCubes::generate_heightmap() {
 	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
@@ -234,8 +239,8 @@ void MarchingCubes::generate_heightmap() {
 
 void MarchingCubes::generate_terrain_fills() {
 	// Prepare render texture
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glGenTextures(1, &LANDSCAPE_DATA);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -243,7 +248,7 @@ void MarchingCubes::generate_terrain_fills() {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	const int verticies_on_side_with_buffer = verticies_on_side + 2;
+	const int verticies_on_side_with_buffer = verticies_on_side + buffer;
 	//const int verticies_on_side_with_buffer = verticies_on_side;
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
 
@@ -251,6 +256,7 @@ void MarchingCubes::generate_terrain_fills() {
 
 	// Heightmap
 	glActiveTexture(GL_TEXTURE0 + HEIGHTMAP_UNIT);
+	glBindTexture(GL_TEXTURE_2D, HEIGHTMAP);
 	glBindImageTexture(HEIGHTMAP_UNIT, HEIGHTMAP, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	// Fill texture with render data
@@ -262,6 +268,8 @@ void MarchingCubes::generate_terrain_fills() {
 }
 
 void MarchingCubes::generate_indices() {
+	gl_flush_errors();
+
 	// Scalar Field
 	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
@@ -289,9 +297,11 @@ void MarchingCubes::generate_indices() {
 		(EBO_SIZE) * sizeof(GLuint),
 		NULL, GL_STATIC_DRAW);
 
+	gl_print_errors();
+
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
-	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 2));
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + buffer));
 	const int fillsize = verticies_on_side;
 	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
 	gen_edges->dontuse();
@@ -314,7 +324,7 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 2));
+	gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side + buffer));
 	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
 }
@@ -322,8 +332,11 @@ void MarchingCubes::generate_verticies() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_3D, 0);
+
 	glBindVertexArray(0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -337,8 +350,6 @@ void MarchingCubes::renderCubes(Shader* shader) {
 	if (current_step == 5) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
-
-
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
@@ -394,7 +405,7 @@ void MarchingCubes::setPos(glm::vec3 p) {
 	pos.x = (int)(p.x / verticies_on_side);
 	pos.y = (int)(p.y / verticies_on_side);
 	pos.z = (int)(p.z / verticies_on_side);
-	pos *= verticies_on_side - 1; // NOTE: This used to be (verticies_on_side + 1)
+	pos *= verticies_on_side; // NOTE: This used to be (verticies_on_side + 1)
 }
 
 glm::vec3 MarchingCubes::getPos() {
@@ -427,7 +438,7 @@ void MarchingCubes::free_fence() {
 
 
 void MarchingCubes::print_task() {
-	//return;
+	return;
 
 	std::cout << current_step << " ";
 	//return;

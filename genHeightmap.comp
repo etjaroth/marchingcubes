@@ -112,10 +112,10 @@ float get_snoise(vec3 pos, float amp, float freq) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
+const float overlap = 1.0;
 void main() {
 	ivec3 pixel_coords = ivec3(gl_GlobalInvocationID);
-	vec3 noise_coords = pixel_coords + offset + vec3(1.0, 0.0, 1.0);
+	vec3 noise_coords = pixel_coords + offset + vec3(overlap, 0.0, overlap);
 
 
 // Generate Fill

@@ -2,7 +2,6 @@
 #include <unordered_set>
 
 const int buffer = 2;
-//const int buffer = 0;
 
 ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
 	gen_verticies("genVerticies.comp"),
@@ -63,8 +62,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
-	std::cout << '[' << std::endl;
-
+	std::cout << "[" << std::endl;
 
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 
@@ -85,8 +83,8 @@ void ChunkManager::render(Shader* shader) {
 			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
 			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
 
-			float arrA[3] = {fa.y, fa.x, fa.z};
-			float arrB[3] = {fb.y, fb.x, fb.z};
+			float arrA[3] = {fa.x, fa.z, fa.y};
+			float arrB[3] = {fb.x, fb.z, fb.y};
 
 			if (arrA[0] < arrB[0]) {
 				return true;
@@ -114,6 +112,8 @@ void ChunkManager::render(Shader* shader) {
 
 
 	for (std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
+		
+		
 		// Check if chunk is visable
 		bool corner_visable = false;
 		float angle = 0.0f;
@@ -130,21 +130,23 @@ void ChunkManager::render(Shader* shader) {
 		corner_visable = true;
 
 
+		//std::cout << chunk->second->getStep() << " " << chunk->second->getPos().x << ":" << chunk->first.three[0] << ", " << chunk->second->getPos().y << ":" << chunk->first.three[1] << ", " << chunk->second->getPos().z << ":" << chunk->first.three[2];
+		//std::cout << std::endl;
+
+
 		if (corner_visable) {
 			chunk->second->renderCubes(shader);
 		}
 		else {
 		}
 	}
-	//std::cout << "==========" << std::endl;
-	std::cout << ']' << std::endl;
+	std::cout << "]" << std::endl;
+
 }
 
 void ChunkManager::update_chunks() {
 	// List legal points
 	std::unordered_set<triple<int>, tripleHashFunction> legal_points;
-
-	//std::cout << "\n\nUpdating chunks: " << chunk_map.size() << std::endl;
 
 	// Account for the giant cell at (0, 0, 0)
 	glm::vec3 offset = glm::vec3(0.0f);
@@ -169,8 +171,6 @@ void ChunkManager::update_chunks() {
 		offset.z = 0.0;
 	}
 
-	//std::cout << "Player is at: " << chunk_position.x << ", " << chunk_position.y << ", " << chunk_position.z << std::endl;
-	//std::cout << "Legal Points: " << std::endl;
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius; y <= radius; y++) {
 			for (int z = -radius; z <= radius; z++) {
@@ -182,7 +182,6 @@ void ChunkManager::update_chunks() {
 				glm::ivec3 offset2 = glm::ivec3(point.three[0], point.three[1], point.three[2]);
 
 				legal_points.insert(point);
-				//std::cout << point.three[0] << ", " << point.three[1] << ", " << point.three[2] << std::endl;
 
 				if (chunk_map.find(point) == chunk_map.end()) {
 					//glm::ivec3 offset3 = static_cast<int>(chunk_size - 1) * offset2; // temporary?
