@@ -416,36 +416,30 @@ void main() {
 	
 	// list indices
 	const uint starting_index = atomicAdd(count, 3 * triangle_count);
-
+	uint indexx = 0;
 	for (uint j = 0; j < 5; j += 1) {
-		const uint i = 3 * j;
+		uint i = 3 * j;
+
 		if (cases[case_index][i] == IV) {return;}
-		const uint index = starting_index + i;
+
+		indexx = starting_index + i;
 
 		int edge_index0 = cases[case_index][i];
 		int edge_index1 = cases[case_index][i + 1];
 		int edge_index2 = cases[case_index][i + 2];
 
-		ivec3 a0 = vertex_pos[edges[edge_index0][0]] + cube_location;
-		ivec3 a1 = vertex_pos[edges[edge_index1][0]] + cube_location;
-		ivec3 a2 = vertex_pos[edges[edge_index2][0]] + cube_location;
+		uint i0 = get_index_of_edge(vertex_pos[edges[edge_index0][0]] + cube_location, 
+									vertex_pos[edges[edge_index0][1]] + cube_location);
+		uint i1 = get_index_of_edge(vertex_pos[edges[edge_index1][0]] + cube_location, 
+									vertex_pos[edges[edge_index1][1]] + cube_location);
+		uint i2 = get_index_of_edge(vertex_pos[edges[edge_index2][0]] + cube_location, 
+									vertex_pos[edges[edge_index2][1]] + cube_location);
 
-		ivec3 b0 = vertex_pos[edges[edge_index0][1]] + cube_location;
-		ivec3 b1 = vertex_pos[edges[edge_index1][1]] + cube_location;
-		ivec3 b2 = vertex_pos[edges[edge_index2][1]] + cube_location;
-
-		uint i0 = get_index_of_edge(a0, b0);
-		uint i1 = get_index_of_edge(a1, b1);
-		uint i2 = get_index_of_edge(a2, b2);
 
 		// Store index
-		indices[starting_index + i] = i0;
-		indices[starting_index + i + 1] = i1;
-		indices[starting_index + i + 2] = i2;
-
-		// Calculate triangle normal
-		const vec3 orgin = vec3(verticies[index].pos);
-		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
+		indices[indexx] = i0;
+		indices[indexx + 1] = i1;
+		indices[indexx + 2] = i2;
 
 		// Create water
 		const uint water_index = 51;

@@ -85,6 +85,8 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
+	GLfloat clear_value = 0.0f;
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_R32F, GL_RGBA32F, &clear_value);
 
 	GLint size = 0;
 	glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
@@ -293,9 +295,9 @@ void MarchingCubes::generate_indices() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
 	EBO_SIZE = verticies_on_side * verticies_on_side * verticies_on_side * 15;
-	glBufferData(GL_SHADER_STORAGE_BUFFER,
-		(EBO_SIZE) * sizeof(GLuint),
-		NULL, GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, (EBO_SIZE) * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+	GLfloat clear_value = 0.0f;
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_R32F, GL_RGBA32F, &clear_value);
 
 	gl_print_errors();
 
