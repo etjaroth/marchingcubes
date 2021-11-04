@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #endif
+#include <iomanip>
 
 // My Classes
 #include "Shader.h" // Shading
@@ -31,8 +32,6 @@ float cameraSpeed = 20.0f;
 //glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
 //glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
 glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, 0.0f);
-
-
 
 FPSCamera camera(cam_spawn, glm::vec3(0.0f, 0.0f, -1.0f), cameraSpeed);
 //unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip);
@@ -87,9 +86,9 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	//ChunkManager terrain(33, glm::vec3(0.0f), 2, "genHeightmap.comp", "drawTexture.comp");
+	//ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
 	ChunkManager terrain((8) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
-
+	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
 	Shader lightingShader("VertexShader.vert", "lightingShader.frag");
@@ -143,8 +142,16 @@ int main() {
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
 	bool update_terrain = true;
+
+	// reset OpenGl tests (TODO: Remove)
+	std::fstream f;
+	f.open("testOutput.txt");
+	f << "";
+	f.close();
+
 	while (!should_close) // Loop
 	{
+		std::cout << "tick" << std::endl;
 		// DeltaTime
 		double nowtime = glfwGetTime();
 		deltatime = nowtime - oldtime; // Change in time
@@ -158,8 +165,8 @@ int main() {
 
 		
 		// Clear window
-		//glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA, f makes the literal a float instead of a double
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//////////////////////////////////////////////////////////////////////

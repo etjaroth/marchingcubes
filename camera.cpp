@@ -1,5 +1,4 @@
 #include "camera.h"
-#include <glfw3.h>
 #include <iostream>
 
 Camera::Camera(glm::vec3 startingPos, glm::vec3 targetPos) {

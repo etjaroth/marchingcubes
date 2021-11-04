@@ -17,8 +17,8 @@
 #include <sstream>
 #include <Windows.h>
 // Opengl Management
-#include <glad/glad.h>
-#include <glfw3.h>
+#include <glad/glad.h> // must be included before GLFW
+#include <GLFW/glfw3.h>
 // Opengl Vector Math
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

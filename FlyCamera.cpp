@@ -1,6 +1,4 @@
 #include "FlyCamera.h"
-#include <glfw3.h>
-#include <iostream>
 
 FlyCamera::FlyCamera(glm::vec3 startingPos, glm::vec3 targetPos) {
 	cameraPos = startingPos;

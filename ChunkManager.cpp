@@ -62,7 +62,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
-	std::cout << "[" << std::endl;
+	//std::cout << "[" << std::endl;
 
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 
@@ -140,7 +140,7 @@ void ChunkManager::render(Shader* shader) {
 		else {
 		}
 	}
-	std::cout << "]" << std::endl;
+	//std::cout << "]" << std::endl;
 
 }
 

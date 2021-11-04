@@ -411,6 +411,7 @@ void main() {
 
 
 	if (triangle_count == 0) {
+
 		return;
 	}
 	
@@ -428,12 +429,12 @@ void main() {
 		int edge_index1 = cases[case_index][i + 1];
 		int edge_index2 = cases[case_index][i + 2];
 
-		uint i0 = get_index_of_edge(vertex_pos[edges[edge_index0][0]] + cube_location, 
-									vertex_pos[edges[edge_index0][1]] + cube_location);
-		uint i1 = get_index_of_edge(vertex_pos[edges[edge_index1][0]] + cube_location, 
-									vertex_pos[edges[edge_index1][1]] + cube_location);
-		uint i2 = get_index_of_edge(vertex_pos[edges[edge_index2][0]] + cube_location, 
-									vertex_pos[edges[edge_index2][1]] + cube_location);
+		uint i0 = get_index_of_edge((vertex_pos[edges[edge_index0][0]] + cube_location), 
+									(vertex_pos[edges[edge_index0][1]] + cube_location));
+		uint i1 = get_index_of_edge((vertex_pos[edges[edge_index1][0]] + cube_location), 
+									(vertex_pos[edges[edge_index1][1]] + cube_location));
+		uint i2 = get_index_of_edge((vertex_pos[edges[edge_index2][0]] + cube_location), 
+									(vertex_pos[edges[edge_index2][1]] + cube_location));
 
 
 		// Store index
@@ -448,8 +449,16 @@ void main() {
 		float waterlevel = is_water_surface ? 1.0 : 0.0;
 
 		// Mark Vertices
-		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
-		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
-		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
+//		vec3 t0 = vec3(vertex_pos[edges[edge_index0][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
+//		vec3 t1 = vec3(vertex_pos[edges[edge_index1][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
+//		vec3 t2 = vec3(vertex_pos[edges[edge_index2][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
+
+		vec3 t0 = vec3(100.01);
+		vec3 t1 = vec3(100.01);
+		vec3 t2 = vec3(100.01);
+
+		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t0.x, t0.y, t0.z, float(edge_index0)), vec4(0.0));
+		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t1.x, t1.y, t1.z, float(edge_index1)), vec4(0.0));
+		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t2.x, t2.y, t2.z, float(edge_index2)), vec4(0.0));
 	}
 }

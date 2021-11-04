@@ -11,11 +11,13 @@ struct Vertex {
 	// The doccumentation warns against using vec3s
 };
 
-uint sizeofVec4 = 4 * 4;
-uint sizeofVertex = 3 * sizeofVec4;
+const uint sizeofVec4 = 4 * 4;
+const uint sizeofVertex = 3 * sizeofVec4;
+const uint verticiesSize = 3; // 3 vec4s per vertex
 
 layout (binding=0, std140) buffer vertex_output {
-	Vertex verticies[];
+	//Vertex verticies[];
+	vec4 verticies[];
 };
 
 uniform vec3 pos = vec3(0.0);
@@ -25,76 +27,40 @@ uniform ivec3 chunk_size;
 
 const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
-	//return (v1+v2)/2.0;
-
-
 	// Code adapted from paulbourke.net/geometry/polygonise/
-	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
+	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
 		return v1;
-	if (abs(isolevel - f2) < 0.00001)
+	}
+	else if (abs(isolevel - f2) < 0.00001) {
 		return v2;
+	}
+	else if (abs(f1-f2) < 0.00001) {
+      return v1;
+	}
 
-	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
-}
+	float mu = (isolevel - f1)/(f2-f1);
+	//mu = max(0.0, min(1.0, mu));
 
-//void add_vertex(uint starting_index, uint case_index, bool is_water_surface, int i, int vertex_index) {
-//	const ivec3 cube_location = ivec3(gl_GlobalInvocationID) / sizeofVertex;
-//	const vec3 offset = vec3(cube_location) + pos;
-//	const uint index = starting_index + i;
-//	const uint edge_index = cases[case_index][i + vertex_index];
-//	const vec4 attribute_vec = (corners[edges[edge_index][0]].x > corners[edges[edge_index][1]].x) ? corners[edges[edge_index][0]] : corners[edges[edge_index][1]];
-//
-//	verticies[index + vertex_index].pos = vec4(vec3interpolate(vertex_pos[edges[edge_index][0]], corners[edges[edge_index][0]].x, vertex_pos[edges[edge_index][1]], corners[edges[edge_index][1]].x), 1.0);
-//	verticies[index + vertex_index].pos += vec4(offset, 0.0);
-//				
-//	// Decide material
-//	verticies[index + vertex_index].material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
-//				
-//	// check if material should be water
-//	verticies[index + vertex_index].material.x = is_water_surface ? 0.0 : verticies[index + vertex_index].material.x;
-//	// If the material is water, we want it to ripple with waves
-//	// To do that we need to change the position of the verticies in the vertex shader, which changes the normals
-//	// To calculate the normals, we need to know where the other two verticies in the triangle are
-//	// A number (triangle_index * 3 + vertex_index) gives us enough information to solve for these locations
-//	// since we know the water surface is normally a flat square made of 2 triangles
-//	// We encode this number in the magnitude of the normal (which is really just the y element since the surface is flat)
-//	verticies[index + vertex_index].normal = vec4(0.0);
-//	verticies[index + vertex_index].normal.y = is_water_surface ? float(i + vertex_index) : 0.0;
-//	verticies[index + vertex_index].normal.y = is_water_surface ? 4.0 : verticies[index + vertex_index].normal.y;
-//}
-
-vec3 index_to_points(uint index) {
-    uint d = index % 3;
-    uint i = (index - d)/3;
-
-	vec3 v;
-
-    v.z = i / (chunk_size.x * chunk_size.y);
-    i -= v.z * chunk_size.x * chunk_size.y;
-    v.y = i / chunk_size.x;
-    v.x = i % chunk_size.x;
-
-    return v;
+	return v1 + mu * (v2 - v1);
 }
 
 void main() {
-	uint idx = gl_GlobalInvocationID.x;
+	int idx = int(gl_GlobalInvocationID.x);
 	const ivec3 axies[3] = {ivec3(1, 0, 0), ivec3(0, 1, 0), ivec3(0, 0, 1)};
-	uint axis_id = idx % 3;
-	uint i = (idx - axis_id)/3;
+	int axis_id = idx % 3;
+	int i = (idx - axis_id) / 3;
 
 	// Read output from genIndicies.comp
-	const float start = verticies[idx].pos.x;
-	const float waterlevel = verticies[idx].pos.y;
-
-	if (start == 0) {return;} // We don't need or want a vertex on this edge
+	//const float start = verticies[idx].pos.x;
+	const float start = verticies[verticiesSize * idx].x;
+	//const float waterlevel = verticies[idx].pos.y;
+	const float waterlevel = verticies[verticiesSize * idx].y;
 	
-	
-	const uint z = i / (chunk_size.x * chunk_size.y);
-    i -= (z * (chunk_size.x * chunk_size.y));
+	const int z = i / (int(chunk_size.x) * int(chunk_size.y));
+    i -= (z * (int(chunk_size.x) * int(chunk_size.y)));
 
 	// Get back points from the edge
-	ivec3 point_a = ivec3(i % chunk_size.x, i / chunk_size.x, z);
+	ivec3 point_a = ivec3(i % int(chunk_size.x), i / int(chunk_size.x), z);
 	ivec3 point_b = point_a + axies[axis_id]; // see genIndices
 
 	const vec3 true_point_a = vec3(point_a) + pos;
@@ -106,6 +72,9 @@ void main() {
 	vec4 data_a = imageLoad(generated_data, point_a);
 	vec4 data_b = imageLoad(generated_data, point_b);
 	// Input format: fill, material, waterlevel, 1.0
+
+	if (start == 0.0) {return;} // We don't need or want a vertex on this edge
+	//if (start == 0.0 || (data_a.x <= 0 && data_b.x <= 0)) {return;} // We don't need or want a vertex on this edge
 
 	Vertex vertex;
 	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
@@ -131,13 +100,40 @@ void main() {
 	vec3 gradienta = vec3(axp - axn, ayp - ayn, azp - ayn);
 	vec3 gradientb = vec3(bxp - bxn, byp - byn, bzp - byn);
 
-
-
 	vertex.normal = -vec4(normalize(vec3interpolate(gradienta, data_a.x, gradientb, data_b.x)), 0.0);
 
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
 	vertex.material.x = (waterlevel == 1.0) ? 0.0 : vertex.material.x;
 
 	//Output vertex
-	verticies[idx] = vertex;
+	//verticies[idx] = vertex;
+
+	float edge_to_dir[12] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0};
+	// + vec3(gl_GlobalInvocationID.xyz)
+
+	verticies[verticiesSize * idx + 0].x = vertex.pos.x;
+	verticies[verticiesSize * idx + 0].y = vertex.pos.y;
+	verticies[verticiesSize * idx + 0].z = vertex.pos.z;
+	verticies[verticiesSize * idx + 0].w = vertex.pos.w;
+
+//	verticies[verticiesSize * idx + 1].x = vertex.normal.x;
+//	verticies[verticiesSize * idx + 1].y = vertex.normal.y;
+//	verticies[verticiesSize * idx + 1].z = vertex.normal.z;
+//	verticies[verticiesSize * idx + 1].w = vertex.normal.w;
+//
+//	verticies[verticiesSize * idx + 2].x = vertex.material.x;
+//	verticies[verticiesSize * idx + 2].y = vertex.material.y;
+//	verticies[verticiesSize * idx + 2].z = vertex.material.z;
+//	verticies[verticiesSize * idx + 2].w = vertex.material.w;
+
+
+	verticies[verticiesSize * idx + 1].x = verticies[verticiesSize * idx + 1].x;
+	verticies[verticiesSize * idx + 1].y = verticies[verticiesSize * idx + 1].y;
+	verticies[verticiesSize * idx + 1].z = verticies[verticiesSize * idx + 1].z;
+	verticies[verticiesSize * idx + 1].w = edge_to_dir[int(verticies[verticiesSize * idx + 1].w)];
+
+	verticies[verticiesSize * idx + 2].x = point_a.x;
+	verticies[verticiesSize * idx + 2].y = point_a.y;
+	verticies[verticiesSize * idx + 2].z = point_a.z;
+	verticies[verticiesSize * idx + 2].w = float(axis_id);
 }
