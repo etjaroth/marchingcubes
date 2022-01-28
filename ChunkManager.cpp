@@ -130,17 +130,12 @@ void ChunkManager::render(Shader* shader) {
 		corner_visable = true;
 
 
-		//std::cout << chunk->second->getStep() << " " << chunk->second->getPos().x << ":" << chunk->first.three[0] << ", " << chunk->second->getPos().y << ":" << chunk->first.three[1] << ", " << chunk->second->getPos().z << ":" << chunk->first.three[2];
-		//std::cout << std::endl;
-
-
 		if (corner_visable) {
 			chunk->second->renderCubes(shader);
 		}
 		else {
 		}
 	}
-	//std::cout << "]" << std::endl;
 
 }
 

@@ -153,6 +153,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
+    <ClCompile Include="CoordinateSystem.cpp" />
     <ClCompile Include="FastNoise.cpp" />
     <ClCompile Include="FlyCamera.cpp" />
     <ClCompile Include="FPSCamera.cpp" />
@@ -174,9 +175,11 @@
     <ClInclude Include="ChunkManager.h" />
     <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="CoordinateSystem.h" />
     <ClInclude Include="FastNoise.h" />
     <ClInclude Include="FlyCamera.h" />
     <ClInclude Include="FPSCamera.h" />
+    <ClInclude Include="glm.h" />
     <ClInclude Include="Heightmap.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MarchingCubes.h" />

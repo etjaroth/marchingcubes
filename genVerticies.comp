@@ -52,7 +52,7 @@ void main() {
 
 	// Read output from genIndicies.comp
 	//const float start = verticies[idx].pos.x;
-	const float start = verticies[verticiesSize * idx].x;
+	const float start = verticies[verticiesSize * idx + 0].x;
 	//const float waterlevel = verticies[idx].pos.y;
 	const float waterlevel = verticies[verticiesSize * idx].y;
 	
@@ -73,8 +73,7 @@ void main() {
 	vec4 data_b = imageLoad(generated_data, point_b);
 	// Input format: fill, material, waterlevel, 1.0
 
-	if (start == 0.0) {return;} // We don't need or want a vertex on this edge
-	//if (start == 0.0 || (data_a.x <= 0 && data_b.x <= 0)) {return;} // We don't need or want a vertex on this edge
+	if (start != 1.0) {return;} // We don't need or want a vertex on this edge
 
 	Vertex vertex;
 	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
@@ -116,24 +115,19 @@ void main() {
 	verticies[verticiesSize * idx + 0].z = vertex.pos.z;
 	verticies[verticiesSize * idx + 0].w = vertex.pos.w;
 
-//	verticies[verticiesSize * idx + 1].x = vertex.normal.x;
-//	verticies[verticiesSize * idx + 1].y = vertex.normal.y;
-//	verticies[verticiesSize * idx + 1].z = vertex.normal.z;
-//	verticies[verticiesSize * idx + 1].w = vertex.normal.w;
-//
-//	verticies[verticiesSize * idx + 2].x = vertex.material.x;
-//	verticies[verticiesSize * idx + 2].y = vertex.material.y;
-//	verticies[verticiesSize * idx + 2].z = vertex.material.z;
-//	verticies[verticiesSize * idx + 2].w = vertex.material.w;
+	verticies[verticiesSize * idx + 1].x = vertex.normal.x;
+	verticies[verticiesSize * idx + 1].y = vertex.normal.y;
+	verticies[verticiesSize * idx + 1].z = vertex.normal.z;
+	verticies[verticiesSize * idx + 1].w = vertex.normal.w;
 
+	verticies[verticiesSize * idx + 2].x = vertex.material.x;
+	verticies[verticiesSize * idx + 2].y = vertex.material.y;
+	verticies[verticiesSize * idx + 2].z = vertex.material.z;
+	verticies[verticiesSize * idx + 2].w = vertex.material.w;
 
-	verticies[verticiesSize * idx + 1].x = verticies[verticiesSize * idx + 1].x;
-	verticies[verticiesSize * idx + 1].y = verticies[verticiesSize * idx + 1].y;
-	verticies[verticiesSize * idx + 1].z = verticies[verticiesSize * idx + 1].z;
-	verticies[verticiesSize * idx + 1].w = edge_to_dir[int(verticies[verticiesSize * idx + 1].w)];
-
-	verticies[verticiesSize * idx + 2].x = point_a.x;
-	verticies[verticiesSize * idx + 2].y = point_a.y;
-	verticies[verticiesSize * idx + 2].z = point_a.z;
-	verticies[verticiesSize * idx + 2].w = float(axis_id);
+	// Testing 
+//	verticies[verticiesSize * idx + 2].x = data_a.x;
+//	verticies[verticiesSize * idx + 2].y = data_b.x;
+//	verticies[verticiesSize * idx + 2].z = 1.234;
+//	verticies[verticiesSize * idx + 2].w = 5.6789;
 }

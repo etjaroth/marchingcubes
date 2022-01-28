@@ -361,7 +361,6 @@ uint get_index_of_edge(ivec3 p1, ivec3 p2) {
 void main() {
 	//const ivec3 cube_location = ivec3(gl_GlobalInvocationID) + ivec3(1);
 	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
-	//const vec3 offset = vec3(cube_location) + pos;
 
 	// Load cube corners
 	//    Note: "Load operations from any texel that is outside of the boundaries of the bound image will return all zeros"
@@ -411,7 +410,6 @@ void main() {
 
 
 	if (triangle_count == 0) {
-
 		return;
 	}
 	
@@ -449,16 +447,12 @@ void main() {
 		float waterlevel = is_water_surface ? 1.0 : 0.0;
 
 		// Mark Vertices
-//		vec3 t0 = vec3(vertex_pos[edges[edge_index0][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
-//		vec3 t1 = vec3(vertex_pos[edges[edge_index1][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
-//		vec3 t2 = vec3(vertex_pos[edges[edge_index2][0]]) + vec3(gl_GlobalInvocationID.xyz) + vec3(100.01);
+//		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
+//		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
+//		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
 
-		vec3 t0 = vec3(100.01);
-		vec3 t1 = vec3(100.01);
-		vec3 t2 = vec3(100.01);
-
-		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t0.x, t0.y, t0.z, float(edge_index0)), vec4(0.0));
-		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t1.x, t1.y, t1.z, float(edge_index1)), vec4(0.0));
-		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(t2.x, t2.y, t2.z, float(edge_index2)), vec4(0.0));
+		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
+		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
 	}
 }

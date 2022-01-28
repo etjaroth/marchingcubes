@@ -86,8 +86,8 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	//ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 1, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((8) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
+	//ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((4) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -145,8 +145,8 @@ int main() {
 
 	// reset OpenGl tests (TODO: Remove)
 	std::fstream f;
-	f.open("testOutput.txt");
-	f << "";
+	f.open("testOutput.txt", std::ofstream::out | std::ofstream::trunc);
+	f << "Clear" << std::endl;
 	f.close();
 
 	while (!should_close) // Loop

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <iomanip> // for printing prescision floats
 #include <set>
+#include <sstream>
 
 unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
 unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, 4, 4, UINT_MAX };
@@ -140,8 +141,6 @@ void MarchingCubes::update_cubes() {
 			task_queue[current_step] += 1;
 			waiting = false;
 
-			std::cout << "Case: " << current_step << std::endl;
-
 			switch (current_step) {
 			case 0:
 				// Should never happen since current_step starts at 0 and we just added 1
@@ -164,7 +163,6 @@ void MarchingCubes::update_cubes() {
 				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
 
 				if (data[0] == 0) { // If there are no verticies to be generated
-					//std::cout << pos.x / verticies_on_side << ", " << pos.y / verticies_on_side << ", " << pos.z / verticies_on_side << std::endl;
 					free_fence();
 					glDeleteTextures(1, &LANDSCAPE_DATA);
 					glDeleteBuffers(1, &INDIRECT_SSBO);
@@ -188,12 +186,22 @@ void MarchingCubes::update_cubes() {
 			break;
 			case 5:
 			{
-				const bool run_tests = true;
+				const bool run_tests = false;
 				if (run_tests) {
+					std::stringstream ss;
 					std::fstream f;
+
+					
+
+					glm::vec4 expectedMinBox = glm::vec4((glm::vec3(pos) - glm::vec3(buffer)), 1.0f);
+					glm::vec4 expectedMaxBox = glm::vec4((glm::vec3(pos) + glm::vec3(verticies_on_side) + glm::vec3(buffer)), 1.0);
+					bool setMinMax = true;
+					glm::vec4 minBox;
+					glm::vec4 maxBox;
+
 					f.open("testOutput.txt", std::ios_base::app);
 					f << "\n\nRunning tests for chunk [" << pos.x << ", " << pos.y << ", " << pos.z << "]...\n";
-					f << "    Note that there are " << verticies_on_side << " edges on a side\n";
+					f << "    Using chunk_size of " << verticies_on_side + 1 << " edges on a side\n";
 
 					glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
 					unsigned int* read_indicies = new unsigned int[EBO_SIZE]();
@@ -231,17 +239,25 @@ void MarchingCubes::update_cubes() {
 					unsigned int illict = 0;
 					for (int i = 0; i < vertex_count; i += 1) {
 						glm::vec4 vpos = glm::vec4(read_verticies[12 * i], read_verticies[12 * i + 1], read_verticies[12 * i + 2], read_verticies[12 * i + 3]);
+						
+						if (vpos.w != 0) {
+							if (setMinMax) {
+								minBox = vpos;
+								maxBox = vpos;
+								setMinMax = false;
+							}
+							minBox = glm::vec4(std::min(minBox.x, vpos.x), std::min(minBox.y, vpos.y), std::min(minBox.z, vpos.z), std::min(minBox.w, vpos.w));
+							maxBox = glm::vec4(std::max(minBox.x, vpos.x), std::max(minBox.y, vpos.y), std::max(minBox.z, vpos.z), std::max(minBox.w, vpos.w));
+						}
 						glm::vec4 vnormal = glm::vec4(read_verticies[12 * i + 4], read_verticies[12 * i + 4 + 1], read_verticies[12 * i + 4 + 2], read_verticies[12 * i + 4 + 3]);
 						glm::vec4 vmaterial = glm::vec4(read_verticies[12 * i + 8], read_verticies[12 * i + 8 + 1], read_verticies[12 * i + 8 + 2], read_verticies[12 * i + 8 + 3]);
 						
-						f << i << ": " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << std::endl;
+						ss << i << ": " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << std::endl;
 
 
 
 						if (vpos.w == 1.0f && (vnormal.w < 0) && (vmaterial.w < 0)) {
-							//std::cout << "Illict Vertex (" << i << "): " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << std::endl;
-							//std::cout << "    " << vpos.x - pos.x << ", " << vpos.y - pos.y << ", " << vpos.z - pos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
-							f << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
+							ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
 							test_failed = true;
 							++illict;
 						}
@@ -252,8 +268,7 @@ void MarchingCubes::update_cubes() {
 						else if (vpos.w != 1.0f) {
 							invalid_generated += 1;
 							test_failed = true;
-							f << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
-							//std::cout << "Invalid Vertex: " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
+							ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
 						}
 						else {
 							generated += 1;
@@ -261,21 +276,30 @@ void MarchingCubes::update_cubes() {
 								invalid_generated += 1;
 								test_failed = true;
 
-								//std::cout << "High Vertex (" << i << "): " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
-								//std::cout << "    " << vpos.x - pos.x << ", " << vpos.y - pos.y << ", " << vpos.z - pos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
-								f << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
+								ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
 							}
 							if (vpos.x < pos.x - 1.0f || vpos.y < pos.y - 1.0f || vpos.z < pos.z - 1.0f) {
 								invalid_generated += 1;
 								test_failed = true;
-								//std::cout << "Low Vertex (" << i << "): " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
-								//std::cout << "    " << vpos.x - pos.x << ", " << vpos.y - pos.y << ", " << vpos.z - pos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << "\n";
-								f << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
+								ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
 							}
 						}
 					}
 
+					bool badBoundingBox = false;
+					if (!setMinMax) {
+						if (maxBox.x > expectedMaxBox.x || maxBox.y > expectedMaxBox.y || maxBox.z > expectedMaxBox.z || maxBox.w != expectedMaxBox.w) {
+							test_failed = true;
+							badBoundingBox = true;
+						}
+						if (minBox.x < expectedMinBox.x || minBox.y < expectedMinBox.y || minBox.z < expectedMinBox.z || minBox.w != expectedMinBox.w) {
+							test_failed = true;
+							badBoundingBox = true;
+						}
+					}
+
 					if (test_failed) {
+						f << ss.rdbuf();
 						f << "Results: " << std::endl;
 						f << "    Total indicies: " << index_count << std::endl;
 						f << "    High indicies: " << high_indicies << std::endl;
@@ -285,14 +309,20 @@ void MarchingCubes::update_cubes() {
 						f << "        Ungenerated: " << ungenerated << std::endl;
 						f << "    Invalid verticies: " << invalid_generated << std::endl;
 						f << "    Illict verticies: " << illict << std::endl;
+
+						if (badBoundingBox) {
+							f << "Bad Bounding Box" << std::endl;
+							f << "    Expected Max: " << expectedMaxBox.x << ", " << expectedMaxBox.y << ", " << expectedMaxBox.z << ", " << expectedMaxBox.w << std::endl;
+							f << "    Expected Min: " << expectedMinBox.x << ", " << expectedMinBox.y << ", " << expectedMinBox.z << ", " << expectedMinBox.w << std::endl;
+							f << "    Actual Max: " << maxBox.x << ", " << maxBox.y << ", " << maxBox.z << ", " << maxBox.w << std::endl;
+							f << "    Actual Min: " << minBox.x << ", " << minBox.y << ", " << minBox.z << ", " << minBox.w << std::endl;
+						}
 						f << "-----------------------" << std::endl;
 						for (auto j = invalid_indicies.begin(); j != invalid_indicies.end(); ++j) {
 							unsigned int i = *j;
 							glm::vec4 vpos = glm::vec4(read_verticies[12 * i], read_verticies[12 * i + 1], read_verticies[12 * i + 2], read_verticies[12 * i + 3]);
 							glm::vec4 vnormal = glm::vec4(read_verticies[12 * i + 4], read_verticies[12 * i + 4 + 1], read_verticies[12 * i + 4 + 2], read_verticies[12 * i + 4 + 3]);
 							glm::vec4 vmaterial = glm::vec4(read_verticies[12 * i + 8], read_verticies[12 * i + 8 + 1], read_verticies[12 * i + 8 + 2], read_verticies[12 * i + 8 + 3]);
-
-							//std::cout << "Vertex " << i << ": " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << std::endl;
 						}
 						f << "-----------------------\n\n\n\n" << std::endl;
 						
@@ -422,7 +452,8 @@ void MarchingCubes::generate_indices() {
 
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
-	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1));
+	//gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // issue here. Index trick doesn't work like that
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
 	const int fillsize = verticies_on_side; // buffer is intentionally ommitted
 	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
 	gen_edges->dontuse();
@@ -445,7 +476,8 @@ void MarchingCubes::generate_verticies() {
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1));
+	//gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // Issue also here
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
 	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
 }
