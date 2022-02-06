@@ -135,6 +135,9 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::update_cubes() {
 	bool task_complete = fence_is_done();
+	if (current_step >= 2) {
+		//std::cout << "Update: " << waiting << " " << current_step << " " << task_queue[current_step] << " " << task_complete << std::endl;
+	}
 	if (waiting) {
 		if (task_queue_max[current_step] == UINT_MAX || task_queue[current_step] < task_queue_max[current_step]) {
 			set_fence();
@@ -170,6 +173,7 @@ void MarchingCubes::update_cubes() {
 					glDeleteBuffers(1, &VERTEX_SSBO);
 					glDeleteVertexArrays(1, &VAO);
 
+					LANDSCAPE_DATA = 0;
 					INDIRECT_SSBO = 0;
 					EBO = 0;
 					VERTEX_SSBO = 0;
@@ -185,157 +189,38 @@ void MarchingCubes::update_cubes() {
 			}
 			break;
 			case 5:
-			{
-				const bool run_tests = false;
-				if (run_tests) {
-					std::stringstream ss;
-					std::fstream f;
+				/*glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+				glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 
+				{
+					const unsigned int size = verticies_on_side_with_buffer * verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4;
+					GLfloat* pixels = new GLfloat[size];
+					glGetTexImage(GL_TEXTURE_3D, 0, GL_RGBA, GL_FLOAT, pixels);
 					
+					std::cout << "Pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+					std::cout << "Tex: " << LANDSCAPE_DATA << std::endl;
 
-					glm::vec4 expectedMinBox = glm::vec4((glm::vec3(pos) - glm::vec3(buffer)), 1.0f);
-					glm::vec4 expectedMaxBox = glm::vec4((glm::vec3(pos) + glm::vec3(verticies_on_side) + glm::vec3(buffer)), 1.0);
-					bool setMinMax = true;
-					glm::vec4 minBox;
-					glm::vec4 maxBox;
-
-					f.open("testOutput.txt", std::ios_base::app);
-					f << "\n\nRunning tests for chunk [" << pos.x << ", " << pos.y << ", " << pos.z << "]...\n";
-					f << "    Using chunk_size of " << verticies_on_side + 1 << " edges on a side\n";
-
-					glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
-					unsigned int* read_indicies = new unsigned int[EBO_SIZE]();
-					glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, EBO_SIZE, read_indicies);
-					glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
-					float* read_verticies = new float[VERTEX_SSBO_SIZE / sizeof(float)]();
-					glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, VERTEX_SSBO_SIZE, read_verticies);
-					glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
-					unsigned int index_count = 0;
-					glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(unsigned int), &index_count);
-					glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-					const int vertex_count = VERTEX_SSBO_SIZE / SIZEOF_VERTEX;
-
-					std::set<unsigned int> invalid_indicies;
-					bool test_failed = false;
-
-					// Check that indicies are valid
-					unsigned int high_indicies = 0;
-					for (unsigned int i = 0; i < index_count; ++i) {
-						if (vertex_count < read_indicies[i]) {
-							++high_indicies;
-						}
-						else if (read_verticies[read_indicies[i] * 12 + 3] != 1.0f) {
-							if (invalid_indicies.find(read_indicies[i]) == invalid_indicies.end()) {
-								invalid_indicies.insert(read_indicies[i]);
-							}
-						}
+					if (pos.y != -3) {
+						std::cout << "\n\nHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n\n" << std::endl;
 					}
 
-					// Check that verticies are valid
-					unsigned int generated = 0;
-					unsigned int ungenerated = 0;
-					unsigned int invalid_generated = 0;
-					unsigned int illict = 0;
-					for (int i = 0; i < vertex_count; i += 1) {
-						glm::vec4 vpos = glm::vec4(read_verticies[12 * i], read_verticies[12 * i + 1], read_verticies[12 * i + 2], read_verticies[12 * i + 3]);
-						
-						if (vpos.w != 0) {
-							if (setMinMax) {
-								minBox = vpos;
-								maxBox = vpos;
-								setMinMax = false;
-							}
-							minBox = glm::vec4(std::min(minBox.x, vpos.x), std::min(minBox.y, vpos.y), std::min(minBox.z, vpos.z), std::min(minBox.w, vpos.w));
-							maxBox = glm::vec4(std::max(minBox.x, vpos.x), std::max(minBox.y, vpos.y), std::max(minBox.z, vpos.z), std::max(minBox.w, vpos.w));
+					for (int i = 0; i < size; ++i) {
+						std::cout << pixels[i] << " ";
+						if ((i + 1) % 4 == 0) {
+							std::cout << "| ";
 						}
-						glm::vec4 vnormal = glm::vec4(read_verticies[12 * i + 4], read_verticies[12 * i + 4 + 1], read_verticies[12 * i + 4 + 2], read_verticies[12 * i + 4 + 3]);
-						glm::vec4 vmaterial = glm::vec4(read_verticies[12 * i + 8], read_verticies[12 * i + 8 + 1], read_verticies[12 * i + 8 + 2], read_verticies[12 * i + 8 + 3]);
-						
-						ss << i << ": " << vpos.x << ", " << vpos.y << ", " << vpos.z << ", " << vpos.w << " | " << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | " << vmaterial.x << ", " << vmaterial.y << ", " << vmaterial.z << ", " << vmaterial.w << std::endl;
-
-
-
-						if (vpos.w == 1.0f && (vnormal.w < 0) && (vmaterial.w < 0)) {
-							ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
-							test_failed = true;
-							++illict;
+						if ((i + 1) % (verticies_on_side_with_buffer * 4) == 0) {
+							std::cout << std::endl;
 						}
-
-						if (vpos.w == 0.0f) {
-							ungenerated += 1;
-						}
-						else if (vpos.w != 1.0f) {
-							invalid_generated += 1;
-							test_failed = true;
-							ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
-						}
-						else {
-							generated += 1;
-							if (vpos.x - pos.x > verticies_on_side + 1.0f || vpos.y - pos.y > verticies_on_side + 1.0f || vpos.z - pos.z > verticies_on_side + 1.0f) {
-								invalid_generated += 1;
-								test_failed = true;
-
-								ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
-							}
-							if (vpos.x < pos.x - 1.0f || vpos.y < pos.y - 1.0f || vpos.z < pos.z - 1.0f) {
-								invalid_generated += 1;
-								test_failed = true;
-								ss << vnormal.x << ", " << vnormal.y << ", " << vnormal.z << ", " << vnormal.w << " | \n";
-							}
+						if ((i + 1) % (verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4) == 0) {
+							std::cout << std::endl;
 						}
 					}
+					std::cout << "\n================\n" << std::endl;
 
-					bool badBoundingBox = false;
-					if (!setMinMax) {
-						if (maxBox.x > expectedMaxBox.x || maxBox.y > expectedMaxBox.y || maxBox.z > expectedMaxBox.z || maxBox.w != expectedMaxBox.w) {
-							test_failed = true;
-							badBoundingBox = true;
-						}
-						if (minBox.x < expectedMinBox.x || minBox.y < expectedMinBox.y || minBox.z < expectedMinBox.z || minBox.w != expectedMinBox.w) {
-							test_failed = true;
-							badBoundingBox = true;
-						}
-					}
-
-					if (test_failed) {
-						f << ss.rdbuf();
-						f << "Results: " << std::endl;
-						f << "    Total indicies: " << index_count << std::endl;
-						f << "    High indicies: " << high_indicies << std::endl;
-						f << "    Invalid indicies: " << invalid_indicies.size() << std::endl;
-						f << "    Total cubes: " << generated + ungenerated << std::endl;
-						f << "        Generated: " << generated << std::endl;
-						f << "        Ungenerated: " << ungenerated << std::endl;
-						f << "    Invalid verticies: " << invalid_generated << std::endl;
-						f << "    Illict verticies: " << illict << std::endl;
-
-						if (badBoundingBox) {
-							f << "Bad Bounding Box" << std::endl;
-							f << "    Expected Max: " << expectedMaxBox.x << ", " << expectedMaxBox.y << ", " << expectedMaxBox.z << ", " << expectedMaxBox.w << std::endl;
-							f << "    Expected Min: " << expectedMinBox.x << ", " << expectedMinBox.y << ", " << expectedMinBox.z << ", " << expectedMinBox.w << std::endl;
-							f << "    Actual Max: " << maxBox.x << ", " << maxBox.y << ", " << maxBox.z << ", " << maxBox.w << std::endl;
-							f << "    Actual Min: " << minBox.x << ", " << minBox.y << ", " << minBox.z << ", " << minBox.w << std::endl;
-						}
-						f << "-----------------------" << std::endl;
-						for (auto j = invalid_indicies.begin(); j != invalid_indicies.end(); ++j) {
-							unsigned int i = *j;
-							glm::vec4 vpos = glm::vec4(read_verticies[12 * i], read_verticies[12 * i + 1], read_verticies[12 * i + 2], read_verticies[12 * i + 3]);
-							glm::vec4 vnormal = glm::vec4(read_verticies[12 * i + 4], read_verticies[12 * i + 4 + 1], read_verticies[12 * i + 4 + 2], read_verticies[12 * i + 4 + 3]);
-							glm::vec4 vmaterial = glm::vec4(read_verticies[12 * i + 8], read_verticies[12 * i + 8 + 1], read_verticies[12 * i + 8 + 2], read_verticies[12 * i + 8 + 3]);
-						}
-						f << "-----------------------\n\n\n\n" << std::endl;
-						
-					}
-					else {
-						f << "Tests passed!\n---------------------- -\n\n\n\n" << std::endl;
-					}
-					f.close();
-					std::cout << "Wrote tests to file" << std::endl;
-					delete[] read_indicies;
-					delete[] read_verticies;
+					delete[] pixels;
 				}
-			}
+				glBindTexture(GL_TEXTURE_3D, 0);*/
 			break;
 			case 6:
 				std::cout << "Something went wrong" << std::endl;
@@ -403,12 +288,12 @@ void MarchingCubes::generate_terrain_fills() {
 
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
 
-	glBindImageTexture(0, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	// Heightmap
 	glActiveTexture(GL_TEXTURE0 + HEIGHTMAP_UNIT);
 	glBindTexture(GL_TEXTURE_2D, HEIGHTMAP);
-	glBindImageTexture(HEIGHTMAP_UNIT, HEIGHTMAP, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(HEIGHTMAP_UNIT, HEIGHTMAP, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 
 	// Fill texture with render data
 	// might be better to pass a pointer to the shader
@@ -424,7 +309,7 @@ void MarchingCubes::generate_indices() {
 	// Scalar Field
 	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
-	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
 
 	// Indirect SSBO
 	// Set initial count and indirect render information

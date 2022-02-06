@@ -81,13 +81,13 @@ int main() {
 	glEnable(GL_BLEND); // Transparencey isn't perfect
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	//ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
-	ChunkManager terrain((4) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
+	//ChunkManager terrain((4) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");

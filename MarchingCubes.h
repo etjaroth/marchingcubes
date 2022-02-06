@@ -4,6 +4,7 @@
 #include "ComputeShader.h"
 #include "SSBOComputeShader.h"
 #include "Heightmap.h"
+#include "CoordinateSystem.h"
 
 class MarchingCubes
 {
