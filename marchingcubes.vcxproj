@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Ethan\Documents\cpplibs\lib\opengl;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Ethan\Documents\cpplibs\lib\opengl;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\..\..\cpplibs\openglDependencies\$(Configuration);C:\Users\Ethan\Documents\cpplibs\lib\opengl;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\..\..\cpplibs\openglDependencies\$(Configuration);C:\Users\Ethan\Documents\cpplibs\lib\opengl;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -120,7 +120,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\Ethan\Documents\cpplibs\lib\opengl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\cpplibs\openglDependencies\$(Configuration);C:\Users\Ethan\Documents\cpplibs\lib\opengl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -153,6 +153,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
+    <ClCompile Include="CoordinateSystem.cpp" />
     <ClCompile Include="FastNoise.cpp" />
     <ClCompile Include="FlyCamera.cpp" />
     <ClCompile Include="FPSCamera.cpp" />
@@ -174,9 +175,11 @@
     <ClInclude Include="ChunkManager.h" />
     <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="CoordinateSystem.h" />
     <ClInclude Include="FastNoise.h" />
     <ClInclude Include="FlyCamera.h" />
     <ClInclude Include="FPSCamera.h" />
+    <ClInclude Include="glm.h" />
     <ClInclude Include="Heightmap.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MarchingCubes.h" />

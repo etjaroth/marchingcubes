@@ -17,9 +17,10 @@ class ChunkManager
 	int radius; // distance from orgin that chunks are generated
 
 	GLuint VAO;
-	SSBOComputeShader gen_verticies;
 	Heightmap heightmap_generator;
 	ComputeShader fill_generator;
+	SSBOComputeShader gen_indicies;
+	SSBOComputeShader gen_verticies;
 
 	void update_chunks();
 

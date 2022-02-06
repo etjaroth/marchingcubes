@@ -7,6 +7,8 @@ struct heightmap_tile {
 	unsigned int refrence_count;
 };
 
+const int buffer = 4;
+
 Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : heightmap_generator(heightmap_shader, vertex_cube_dimension, 1, vertex_cube_dimension) {
 	vertex_cube_dimensions = vertex_cube_dimension;
 
@@ -28,9 +30,10 @@ Heightmap::~Heightmap() {
 
 void Heightmap::generate_heightmap(glm::ivec2 coord) {
 	triple<int> key = { {coord.x, 0, coord.y} };
-
+	//std::cout << "Generating Heightmap: " << coord.x << ", " << coord.y;
 	auto itr = heightmaps.find(key);
 	if (itr != heightmaps.end()) {
+		std::cout << "    Heightmap already exists! (" << itr->second.texture << ")" << std::endl;
 		return;
 	}
 
@@ -51,12 +54,15 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 	heightmap_generator.fillTexture(hmap.texture);
 	heightmap_generator.dontuse();
 
+	//std::cout << " (" << hmap.texture << ')' << std::endl;
+
 	heightmaps.insert({ key, hmap });
 }
 
 void Heightmap::delete_heightmap(glm::ivec2 coord) {
 	std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
+		//std::cout << "Uh oh!" << std::endl;
 		return;
 	}
 
@@ -64,7 +70,9 @@ void Heightmap::delete_heightmap(glm::ivec2 coord) {
 		glDeleteSync(itr->second.fence);
 	}
 
-	glDeleteTextures(1, &itr->second.texture);
+	//std::cout << "Deleting Heightmap: " << coord.x << ", " << coord.y << " (" << itr->second.texture << ')' << std::endl;
+
+	glDeleteTextures(1, &(itr->second.texture));
 	heightmaps.erase(itr);
 }
 

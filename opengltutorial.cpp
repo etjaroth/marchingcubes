@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #endif
+#include <iomanip>
 
 // My Classes
 #include "Shader.h" // Shading
@@ -26,12 +27,11 @@
 unsigned int screenx = 800;
 unsigned int screeny = 600;
 
-float cameraSpeed = 7.0f;
+float cameraSpeed = 20.0f;
 
 //glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
-glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
-
-
+//glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
+glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, 0.0f);
 
 FPSCamera camera(cam_spawn, glm::vec3(0.0f, 0.0f, -1.0f), cameraSpeed);
 //unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip);
@@ -42,6 +42,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void error_callback(int error, const char* description);
 
 int main() {
+
 	// Setup
 		// GLFW Initilisation
 	glfwInit();
@@ -85,8 +86,9 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain(16-1, glm::vec3(0.0f), 4, "genHeightmap.comp", "drawTexture.comp");
-
+	ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
+	//ChunkManager terrain((4) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
+	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
 	Shader lightingShader("VertexShader.vert", "lightingShader.frag");
@@ -114,7 +116,7 @@ int main() {
 		// Lighting
 
 	Light sun = Light();
-	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 0.1), -1.0f, (float)sin(glfwGetTime() * 0.1));
+	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 1), -1.0f, (float)sin(glfwGetTime() * 1));
 	sun.setPos(camera.getPos());
 	sun.setDir(light_dir);
 	sun.setBrightness(1.0f);
@@ -139,8 +141,17 @@ int main() {
 	Stopwatch fpsCounter = Stopwatch();
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
+	bool update_terrain = true;
+
+	// reset OpenGl tests (TODO: Remove)
+	std::fstream f;
+	f.open("testOutput.txt", std::ofstream::out | std::ofstream::trunc);
+	f << "Clear" << std::endl;
+	f.close();
+
 	while (!should_close) // Loop
 	{
+		std::cout << "tick" << std::endl;
 		// DeltaTime
 		double nowtime = glfwGetTime();
 		deltatime = nowtime - oldtime; // Change in time
@@ -155,11 +166,12 @@ int main() {
 		
 		// Clear window
 		glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA, f makes the literal a float instead of a double
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//////////////////////////////////////////////////////////////////////
 		// Handle input
-
+		
 		
 		// Keyboard
 				// Misc Important
@@ -167,11 +179,17 @@ int main() {
 			glfwSetWindowShouldClose(window, true);
 		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
 			camera = FPSCamera(cam_spawn, glm::vec3(0, 0, -1.0f), cameraSpeed);
+		if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+			camera = FPSCamera(camera.getPos(), glm::vec3(0, 0, -1.0f), cameraSpeed);
 		// Misc Unimportant
 		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+			update_terrain = true;
+		if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+			update_terrain = false;
 		// Fps Movement
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -201,11 +219,8 @@ int main() {
 
 		
 		// Perspective
-		//std::cout << "|";
 		objectShader.use();
-		//std::cout << "{";
 		objectShader.setFloat("wavetime", (float)nowtime);
-		//std::cout << "}" << std::endl;
 
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
@@ -226,9 +241,12 @@ int main() {
 
 		///////////////////////////////////////////////////////////////////////
 
-		terrain.set_pos(-camera.getPos());
+		if (update_terrain) {
+			terrain.set_pos(-camera.getPos());
+		}
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
+		std::cout << "\n" << std::endl;
 
 		///////////////////////////////////////////////////////////////////////
 
@@ -239,7 +257,6 @@ int main() {
 		should_close = glfwWindowShouldClose(window);
 
 		///////////////////////////////////////////////////////////////////////
-
 		// Measure fps
 		frameCount++;
 		// If a second has passed.
@@ -256,8 +273,10 @@ int main() {
 		const unsigned int max_framerate = 120; // why does this give ~63fps?
 		clock.stop();
 		unsigned int sleep = (1000 / max_framerate - clock.get_time());
+
 		if (sleep < 100) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+
 		}
 		clock.start();
 	}

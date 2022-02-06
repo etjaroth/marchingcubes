@@ -17,12 +17,10 @@
 #include <sstream>
 #include <Windows.h>
 // Opengl Management
-#include <glad/glad.h>
-#include <glfw3.h>
+#include <glad/glad.h> // must be included before GLFW
+#include <GLFW/glfw3.h>
 // Opengl Vector Math
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "glm.h"
 // Model Loading
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -30,3 +28,4 @@
 
 // Data
 #include "Structs.h"
+

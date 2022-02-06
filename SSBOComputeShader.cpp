@@ -62,6 +62,10 @@ SSBOComputeShader::SSBOComputeShader(const char* shader_file) {
 	glUseProgram(shader_program); // All shader calls will use shader_program
 }
 
+SSBOComputeShader::~SSBOComputeShader() {
+	glDeleteProgram(shader_program);
+}
+
 void SSBOComputeShader::use() const {
 	glUseProgram(shader_program);
 }
@@ -108,6 +112,14 @@ void SSBOComputeShader::setVec2(const std::string& name, float x, float y) const
 {
 	glUniform2f(glGetUniformLocation(shader_program, name.c_str()), x, y);
 }
+void SSBOComputeShader::setiVec2(const std::string& name, const glm::ivec2& value) const
+{
+	glUniform2iv(glGetUniformLocation(shader_program, name.c_str()), 1, &value[0]);
+}
+void SSBOComputeShader::setiVec2(const std::string& name, int x, int y) const
+{
+	glUniform2i(glGetUniformLocation(shader_program, name.c_str()), x, y);
+}
 // ------------------------------------------------------------------------
 void SSBOComputeShader::setVec3(const std::string& name, const glm::vec3& value) const
 {
@@ -116,6 +128,14 @@ void SSBOComputeShader::setVec3(const std::string& name, const glm::vec3& value)
 void SSBOComputeShader::setVec3(const std::string& name, float x, float y, float z) const
 {
 	glUniform3f(glGetUniformLocation(shader_program, name.c_str()), x, y, z);
+}
+void SSBOComputeShader::setiVec3(const std::string& name, const glm::ivec3& value) const
+{
+	glUniform3iv(glGetUniformLocation(shader_program, name.c_str()), 1, &value[0]);
+}
+void SSBOComputeShader::setiVec3(const std::string& name, int x, int y, int z) const
+{
+	glUniform3i(glGetUniformLocation(shader_program, name.c_str()), x, y, z);
 }
 // ------------------------------------------------------------------------
 void SSBOComputeShader::setVec4(const std::string& name, const glm::vec4& value) const

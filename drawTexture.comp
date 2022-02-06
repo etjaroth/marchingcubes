@@ -1,8 +1,8 @@
 #version 460
 #define PI 3.14159265358979323846
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(rgba32f, binding = 1) uniform image2D heightmap;
 layout(rgba32f, binding = 0) uniform image3D img_output;
+layout(rgba32f, binding = 1) uniform image2D heightmap;
 
 struct vertex { // vertex output format
 	vec4 position;
@@ -146,11 +146,11 @@ float get_cavenoise(vec3 pos, float freq, float floor_height, float base_elevati
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-
+const float overlap = 1.0;
 void main() {
   // get index in global work group i.e x,y position
   ivec3 pixel_coords = ivec3(gl_GlobalInvocationID);
-  vec3 noise_coords = pixel_coords + offset;
+  vec3 noise_coords = pixel_coords + offset + vec3(overlap);
 
 //  // Set biome
 //  if (noise_coords.x > boundryA.x){// || noise_coords.y > boundryA.y || noise_coords.z > boundryA.z) {
@@ -226,6 +226,7 @@ void main() {
 	float material = 1.0;
 	if (is_water_surface) {
 		material = 0.0;
+		fill = 1.0;
 	} else {
 		float down = elevation - noise_coords.y;
 		if (down < 0) {
@@ -262,15 +263,10 @@ void main() {
 	//////////////////////////////////////////////////////////////////////////
 
   // output to a specific pixel in the image
-
   vec4 pixel = vec4(fill, material, waterlevel, 1.0);
-  pixel.x = waterlevel > 0.0 && waterlevel < maxFill ? 1.0 : pixel.x; // water surface should be filled
-
-// Grid floor
-//vec4 pixel = vec4(0.0, 1.0, 0.0, 0.0);
-//pixel.x = (pixel_coords.y == vec3(0.0).y && (pixel_coords.x % 4 == 0 || pixel_coords.z % 4 == 0)) ? 1.0 : 0.0;
-//pixel.z = (pixel_coords.x == 0.0 || pixel_coords.y == 1.0 || pixel_coords.z == 0.0) ? 1.0 : 0.0;
-
-
+  //pixel.x = (noise_coords.y == 0.0 ? 1.0 : 0.0);
+  //pixel.y = (noise_coords.y);
+  //pixel.y = (offset.y);
+  //pixel.z = (offset.z);
   imageStore(img_output, pixel_coords.xyz, pixel);
 }

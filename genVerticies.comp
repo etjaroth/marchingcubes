@@ -11,430 +11,123 @@ struct Vertex {
 	// The doccumentation warns against using vec3s
 };
 
-uint sizeofVec4 = 4 * 4;
-uint sizeofVertex = 3 * sizeofVec4;
+const uint sizeofVec4 = 4 * 4;
+const uint sizeofVertex = 3 * sizeofVec4;
+const uint verticiesSize = 3; // 3 vec4s per vertex
 
-layout (binding=0, std140) buffer shader_output {
-	Vertex verticies[];
-};
-
-layout (binding=1, std140) buffer indirect_render_data {
-	uint count; // atomic counter
-	uint instanceCount; // 1 (1 instance of terrain)
-	uint first; // 0 (no offset)
-	uint baseInstance; // 0 (not important?)
+layout (binding=0, std140) buffer vertex_output {
+	//Vertex verticies[];
+	vec4 verticies[];
 };
 
 uniform vec3 pos = vec3(0.0);
 uniform float maxFill = 1.0;
 uniform float minFill = 0.0;
-
-///////////////////////////////////////////////////////////////////////////////
-
-const ivec3 vertex_pos[8] = { // Points on a cube
-	ivec3(0, 0, 0),
-	ivec3(1, 0, 0),
-	ivec3(1, 1, 0),
-	ivec3(0, 1, 0),
-	ivec3(0, 0, 1),
-	ivec3(1, 0, 1),
-	ivec3(1, 1, 1),
-	ivec3(0, 1, 1)
-};
-
-const uint edges[12][2] = { // Lines between points
-	{0, 1}, // 0
-	{1, 2}, // 1
-	{2, 3}, // 2
-	{3, 0}, // 3
-	{4, 5}, // 4
-	{5, 6}, // 5
-	{6, 7}, // 6
-	{7, 4}, // 7
-	{0, 4}, // 8
-	{1, 5}, // 9
-	{2, 6}, // 10
-	{3, 7}  // 11
-};
-
-const int cases[256][15] = { // List of faces from edges
-	{IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},	// index number as binary represents
-	{8, 0, 3,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},	// exsistence of cube vertecies (10110000 has 3)
-	{1, 0, 9,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},	// in order of verticies
-	{8, 1, 3,    8, 9, 1,    IV, IV, IV, IV, IV, IV, IV, IV, IV},	// Cube -> Triangles -> Edges
-	{10, 2, 1,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 0, 3,    1, 10, 2,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 2, 0,    9, 10, 2,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 8, 2,    2, 8, 10,   10, 8, 9,   IV, IV, IV, IV, IV, IV},
-	{3, 2, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 2, 8,    2, 11, 8,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{1, 0, 9,    2, 11, 3,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{2, 9, 1,    11, 9, 2,   8, 9, 11,   IV, IV, IV, IV, IV, IV},
-	{3, 10, 11,  3, 1, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{1, 10, 0,   0, 10, 8,   8, 10, 11,  IV, IV, IV, IV, IV, IV},
-	{0, 11, 3,   9, 11, 0,   10, 11, 9,  IV, IV, IV, IV, IV, IV},
-	{8, 9, 11,   11, 9, 10,  IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{7, 4, 8,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 7, 0,    7, 4, 0,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{7, 4, 8,    9, 1, 0,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 1, 4,    4, 1, 7,    7, 1, 3,    IV, IV, IV, IV, IV, IV},
-	{7, 4, 8,    2, 1, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{4, 3, 7,    4, 0, 3,    2, 1, 10,   IV, IV, IV, IV, IV, IV},
-	{2, 0, 10,   0, 9, 10,   7, 4, 8,    IV, IV, IV, IV, IV, IV},
-	{9, 10, 4,   4, 10, 3,   3, 10, 2,   4, 3, 7,    IV, IV, IV},
-	{4, 8, 7,    3, 2, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{7, 4, 11,   11, 4, 2,   2, 4, 0,    IV, IV, IV, IV, IV, IV},
-	{1, 0, 9,    2, 11, 3,   8, 7, 4,    IV, IV, IV, IV, IV, IV},
-	{2, 11, 1,   1, 11, 9,   9, 11, 7,   9, 7, 4,    IV, IV, IV},
-	{10, 11, 1,  11, 3, 1,   4, 8, 7,    IV, IV, IV, IV, IV, IV},
-	{4, 0, 7,    7, 0, 10,   0, 1, 10,   7, 10, 11,  IV, IV, IV},
-	{7, 4, 8,    0, 11, 3,   9, 11, 0,   10, 11, 9,  IV, IV, IV},
-	{4, 11, 7,   9, 11, 4,   10, 11, 9,  IV, IV, IV, IV, IV, IV},
-	{9, 4, 5,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 4, 5,    0, 3, 8,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 5, 1,    0, 4, 5,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{4, 3, 8,    5, 3, 4,    1, 3, 5,    IV, IV, IV, IV, IV, IV},
-	{5, 9, 4,    10, 2, 1,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 0, 3,    1, 10, 2,   4, 5, 9,    IV, IV, IV, IV, IV, IV},
-	{10, 4, 5,   2, 4, 10,   0, 4, 2,    IV, IV, IV, IV, IV, IV},
-	{3, 10, 2,   8, 10, 3,   5, 10, 8,   4, 5, 8,    IV, IV, IV},
-	{9, 4, 5,    11, 3, 2,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{11, 0, 2,   11, 8, 0,   9, 4, 5,    IV, IV, IV, IV, IV, IV},
-	{5, 1, 4,    1, 0, 4,    11, 3, 2,   IV, IV, IV, IV, IV, IV},
-	{5, 1, 4,    4, 1, 11,   1, 2, 11,   4, 11, 8,   IV, IV, IV},
-	{3, 10, 11,  3, 1, 10,   5, 9, 4,    IV, IV, IV, IV, IV, IV},
-	{9, 4, 5,    1, 10, 0,   0, 10, 8,   8, 10, 11,  IV, IV, IV},
-	{5, 0, 4,    11, 0, 5,   11, 3, 0,   10, 11, 5,  IV, IV, IV},
-	{5, 10, 4,   4, 10, 8,   8, 10, 11,  IV, IV, IV, IV, IV, IV},
-	{9, 7, 5,    9, 8, 7,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 5, 9,    3, 5, 0,    7, 5, 3,    IV, IV, IV, IV, IV, IV},
-	{8, 7, 0,    0, 7, 1,    1, 7, 5,    IV, IV, IV, IV, IV, IV},
-	{7, 5, 3,    3, 5, 1,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{7, 5, 8,    5, 9, 8,    2, 1, 10,   IV, IV, IV, IV, IV, IV},
-	{10, 2, 1,   0, 5, 9,    3, 5, 0,    7, 5, 3,    IV, IV, IV},
-	{8, 2, 0,    5, 2, 8,    10, 2, 5,   7, 5, 8,    IV, IV, IV},
-	{2, 3, 10,   10, 3, 5,   5, 3, 7,    IV, IV, IV, IV, IV, IV},
-	{9, 7, 5,    9, 8, 7,    11, 3, 2,   IV, IV, IV, IV, IV, IV},
-	{0, 2, 9,    9, 2, 7,    7, 2, 11,   9, 7, 5,    IV, IV, IV},
-	{3, 2, 11,   8, 7, 0,    0, 7, 1,    1, 7, 5,    IV, IV, IV},
-	{11, 1, 2,   7, 1, 11,   5, 1, 7,    IV, IV, IV, IV, IV, IV},
-	{3, 1, 11,   11, 1, 10,  8, 7, 9,    9, 7, 5,    IV, IV, IV},
-	{11, 7, 0,   7, 5, 0,    5, 9, 0,    10, 11, 0,  1, 10, 0},
-	{0, 5, 10,   0, 7, 5,    0, 8, 7,    0, 10, 11,  0, 11, 3},
-	{10, 11, 5,  11, 7, 5,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{5, 6, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 0, 3,    10, 5, 6,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 9, 1,    5, 6, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 1, 3,    8, 9, 1,    10, 5, 6,   IV, IV, IV, IV, IV, IV},
-	{1, 6, 2,    1, 5, 6,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{6, 2, 5,    2, 1, 5,    8, 0, 3,    IV, IV, IV, IV, IV, IV},
-	{5, 6, 9,    9, 6, 0,    0, 6, 2,    IV, IV, IV, IV, IV, IV},
-	{5, 8, 9,    2, 8, 5,    3, 8, 2,    6, 2, 5,    IV, IV, IV},
-	{3, 2, 11,   10, 5, 6,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 2, 8,    2, 11, 8,   5, 6, 10,   IV, IV, IV, IV, IV, IV},
-	{3, 2, 11,   0, 9, 1,    10, 5, 6,   IV, IV, IV, IV, IV, IV},
-	{5, 6, 10,   2, 9, 1,    11, 9, 2,   8, 9, 11,   IV, IV, IV},
-	{11, 3, 6,   6, 3, 5,    5, 3, 1,    IV, IV, IV, IV, IV, IV},
-	{11, 8, 6,   6, 8, 1,    1, 8, 0,    6, 1, 5,    IV, IV, IV},
-	{5, 0, 9,    6, 0, 5,    3, 0, 6,    11, 3, 6,   IV, IV, IV},
-	{6, 9, 5,    11, 9, 6,   8, 9, 11,   IV, IV, IV, IV, IV, IV},
-	{7, 4, 8,    6, 10, 5,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 7, 0,    7, 4, 0,    10, 5, 6,   IV, IV, IV, IV, IV, IV},
-	{7, 4, 8,    6, 10, 5,   9, 1, 0,    IV, IV, IV, IV, IV, IV},
-	{5, 6, 10,   9, 1, 4,    4, 1, 7,    7, 1, 3,    IV, IV, IV},
-	{1, 6, 2,    1, 5, 6,    7, 4, 8,    IV, IV, IV, IV, IV, IV},
-	{6, 1, 5,    2, 1, 6,    0, 7, 4,    3, 7, 0,    IV, IV, IV},
-	{4, 8, 7,    5, 6, 9,    9, 6, 0,    0, 6, 2,    IV, IV, IV},
-	{2, 3, 9,    3, 7, 9,    7, 4, 9,    6, 2, 9,    5, 6, 9},
-	{2, 11, 3,   7, 4, 8,    10, 5, 6,   IV, IV, IV, IV, IV, IV},
-	{6, 10, 5,   7, 4, 11,   11, 4, 2,   2, 4, 0,    IV, IV, IV},
-	{1, 0, 9,    8, 7, 4,    3, 2, 11,   5, 6, 10,   IV, IV, IV},
-	{1, 2, 9,    9, 2, 11,   9, 11, 4,   4, 11, 7,   5, 6, 10},
-	{7, 4, 8,    11, 3, 6,   6, 3, 5,    5, 3, 1,    IV, IV, IV},
-	{11, 0, 1,   11, 4, 0,   11, 7, 4,   11, 1, 5,   11, 5, 6},
-	{6, 9, 5,    0, 9, 6,    11, 0, 6,   3, 0, 11,   4, 8, 7},
-	{5, 6, 9,    9, 6, 11,   9, 11, 7,   9, 7, 4,    IV, IV, IV},
-	{4, 10, 9,   4, 6, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{10, 4, 6,   10, 9, 4,   8, 0, 3,    IV, IV, IV, IV, IV, IV},
-	{1, 0, 10,   10, 0, 6,   6, 0, 4,    IV, IV, IV, IV, IV, IV},
-	{8, 1, 3,    6, 1, 8,    6, 10, 1,   4, 6, 8,    IV, IV, IV},
-	{9, 2, 1,    4, 2, 9,    6, 2, 4,    IV, IV, IV, IV, IV, IV},
-	{3, 8, 0,    9, 2, 1,    4, 2, 9,    6, 2, 4,    IV, IV, IV},
-	{0, 4, 2,    2, 4, 6,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 2, 3,    4, 2, 8,    6, 2, 4,    IV, IV, IV, IV, IV, IV},
-	{4, 10, 9,   4, 6, 10,   2, 11, 3,   IV, IV, IV, IV, IV, IV},
-	{11, 8, 2,   2, 8, 0,    6, 10, 4,   4, 10, 9,   IV, IV, IV},
-	{2, 11, 3,   1, 0, 10,   10, 0, 6,   6, 0, 4,    IV, IV, IV},
-	{8, 4, 1,    4, 6, 1,    6, 10, 1,   11, 8, 1,   2, 11, 1},
-	{3, 1, 11,   11, 1, 4,   1, 9, 4,    11, 4, 6,   IV, IV, IV},
-	{6, 11, 1,   11, 8, 1,   8, 0, 1,    4, 6, 1,    9, 4, 1},
-	{3, 0, 11,   11, 0, 6,   6, 0, 4,    IV, IV, IV, IV, IV, IV},
-	{4, 11, 8,   4, 6, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{6, 8, 7,    10, 8, 6,   9, 8, 10,   IV, IV, IV, IV, IV, IV},
-	{3, 7, 0,    0, 7, 10,   7, 6, 10,   0, 10, 9,   IV, IV, IV},
-	{1, 6, 10,   0, 6, 1,    7, 6, 0,    8, 7, 0,    IV, IV, IV},
-	{10, 1, 6,   6, 1, 7,    7, 1, 3,    IV, IV, IV, IV, IV, IV},
-	{9, 8, 1,    1, 8, 6,    6, 8, 7,    1, 6, 2,    IV, IV, IV},
-	{9, 7, 6,    9, 3, 7,    9, 0, 3,    9, 6, 2,    9, 2, 1},
-	{7, 6, 8,    8, 6, 0,    0, 6, 2,    IV, IV, IV, IV, IV, IV},
-	{3, 6, 2,    3, 7, 6,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 2, 11,   6, 8, 7,    10, 8, 6,   9, 8, 10,   IV, IV, IV},
-	{7, 9, 0,    7, 10, 9,   7, 6, 10,   7, 0, 2,    7, 2, 11},
-	{0, 10, 1,   6, 10, 0,   8, 6, 0,    7, 6, 8,    2, 11, 3},
-	{1, 6, 10,   7, 6, 1,    11, 7, 1,   2, 11, 1,   IV, IV, IV},
-	{1, 9, 6,    9, 8, 6,    8, 7, 6,    3, 1, 6,    11, 3, 6},
-	{9, 0, 1,    11, 7, 6,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 11, 3,   6, 11, 0,   7, 6, 0,    8, 7, 0,    IV, IV, IV},
-	{7, 6, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{11, 6, 7,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 8, 0,    11, 6, 7,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{1, 0, 9,    6, 7, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{1, 3, 9,    3, 8, 9,    6, 7, 11,   IV, IV, IV, IV, IV, IV},
-	{10, 2, 1,   6, 7, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{10, 2, 1,   3, 8, 0,    6, 7, 11,   IV, IV, IV, IV, IV, 3},
-	{9, 2, 0,    9, 10, 2,   11, 6, 7,   IV, IV, IV, IV, IV, IV},
-	{11, 6, 7,   3, 8, 2,    2, 8, 10,   10, 8, 9,   IV, IV, IV},
-	{2, 6, 3,    6, 7, 3,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 6, 7,    0, 6, 8,    2, 6, 0,    IV, IV, IV, IV, IV, IV},
-	{7, 2, 6,    7, 3, 2,    1, 0, 9,    IV, IV, IV, IV, IV, IV},
-	{8, 9, 7,    7, 9, 2,    2, 9, 1,    7, 2, 6,    IV, IV, IV},
-	{6, 1, 10,   7, 1, 6,    3, 1, 7,    IV, IV, IV, IV, IV, IV},
-	{8, 0, 7,    7, 0, 6,    6, 0, 1,    6, 1, 10,   IV, IV, IV},
-	{7, 3, 6,    6, 3, 9,    3, 0, 9,    6, 9, 10,   IV, IV, IV},
-	{7, 8, 6,    6, 8, 10,   10, 8, 9,   IV, IV, IV, IV, IV, IV},
-	{8, 11, 4,   11, 6, 4,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{11, 0, 3,   6, 0, 11,   4, 0, 6,    IV, IV, IV, IV, IV, IV},
-	{6, 4, 11,   4, 8, 11,   1, 0, 9,    IV, IV, IV, IV, IV, IV},
-	{1, 3, 9,    9, 3, 6,    3, 11, 6,   9, 6, 4,    IV, IV, IV},
-	{8, 11, 4,   11, 6, 4,   1, 10, 2,   IV, IV, IV, IV, IV, IV},
-	{1, 10, 2,   11, 0, 3,   6, 0, 11,   4, 0, 6,    IV, IV, IV},
-	{2, 9, 10,   0, 9, 2,    4, 11, 6,   8, 11, 4,   IV, IV, IV},
-	{3, 4, 9,    3, 6, 4,    3, 11, 6,   3, 9, 10,   3, 10, 2},
-	{3, 2, 8,    8, 2, 4,    4, 2, 6,    IV, IV, IV, IV, IV, IV},
-	{2, 4, 0,    6, 4, 2,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 9, 1,    3, 2, 8,    8, 2, 4,    4, 2, 6,    IV, IV, IV},
-	{1, 2, 9,    9, 2, 4,    4, 2, 6,    IV, IV, IV, IV, IV, IV},
-	{10, 3, 1,   4, 3, 10,   4, 8, 3,    6, 4, 10,   IV, IV, IV},
-	{10, 0, 1,   6, 0, 10,   4, 0, 6,    IV, IV, IV, IV, IV, IV},
-	{3, 10, 6,   3, 9, 10,   3, 0, 9,    3, 6, 4,    3, 4, 8},
-	{9, 10, 4,   10, 6, 4,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 4, 5,    7, 11, 6,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 4, 5,    7, 11, 6,   0, 3, 8,    IV, IV, IV, IV, IV, IV},
-	{0, 5, 1,    0, 4, 5,    6, 7, 11,   IV, IV, IV, IV, IV, IV},
-	{11, 6, 7,   4, 3, 8,    5, 3, 4,    1, 3, 5,    IV, IV, IV},
-	{1, 10, 2,   9, 4, 5,    6, 7, 11,   IV, IV, IV, IV, IV, IV},
-	{8, 0, 3,    4, 5, 9,    10, 2, 1,   11, 6, 7,   IV, IV, IV},
-	{7, 11, 6,   10, 4, 5,   2, 4, 10,   0, 4, 2,    IV, IV, IV},
-	{8, 2, 3,    10, 2, 8,   4, 10, 8,   5, 10, 4,   11, 6, 7},
-	{2, 6, 3,    6, 7, 3,    9, 4, 5,    IV, IV, IV, IV, IV, IV},
-	{5, 9, 4,    8, 6, 7,    0, 6, 8,    2, 6, 0,    IV, IV, IV},
-	{7, 3, 6,    6, 3, 2,    4, 5, 0,    0, 5, 1,    IV, IV, IV},
-	{8, 1, 2,    8, 5, 1,    8, 4, 5,    8, 2, 6,    8, 6, 7},
-	{9, 4, 5,    6, 1, 10,   7, 1, 6,    3, 1, 7,    IV, IV, IV},
-	{7, 8, 6,    6, 8, 0,    6, 0, 10,   10, 0, 1,   5, 9, 4},
-	{3, 0, 10,   0, 4, 10,   4, 5, 10,   7, 3, 10,   6, 7, 10},
-	{8, 6, 7,    10, 6, 8,   5, 10, 8,   4, 5, 8,    IV, IV, IV},
-	{5, 9, 6,    6, 9, 11,   11, 9, 8,   IV, IV, IV, IV, IV, IV},
-	{11, 6, 3,   3, 6, 0,    0, 6, 5,    0, 5, 9,    IV, IV, IV},
-	{8, 11, 0,   0, 11, 5,   5, 11, 6,   0, 5, 1,    IV, IV, IV},
-	{6, 3, 11,   5, 3, 6,    1, 3, 5,    IV, IV, IV, IV, IV, IV},
-	{10, 2, 1,   5, 9, 6,    6, 9, 11,   11, 9, 8,   IV, IV, IV},
-	{3, 11, 0,   0, 11, 6,   0, 6, 9,    9, 6, 5,    1, 10, 2},
-	{0, 8, 5,    8, 11, 5,   11, 6, 5,   2, 0, 5,    10, 2, 5},
-	{11, 6, 3,   3, 6, 5,    3, 5, 10,   3, 10, 2,   IV, IV, IV},
-	{3, 9, 8,    6, 9, 3,    5, 9, 6,    2, 6, 3,    IV, IV, IV},
-	{9, 6, 5,    0, 6, 9,    2, 6, 0,    IV, IV, IV, IV, IV, IV},
-	{6, 5, 8,    5, 1, 8,    1, 0, 8,    2, 6, 8,    3, 2, 8},
-	{2, 6, 1,    6, 5, 1,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{6, 8, 3,    6, 9, 8,    6, 5, 9,    6, 3, 1,    6, 1, 10},
-	{1, 10, 0,   0, 10, 6,   0, 6, 5,    0, 5, 9,    IV, IV, IV},
-	{3, 0, 8,    6, 5, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{10, 6, 5,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{5, 11, 10,  5, 7, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{5, 11, 10,  5, 7, 11,   3, 8, 0,    IV, IV, IV, IV, IV, IV},
-	{11, 10, 7,  10, 5, 7,   0, 9, 1,    IV, IV, IV, IV, IV, IV},
-	{5, 7, 10,   10, 7, 11,  9, 1, 8,    8, 1, 3,    IV, IV, IV},
-	{2, 1, 11,   11, 1, 7,   7, 1, 5,    IV, IV, IV, IV, IV, IV},
-	{3, 8, 0,    2, 1, 11,   11, 1, 7,   7, 1, 5,    IV, IV, IV},
-	{2, 0, 11,   11, 0, 5,   5, 0, 9,    11, 5, 7,   IV, IV, IV},
-	{2, 9, 5,    2, 8, 9,    2, 3, 8,    2, 5, 7,    2, 7, 11},
-	{10, 3, 2,   5, 3, 10,   7, 3, 5,    IV, IV, IV, IV, IV, IV},
-	{10, 0, 2,   7, 0, 10,   8, 0, 7,    5, 7, 10,   IV, IV, IV},
-	{0, 9, 1,    10, 3, 2,   5, 3, 10,   7, 3, 5,    IV, IV, IV},
-	{7, 8, 2,    8, 9, 2,    9, 1, 2,    5, 7, 2,    10, 5, 2},
-	{3, 1, 7,    7, 1, 5,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{0, 7, 8,    1, 7, 0,    5, 7, 1,    IV, IV, IV, IV, IV, IV},
-	{9, 5, 0,    0, 5, 3,    3, 5, 7,    IV, IV, IV, IV, IV, IV},
-	{5, 7, 9,    7, 8, 9,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{4, 10, 5,   8, 10, 4,   11, 10, 8,  IV, IV, IV, IV, IV, IV},
-	{3, 4, 0,    10, 4, 3,   10, 5, 4,   11, 10, 3,  IV, IV, IV},
-	{1, 0, 9,    4, 10, 5,   8, 10, 4,   11, 10, 8,  IV, IV, IV},
-	{4, 3, 11,   4, 1, 3,    4, 9, 1,    4, 11, 10,  4, 10, 5},
-	{1, 5, 2,    2, 5, 8,    5, 4, 8,    2, 8, 11,   IV, IV, IV},
-	{5, 4, 11,   4, 0, 11,   0, 3, 11,   1, 5, 11,   2, 1, 11},
-	{5, 11, 2,   5, 8, 11,   5, 4, 8,    5, 2, 0,    5, 0, 9},
-	{5, 4, 9,    2, 3, 11,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 4, 8,    2, 4, 3,    5, 4, 2,    10, 5, 2,   IV, IV, IV},
-	{5, 4, 10,   10, 4, 2,   2, 4, 0,    IV, IV, IV, IV, IV, IV},
-	{2, 8, 3,    4, 8, 2,    10, 4, 2,   5, 4, 10,   0, 9, 1},
-	{4, 10, 5,   2, 10, 4,   1, 2, 4,    9, 1, 4,    IV, IV, IV},
-	{8, 3, 4,    4, 3, 5,    5, 3, 1,    IV, IV, IV, IV, IV, IV},
-	{1, 5, 0,    5, 4, 0,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{5, 0, 9,    3, 0, 5,    8, 3, 5,    4, 8, 5,    IV, IV, IV},
-	{5, 4, 9,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{7, 11, 4,   4, 11, 9,   9, 11, 10,  IV, IV, IV, IV, IV, IV},
-	{8, 0, 3,    7, 11, 4,   4, 11, 9,   9, 11, 10,  IV, IV, IV},
-	{0, 4, 1,    1, 4, 11,   4, 7, 11,   1, 11, 10,  IV, IV, IV},
-	{10, 1, 4,   1, 3, 4,    3, 8, 4,    11, 10, 4,  7, 11, 4},
-	{9, 4, 1,    1, 4, 2,    2, 4, 7,    2, 7, 11,   IV, IV, IV},
-	{1, 9, 2,    2, 9, 4,    2, 4, 11,   11, 4, 7,   3, 8, 0},
-	{11, 4, 7,   2, 4, 11,   0, 4, 2,    IV, IV, IV, IV, IV, IV},
-	{7, 11, 4,   4, 11, 2,   4, 2, 3,    4, 3, 8,    IV, IV, IV},
-	{10, 9, 2,   2, 9, 7,    7, 9, 4,    2, 7, 3,    IV, IV, IV},
-	{2, 10, 7,   10, 9, 7,   9, 4, 7,    0, 2, 7,    8, 0, 7},
-	{10, 4, 7,   10, 0, 4,   10, 1, 0,   10, 7, 3,   10, 3, 2},
-	{8, 4, 7,    10, 1, 2,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{4, 1, 9,    7, 1, 4,    3, 1, 7,    IV, IV, IV, IV, IV, IV},
-	{8, 0, 7,    7, 0, 1,    7, 1, 9,    7, 9, 4,    IV, IV, IV},
-	{0, 7, 3,    0, 4, 7,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{8, 4, 7,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 8, 10,   10, 8, 11,  IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 11, 0,   0, 11, 9,   9, 11, 10,  IV, IV, IV, IV, IV, IV},
-	{0, 10, 1,   8, 10, 0,   11, 10, 8,  IV, IV, IV, IV, IV, IV},
-	{11, 10, 3,  10, 1, 3,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{1, 9, 2,    2, 9, 11,   11, 9, 8,   IV, IV, IV, IV, IV, IV},
-	{9, 2, 1,    11, 2, 9,   3, 11, 9,   0, 3, 9,    IV, IV, IV},
-	{8, 2, 0,    8, 11, 2,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{11, 2, 3,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{2, 8, 3,    10, 8, 2,   9, 8, 10,   IV, IV, IV, IV, IV, IV},
-	{0, 2, 9,    2, 10, 9,   IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 2, 8,    8, 2, 10,   8, 10, 1,   8, 1, 0,    IV, IV, IV},
-	{1, 2, 10,   IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 1, 8,    1, 9, 8,    IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{9, 0, 1,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{3, 0, 8,    IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV},
-	{IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV, IV}
-};
-
-///////////////////////////////////////////////////////////////////////////////
+uniform ivec3 chunk_size;
 
 const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 	// Code adapted from paulbourke.net/geometry/polygonise/
-	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001)
+	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
 		return v1;
-	if (abs(isolevel - f2) < 0.00001)
+	}
+	else if (abs(isolevel - f2) < 0.00001) {
 		return v2;
+	}
+	else if (abs(f1-f2) < 0.00001) {
+      return v1;
+	}
 
-	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
-}
+	float mu = (isolevel - f1)/(f2-f1);
+	//mu = max(0.0, min(1.0, mu));
 
-vec4 corners[8];
-
-void add_vertex(uint starting_index, uint case_index, bool is_water_surface, int i, int vertex_index) {
-	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
-	const vec3 offset = vec3(cube_location) + pos;
-	const uint index = starting_index + i;
-	const uint edge_index = cases[case_index][i + vertex_index];
-	const vec4 attribute_vec = (corners[edges[edge_index][0]].x > corners[edges[edge_index][1]].x) ? corners[edges[edge_index][0]] : corners[edges[edge_index][1]];
-
-	verticies[index + vertex_index].pos = vec4(vec3interpolate(vertex_pos[edges[edge_index][0]], corners[edges[edge_index][0]].x, vertex_pos[edges[edge_index][1]], corners[edges[edge_index][1]].x), 1.0);
-	verticies[index + vertex_index].pos += vec4(offset, 0.0);
-				
-	// Decide material
-	verticies[index + vertex_index].material = vec4(attribute_vec.y, attribute_vec.z, 0.0, 0.0);
-				
-	// check if material should be water
-	verticies[index + vertex_index].material.x = is_water_surface ? 0.0 : verticies[index + vertex_index].material.x;
-	// If the material is water, we want it to ripple with waves
-	// To do that we need to change the position of the verticies in the vertex shader, which changes the normals
-	// To calculate the normals, we need to know where the other two verticies in the triangle are
-	// A number (triangle_index * 3 + vertex_index) gives us enough information to solve for these locations
-	// since we know the water surface is normally a flat square made of 2 triangles
-	// We encode this number in the magnitude of the normal (which is really just the y element since the surface is flat)
-	verticies[index + vertex_index].normal = vec4(0.0);
-	verticies[index + vertex_index].normal.y = is_water_surface ? float(i + vertex_index) : 0.0;
-	verticies[index + vertex_index].normal.y = is_water_surface ? 4.0 : verticies[index + vertex_index].normal.y;
+	return v1 + mu * (v2 - v1);
 }
 
 void main() {
-	const ivec3 cube_location = ivec3(gl_GlobalInvocationID);
-	const vec3 offset = vec3(cube_location) + pos;
+	int idx = int(gl_GlobalInvocationID.x);
+	const ivec3 axies[3] = {ivec3(1, 0, 0), ivec3(0, 1, 0), ivec3(0, 0, 1)};
+	int axis_id = idx % 3;
+	int i = (idx - axis_id) / 3;
 
-	// Load cube corners
-	//    Note: "Load operations from any texel that is outside of the boundaries of the bound image will return all zeros"
-	//            so corners outside the texture will just have a fill of 0
-	corners[0] = imageLoad(generated_data, cube_location + ivec3(0, 0, 0));
-	corners[1] = imageLoad(generated_data, cube_location + ivec3(1, 0, 0));
-	corners[2] = imageLoad(generated_data, cube_location + ivec3(1, 1, 0));
-	corners[3] = imageLoad(generated_data, cube_location + ivec3(0, 1, 0));
-	corners[4] = imageLoad(generated_data, cube_location + ivec3(0, 0, 1));
-	corners[5] = imageLoad(generated_data, cube_location + ivec3(1, 0, 1));
-	corners[6] = imageLoad(generated_data, cube_location + ivec3(1, 1, 1));
-	corners[7] = imageLoad(generated_data, cube_location + ivec3(0, 1, 1));
-
-	// Input format: fill, material, waterlevel, 1.0
+	// Read output from genIndicies.comp
+	//const float start = verticies[idx].pos.x;
+	const float start = verticies[verticiesSize * idx + 0].x;
+	//const float waterlevel = verticies[idx].pos.y;
+	const float waterlevel = verticies[verticiesSize * idx].y;
 	
-	uint case_index = 0;
-	case_index = 0; // Cube vertex existence in binary
-	case_index += (corners[0].x > 0 ? 1 : 0);
-	case_index += (corners[1].x > 0 ? 2 : 0);
-	case_index += (corners[2].x > 0 ? 4 : 0);
-	case_index += (corners[3].x > 0 ? 8 : 0);
-	case_index += (corners[4].x > 0 ? 16 : 0);
-	case_index += (corners[5].x > 0 ? 32 : 0);
-	case_index += (corners[6].x > 0 ? 64 : 0);
-	case_index += (corners[7].x > 0 ? 128 : 0);
+	const int z = i / (int(chunk_size.x) * int(chunk_size.y));
+    i -= (z * (int(chunk_size.x) * int(chunk_size.y)));
 
-	// Count triangles (shockingly hard)
-//	for (uint triangle_index = 0; triangle_index < 5; ++triangle_index) {
-//		if (cases[case_index][triangle_index][0] != IV) { // if triangle contains verticies
-//			triangle_count += 1;
-//	}
+	// Get back points from the edge
+	ivec3 point_a = ivec3(i % int(chunk_size.x), i / int(chunk_size.x), z);
+	ivec3 point_b = point_a + axies[axis_id]; // see genIndices
 
-	// Equivilent to for loop above, because that loop is apparently ridiculusly expensive
-	// This only works because IV == -2
-	// Explination:
-	//   For this, call cases[case_index][n][0] C. C is [0, 12] if valid, or -2 if invalid.
-	//   We want to convert C to 1 if valid or 0 if invalid (because we want to count the number of triangles)
-	//   We add 1 to cause (C is [0, 12] or -2) -> (C is [1, 13] or -1) (want to make division by 0 legal)
-	//   We divide that value by its self to get 1 if valid, or -1 if invalid
-	//   We add 1 to that to get 2 if valid, or 0 if invalid
-	//   We divide by 2 to get 1 if valid or 0 if invalid
-	//   We :( because we had to do all this to count triangles at a reasonable framerate
-	// Note that we only have to do all this because we use triangle_count in an atomic add
+	const vec3 true_point_a = vec3(point_a) + pos;
+	const vec3 true_point_b = vec3(point_b) + pos;
 
-	const int triangle_count = ((((cases[case_index][0] + 1) / (cases[case_index][0] + 1)) + 1) / 2) + 
-								((((cases[case_index][3] + 1) / (cases[case_index][3] + 1)) + 1) / 2) + 
-								((((cases[case_index][6] + 1) / (cases[case_index][6] + 1)) + 1) / 2) + 
-								((((cases[case_index][9] + 1) / (cases[case_index][9] + 1)) + 1) / 2) + 
-								((((cases[case_index][12] + 1) / (cases[case_index][12] + 1)) + 1) / 2);
+	//point_a += ivec3(1);
+	//point_b += ivec3(1);
 
+	vec4 data_a = imageLoad(generated_data, point_a);
+	vec4 data_b = imageLoad(generated_data, point_b);
+	// Input format: fill, material, waterlevel, 1.0
 
-	if (triangle_count == 0) {
-		return;
-	}
+	if (start != 1.0) {return;} // We don't need or want a vertex on this edge
 
-	// Check for water surface
-	// Mark water
-	//const int bottom_fill_index = 1 + 2 + 16 + 32; // case: flat surface with air above (only bottom 4 vericies filled)
-	bool is_water_surface = (case_index == 51) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
+	Vertex vertex;
+	vertex.pos = vec4(vec3interpolate(true_point_a, data_a.x, true_point_b, data_b.x), 1.0);
 
-	// Build verticies
-	const uint starting_index = atomicAdd(count, 3 * triangle_count * sizeofVertex) / sizeofVertex; // get safe, writeable section of SSBO [starting_index, starting_index+triangle_count]
-	for (int i = 0; i < 13; i += 3) {
-		if (cases[case_index][i] == IV) {break;}
-		const uint index = starting_index + i;
-		
-		add_vertex(starting_index, case_index, is_water_surface, i, 0);
-		add_vertex(starting_index, case_index, is_water_surface, i, 1);
-		add_vertex(starting_index, case_index, is_water_surface, i, 2);
+	// Calculate normal
+	// Sample a[dir][positive/negative]
+	float axp = imageLoad(generated_data, point_a + ivec3(1, 0, 0)).x;
+	float axn = imageLoad(generated_data, point_a + ivec3(-1, 0, 0)).x;
+	float ayp = imageLoad(generated_data, point_a + ivec3(0, 1, 0)).x;
+	float ayn = imageLoad(generated_data, point_a + ivec3(0, -1, 0)).x;
+	float azp = imageLoad(generated_data, point_a + ivec3(0, 0, 1)).x;
+	float azn = imageLoad(generated_data, point_a + ivec3(0, 0, -1)).x;
 
-		// Calculate triangle normal
-		const vec3 orgin = vec3(verticies[index].pos);
-		vec4 normal = vec4(normalize(cross(vec3(verticies[index + 1].pos) - orgin, vec3(verticies[index + 2].pos) - orgin)), 1.0);
-		verticies[index].normal += normal;
-		verticies[index + 1].normal += normal;
-		verticies[index + 2].normal += normal;
-	}
+	// Sample b[dir][positive/negative]
+	float bxp = imageLoad(generated_data, point_b + ivec3(1, 0, 0)).x;
+	float bxn = imageLoad(generated_data, point_b + ivec3(-1, 0, 0)).x;
+	float byp = imageLoad(generated_data, point_b + ivec3(0, 1, 0)).x;
+	float byn = imageLoad(generated_data, point_b + ivec3(0, -1, 0)).x;
+	float bzp = imageLoad(generated_data, point_b + ivec3(0, 0, 1)).x;
+	float bzn = imageLoad(generated_data, point_b + ivec3(0, 0, -1)).x;
+	
+	// Compute gradient (normal)
+	vec3 gradienta = vec3(axp - axn, ayp - ayn, azp - ayn);
+	vec3 gradientb = vec3(bxp - bxn, byp - byn, bzp - byn);
+
+	vertex.normal = -vec4(normalize(vec3interpolate(gradienta, data_a.x, gradientb, data_b.x)), 0.0);
+
+	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
+	vertex.material.x = (waterlevel == 1.0) ? 0.0 : vertex.material.x;
+
+	//Output vertex
+	//verticies[idx] = vertex;
+
+	float edge_to_dir[12] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0};
+	// + vec3(gl_GlobalInvocationID.xyz)
+
+	verticies[verticiesSize * idx + 0].x = vertex.pos.x;
+	verticies[verticiesSize * idx + 0].y = vertex.pos.y;
+	verticies[verticiesSize * idx + 0].z = vertex.pos.z;
+	verticies[verticiesSize * idx + 0].w = vertex.pos.w;
+
+	verticies[verticiesSize * idx + 1].x = vertex.normal.x;
+	verticies[verticiesSize * idx + 1].y = vertex.normal.y;
+	verticies[verticiesSize * idx + 1].z = vertex.normal.z;
+	verticies[verticiesSize * idx + 1].w = vertex.normal.w;
+
+	verticies[verticiesSize * idx + 2].x = vertex.material.x;
+	verticies[verticiesSize * idx + 2].y = vertex.material.y;
+	verticies[verticiesSize * idx + 2].z = vertex.material.z;
+	verticies[verticiesSize * idx + 2].w = vertex.material.w;
+
+	// Testing 
+//	verticies[verticiesSize * idx + 2].x = data_a.x;
+//	verticies[verticiesSize * idx + 2].y = data_b.x;
+//	verticies[verticiesSize * idx + 2].z = 1.234;
+//	verticies[verticiesSize * idx + 2].w = 5.6789;
 }

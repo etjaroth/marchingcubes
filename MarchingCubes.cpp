@@ -1,43 +1,109 @@
 #include "MarchingCubes.h"
 #include <assert.h>
+#include <iomanip> // for printing prescision floats
+#include <set>
+#include <sstream>
 
-int MarchingCubes::max_stage_count = 4;
-int MarchingCubes::stage_count = 0;
+unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
+unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, 4, 4, UINT_MAX };
+// start, heightmap, scalar field, indicies, verticies, done
+// 0      1          2             3         4          5
 
-MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_verticies_ptr) {
-	gen_verticies = gen_verticies_ptr;
+const int buffer = 2; // needs to be the same as buffer in ChunkManager.cpp and as int(2*overlap) in genHeightmap, and drawTexture
+
+std::string glGetErrorString(GLenum err)
+{
+	switch (err)
+	{
+		// opengl 2 errors (8)
+	case GL_NO_ERROR:
+		return "GL_NO_ERROR";
+
+	case GL_INVALID_ENUM:
+		return "GL_INVALID_ENUM";
+
+	case GL_INVALID_VALUE:
+		return "GL_INVALID_VALUE";
+
+	case GL_INVALID_OPERATION:
+		return "GL_INVALID_OPERATION";
+
+	case GL_STACK_OVERFLOW:
+		return "GL_STACK_OVERFLOW";
+
+	case GL_STACK_UNDERFLOW:
+		return "GL_STACK_UNDERFLOW";
+
+	case GL_OUT_OF_MEMORY:
+		return "GL_OUT_OF_MEMORY";
+
+		// opengl 3 errors (1)
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "GL_INVALID_FRAMEBUFFER_OPERATION";
+
+		// gles 2, 3 and gl 4 error are handled by the switch above
+	default:
+		return "Unknown_Error " + std::to_string((unsigned int)err);
+	}
+}
+
+void gl_flush_errors() {
+	while (glGetError() != GL_NO_ERROR) {}
+};
+
+void gl_print_errors() {
+	return;
+	std::cout << "GL_Errors:" << std::endl;
+	while (true) {
+		GLenum err = glGetError();
+		if (err == GL_NO_ERROR) {
+			break;
+		}
+		else {
+			std::cout << "    " << glGetErrorString(err) << std::endl;
+		}
+	}
+}
+
+MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
+	task_queue[current_step] += 1;
+
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
+	gen_edges = gen_indices_ptr;
+	gen_verticies = gen_verticies_ptr;
 
-	cube_dimensions = cubeSize;
-	vertex_cube_dimensions = cube_dimensions + 1;
+	verticies_on_side = cubeSize;
+	edges_on_side = verticies_on_side - 1;
+	verticies_on_side_with_buffer = verticies_on_side + buffer;
+
 	pos = position;
 
 	///////////////////////////////////////////////////////////////////////////
 
 	// Init SSBOs (output holds verticies, index holds number of verticies)
-	glGenBuffers(1, &INDIRECT_SSBO);
-	glGenBuffers(1, &OUTPUT_SSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, OUTPUT_SSBO);
+	glGenBuffers(1, &VERTEX_SSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
+	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
+	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_DRAW);
+	GLfloat clear_value = 0.0f;
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_R32F, GL_RGBA32F, &clear_value);
 
-	GLint ENOUGH_MEMORY_FOR_ALL_CASES = 4 * sizeof(int);
-	ENOUGH_MEMORY_FOR_ALL_CASES *= (cubeSize + 1) * (cubeSize + 1) * (cubeSize + 1) * (5 * 3 * 4);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, ENOUGH_MEMORY_FOR_ALL_CASES, NULL, GL_DYNAMIC_DRAW);
+	GLint size = 0;
+	glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
 
 	// be polite
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
 
 	// Set Vertex Attributes
-
-
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, OUTPUT_SSBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 
 	// Vertex Position
-	const unsigned int stride = 3 * 4 * sizeof(float);
+	const unsigned int stride = 3 * 4 * sizeof(GLfloat);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride, (void*)0);
 	glEnableVertexAttribArray(0);
 	// Vertex Normal
@@ -47,217 +113,337 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heigh
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, (void*)(8 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-	current_task = tasks::start;
-	set_fence();
 }
 
 
 MarchingCubes::~MarchingCubes() {
-	if (current_task != tasks::empty) {
+	glDeleteTextures(1, &LANDSCAPE_DATA);
+	glDeleteBuffers(1, &INDIRECT_SSBO);
+	glDeleteBuffers(1, &EBO);
+	glDeleteBuffers(1, &VERTEX_SSBO);
+	glDeleteVertexArrays(1, &VAO);
+	if (HEIGHTMAP != 0) {
 		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
-		glDeleteBuffers(1, &INDIRECT_SSBO);
-		glDeleteBuffers(1, &OUTPUT_SSBO);
-
-		if (edge_data != 0) {
-			glDeleteTextures(1, &edge_data);
-		}
-
-		if (current_task == tasks::verticies) {
-			glDeleteTextures(1, &landscape_data);
-		}
 	}
-	if (assigned_stage) {
-		--stage_count;
+
+	if (!waiting) {
+		task_queue[current_step] -= 1;
 	}
+
 	free_fence();
 }
 
 void MarchingCubes::update_cubes() {
-	glBindVertexArray(VAO);
-	if (current_task != tasks::empty) {
-		bool finished = true;
-		if (current_task != tasks::start) {
-			finished = fence_is_done();
-		}
-		if (current_task == tasks::waiting) {
-			if (stage_count < max_stage_count) {
-				++stage_count;
-				assigned_stage = true;
-			}
-			finished = assigned_stage;
-		}
+	bool task_complete = fence_is_done();
+	if (current_step >= 2) {
+		//std::cout << "Update: " << waiting << " " << current_step << " " << task_queue[current_step] << " " << task_complete << std::endl;
+	}
+	if (waiting) {
+		if (task_queue_max[current_step] == UINT_MAX || task_queue[current_step] < task_queue_max[current_step]) {
+			set_fence();
+			task_queue[current_step] += 1;
+			waiting = false;
 
-		if (finished) {
-			free_fence();
-
-			// do next task
-			++current_task;
-
-			switch (current_task) {
-			case tasks::heightmap:
+			switch (current_step) {
+			case 0:
+				// Should never happen since current_step starts at 0 and we just added 1
+				break;
+			case 1:
 				generate_heightmap();
 				break;
-			case tasks::terrain_fills:
+			case 2:
 				generate_terrain_fills();
 				break;
-			case tasks::verticies:
-				generate_verticies();
+			case 3:
+				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+				HEIGHTMAP = 0;
+				generate_indices();
 				break;
-			case tasks::done: // check if empty
-				--stage_count;
-				assigned_stage = false;
-				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
-				//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-				//unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
-				//glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(unsigned int), indirect_render_data);
-				//if (indirect_render_data[0] == 0) {
-				//	current_task = tasks::empty;
-				//	// Do destructor
-				//	glDeleteBuffers(1, &INDIRECT_SSBO);
-				//	glDeleteBuffers(1, &OUTPUT_SSBO);
-				//	glDeleteVertexArrays(1, &VAO);
-				//}
+			case 4:
+			{
+				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+				GLuint data[5] = { 1, 1, 0, 0, 5 };
+				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
+
+				if (data[0] == 0) { // If there are no verticies to be generated
+					free_fence();
+					glDeleteTextures(1, &LANDSCAPE_DATA);
+					glDeleteBuffers(1, &INDIRECT_SSBO);
+					glDeleteBuffers(1, &EBO);
+					glDeleteBuffers(1, &VERTEX_SSBO);
+					glDeleteVertexArrays(1, &VAO);
+
+					LANDSCAPE_DATA = 0;
+					INDIRECT_SSBO = 0;
+					EBO = 0;
+					VERTEX_SSBO = 0;
+					VAO = 0;
+
+					task_queue[current_step] -= 1;
+					current_step = 6;
+
+				}
+				else {
+					generate_verticies();
+				}
+			}
+			break;
+			case 5:
+				/*glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+				glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
+
+				{
+					const unsigned int size = verticies_on_side_with_buffer * verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4;
+					GLfloat* pixels = new GLfloat[size];
+					glGetTexImage(GL_TEXTURE_3D, 0, GL_RGBA, GL_FLOAT, pixels);
+					
+					std::cout << "Pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+					std::cout << "Tex: " << LANDSCAPE_DATA << std::endl;
+
+					if (pos.y != -3) {
+						std::cout << "\n\nHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n\n" << std::endl;
+					}
+
+					for (int i = 0; i < size; ++i) {
+						std::cout << pixels[i] << " ";
+						if ((i + 1) % 4 == 0) {
+							std::cout << "| ";
+						}
+						if ((i + 1) % (verticies_on_side_with_buffer * 4) == 0) {
+							std::cout << std::endl;
+						}
+						if ((i + 1) % (verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4) == 0) {
+							std::cout << std::endl;
+						}
+					}
+					std::cout << "\n================\n" << std::endl;
+
+					delete[] pixels;
+				}
+				glBindTexture(GL_TEXTURE_3D, 0);*/
+			break;
+			case 6:
+				std::cout << "Something went wrong" << std::endl;
 				break;
 			}
+		}
+		else {
+			// wait for empty slot
+			return;
+		}
+	}
+	else {
+		if (task_complete) {
+			task_queue[current_step] -= 1;
+			++current_step;
+			waiting = true;
+			free_fence();
+			update_cubes();
+		}
+		else {
+			// wait for shader to finish
+			return;
 		}
 	}
 
 	// Be polite
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-void MarchingCubes::generate_heightmap() {
-	//fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
+
+void MarchingCubes::generate_heightmap() {
 	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
 
-	if (heightmap_generator->is_generated(coord)) {
-		//glDeleteSync(fence);
-	}
-	else {
+	if (!heightmap_generator->is_generated(coord)) {
 		heightmap_generator->generate_heightmap(coord);
 	}
 
-	heightmap = heightmap_generator->get_heightmap(coord);
+	HEIGHTMAP = heightmap_generator->get_heightmap(coord);
 }
 
 void MarchingCubes::generate_terrain_fills() {
-	set_fence();
-
 	// Prepare render texture
-	glGenTextures(1, &landscape_data);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, landscape_data);
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+	glGenTextures(1, &LANDSCAPE_DATA);
+	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, vertex_cube_dimensions, vertex_cube_dimensions, vertex_cube_dimensions, 0, GL_RGBA, GL_FLOAT, NULL);
 
-	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, verticies_on_side_with_buffer, verticies_on_side_with_buffer, verticies_on_side_with_buffer, 0, GL_RGBA, GL_FLOAT, NULL);
 
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindImageTexture(1, heightmap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	// Heightmap
+	glActiveTexture(GL_TEXTURE0 + HEIGHTMAP_UNIT);
+	glBindTexture(GL_TEXTURE_2D, HEIGHTMAP);
+	glBindImageTexture(HEIGHTMAP_UNIT, HEIGHTMAP, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 
 	// Fill texture with render data
 	// might be better to pass a pointer to the shader
 	fillGenerator->use();
 	fillGenerator->setVec3("offset", glm::vec3(pos));
-	fillGenerator->fillTexture(landscape_data);
+	fillGenerator->fillTexture(LANDSCAPE_DATA);
 	fillGenerator->dontuse();
-
-	//glDeleteTextures(1, &heightmap);
 }
 
-void MarchingCubes::generate_edges() {
-	glBindTexture(GL_TEXTURE_3D, landscape_data);
-	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	set_fence();
+void MarchingCubes::generate_indices() {
+	gl_flush_errors();
 
-	// Create SSBO (edge_data)
-	glGenBuffers(1, &edge_data);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
+	// Scalar Field
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32F);
 
-	GLint ENOUGH_MEMORY_FOR_ALL_CASES = 4 * sizeof(int);
-	ENOUGH_MEMORY_FOR_ALL_CASES *= vertex_cube_dimensions * vertex_cube_dimensions * vertex_cube_dimensions * (3 * 4); // verticies are 3 vec4s (12 bytes)
-	glBufferData(GL_SHADER_STORAGE_BUFFER, ENOUGH_MEMORY_FOR_ALL_CASES, NULL, GL_DYNAMIC_DRAW);
-
+	// Indirect SSBO
 	// Set initial count and indirect render information
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
-	unsigned int render_data_init[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(unsigned int), render_data_init, GL_DYNAMIC_DRAW);
+	glGenBuffers(1, &INDIRECT_SSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
+	unsigned int data[5] = { 0, 1, 0, 0, 0 };
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(GLuint), data, GL_STATIC_DRAW);
 
-	// Generate vertex data
+	// Vertex SSBO
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
+
+	// Indicies
+	// Generate data
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
+	EBO_SIZE = verticies_on_side * verticies_on_side * verticies_on_side * 15;
+	glBufferData(GL_SHADER_STORAGE_BUFFER, (EBO_SIZE) * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+	GLfloat clear_value = 0.0f;
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_R32F, GL_RGBA32F, &clear_value);
+
+	gl_print_errors();
+
 	gen_edges->use();
 	gen_edges->setVec3("pos", glm::vec3(pos));
-	gen_edges->fillSSBO(edge_data, edge_data_binding, cube_dimensions, cube_dimensions, cube_dimensions);
+	//gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // issue here. Index trick doesn't work like that
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
+	const int fillsize = verticies_on_side; // buffer is intentionally ommitted
+	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
 	gen_edges->dontuse();
 }
 
 void MarchingCubes::generate_verticies() {
-	glBindTexture(GL_TEXTURE_3D, landscape_data);
-	glBindImageTexture(0, landscape_data, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, edge_data);
-	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, edge_data_binding, edge_data);
-	set_fence();
+	// Scalar field
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-	// Set initial count and indirect render information
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-	unsigned int indirect_render_data[4] = { 0, 1, 0, 0 }; // count, instance_count, first, base_instance
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(unsigned int), indirect_render_data, GL_DYNAMIC_DRAW);
+	// EBO
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, EBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, EBO_BINDING, EBO);
+
+	// Vertex SSBO
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 
 	// Generate vertex data
 	gen_verticies->use();
 	gen_verticies->setVec3("pos", glm::vec3(pos));
-	gen_verticies->fillSSBO(OUTPUT_SSBO, OUTPUT_SSBO_BINDING, cube_dimensions, cube_dimensions, cube_dimensions);
+	//gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // Issue also here
+	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
+	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
 	gen_verticies->dontuse();
-	glDeleteTextures(1, &landscape_data);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	print_task();
-	if (current_task == tasks::done) {
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_3D, 0);
+
+	glBindVertexArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
+	gl_print_errors();
+
+	if (current_step == 5) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, INDIRECT_SSBO);
-		glBindBuffer(GL_ARRAY_BUFFER, OUTPUT_SSBO);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, OUTPUT_SSBO_BINDING, OUTPUT_SSBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-		shader->use();
-		glDrawArraysIndirect(GL_TRIANGLES, 0);
-		shader->dontuse();
+		// For testing:
+		// 0 draws triangles only (normal)
+		// 1 draws verticies only
+		// 2 draws both
+		const unsigned int render_mode = 0;
+		unsigned int data[5] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side, 0, 0, 0, 0 };
+		switch (render_mode) {
+		case 0:
+		{
+			shader->use();
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+			shader->dontuse();
+			break;
+		}
+		case 1:
+			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
+			shader->use();
+			glPointSize(10.0f);
+			glDrawArraysIndirect(GL_POINTS, 0);
+			shader->dontuse();
+			break;
+		case 2:
+			shader->use();
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+
+
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
+			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
+
+
+			glPointSize(10.0f);
+			glDrawArraysIndirect(GL_POINTS, 0);
+			shader->dontuse();
+			break;
+		}
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	}
-	else if (current_task != tasks::empty) {
+	else if (current_step != 6) {
 		update_cubes();
 	}
 };
 
 void MarchingCubes::setPos(glm::vec3 p) {
-	pos.x = (int)(p.x / cube_dimensions);
-	pos.y = (int)(p.y / cube_dimensions);
-	pos.z = (int)(p.z / cube_dimensions);
-	pos *= vertex_cube_dimensions;
+	pos.x = (int)(p.x / verticies_on_side);
+	pos.y = (int)(p.y / verticies_on_side);
+	pos.z = (int)(p.z / verticies_on_side);
+	pos *= verticies_on_side; // NOTE: This used to be (verticies_on_side + 1)
 }
 
 glm::vec3 MarchingCubes::getPos() {
@@ -265,6 +451,10 @@ glm::vec3 MarchingCubes::getPos() {
 }
 
 bool MarchingCubes::fence_is_done() {
+	if (!fence_is_active) {
+		return true;
+	}
+
 	GLint syncStatus[1] = { GL_UNSIGNALED };
 	glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
 	return (syncStatus[0] == GL_SIGNALED);
@@ -273,12 +463,14 @@ bool MarchingCubes::fence_is_done() {
 void MarchingCubes::set_fence() {
 	if (!fence_is_active) {
 		fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+		fence_is_active = true;
 	}
 }
 
 void MarchingCubes::free_fence() {
 	if (fence_is_active) {
 		glDeleteSync(fence);
+		fence_is_active = false;
 	}
 }
 
@@ -286,26 +478,24 @@ void MarchingCubes::free_fence() {
 void MarchingCubes::print_task() {
 	return;
 
-
-	if (current_task == tasks::start) {
-		std::cout << "S";
-	}
-	else if (current_task == tasks::heightmap) {
-		std::cout << "h";
-	}
-	else if (current_task == tasks::terrain_fills) {
-		std::cout << "t";
-	}
-	else if (current_task == tasks::verticies) {
-		std::cout << "v";
-	}
-	else if (current_task == tasks::done) {
-		std::cout << "D";
-	}
-	else if (current_task == tasks::empty) {
-		std::cout << "E";
-	}
-	else {
-		std::cout << "?";
-	}
+	std::cout << current_step << " ";
+	//return;
+	//switch (current_step) {
+	//case 0:
+	//	std::cout << "S";
+	//	break;
+	//case 1:
+	//	std::cout << "h";
+	//	break;
+	//case 2:
+	//	break;
+	//case 3:
+	//	break;
+	//case 4:
+	//	break;
+	//case 5:
+	//	break;
+	//case 6:
+	//	break;
+	//}
 }
