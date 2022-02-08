@@ -443,14 +443,12 @@ void main() {
 		// Create water
 		const uint water_index = 51;
 		//const uint water_index = 204;
-		bool is_water_surface = (case_index == water_index) && (corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0);
+		bool is_water_surface = (case_index == water_index) && 
+		(corners[0].z > 0) && (corners[1].z > 0) && (corners[4].z > 0) && (corners[5].z > 0) &&
+		(corners[2].z < 1) && (corners[3].z < 1) && (corners[6].z < 1) && (corners[7].z < 1);
 		float waterlevel = is_water_surface ? 1.0 : 0.0;
 
 		// Mark Vertices
-//		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
-//		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
-//		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(9.0), vec4(10.0));
-
 		verticies[i0] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
 		verticies[i1] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));
 		verticies[i2] = Vertex(vec4(1.0, waterlevel, 0.0, 0.0), vec4(0.0), vec4(0.0));

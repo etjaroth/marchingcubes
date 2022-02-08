@@ -264,9 +264,5 @@ void main() {
 
   // output to a specific pixel in the image
   vec4 pixel = vec4(fill, material, waterlevel, 1.0);
-  //pixel.x = (noise_coords.y == 0.0 ? 1.0 : 0.0);
-  //pixel.y = (noise_coords.y);
-  //pixel.y = (offset.y);
-  //pixel.z = (offset.z);
   imageStore(img_output, pixel_coords.xyz, pixel);
 }

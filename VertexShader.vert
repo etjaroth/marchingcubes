@@ -131,8 +131,6 @@ vec3 apply_wave(vec3 v) {
 
 const float isolevel = 0.0;
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
-
-
     // Code adapted from paulbourke.net/geometry/polygonise/
 	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
 		return v1;
@@ -148,19 +146,6 @@ vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 	mu = max(0.0, min(1.0, mu));
 
 	return v1 + mu * (v2 - v1);
-
-//	// Code adapted from paulbourke.net/geometry/polygonise/
-//	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
-//		return v1;
-//	}
-//	if (abs(isolevel - f2) < 0.00001) {
-//		return v2;
-//	}
-//	if (abs(f1-f2) < 0.00001) {
-//      return v1;
-//	}
-//
-//	return v1 + vec3((isolevel - f1) / (f2 - f1)) * (v2 - v1);
 }
 
 void main()
@@ -177,7 +162,7 @@ void main()
         Shininess = 32.0;
         
         
-        //vertex_position.y += wave(vertex_position.xz);
+        vertex_position.y += wave(vertex_position.xz);
 
         // Recalculate normal
         const vec3 pos = vertex_position.xyz;
@@ -185,7 +170,6 @@ void main()
         vec3 tangent_x = vec3(1.0, der.x, 0.0);
         vec3 tangent_z = vec3(0.0, der.y, 1.0);
         normal = -normalize(cross(tangent_x, tangent_z));
-        //normal = vec3(0.0, 1.0, 0.0);
     }
     
     //////////////////////////////////////////////////////////////////////////

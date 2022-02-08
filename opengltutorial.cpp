@@ -82,12 +82,10 @@ int main() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_CULL_FACE);
-
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain((16) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
-	//ChunkManager terrain((4) + 1 - 2, glm::vec3(0.0f), 6, "genHeightmap.comp", "drawTexture.comp");
+	ChunkManager terrain((32) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -115,11 +113,16 @@ int main() {
 
 		// Lighting
 
+	//Light sun = Light();
+	//sun.setPos(camera.getPos());
+	//sun.setBrightness(0.9f);
+	//sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
+	//sun.useAsDirectionalLight(objectShader, 0);
 	Light sun = Light();
 	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 1), -1.0f, (float)sin(glfwGetTime() * 1));
 	sun.setPos(camera.getPos());
 	sun.setDir(light_dir);
-	sun.setBrightness(1.0f);
+	sun.setBrightness(1.2f);
 	sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
 	sun.useAsDirectionalLight(objectShader, 0);
 
@@ -137,29 +140,34 @@ int main() {
 
 	bool should_close = glfwWindowShouldClose(window);
 	int frameCount = 0;
-	Stopwatch clock = Stopwatch();
 	Stopwatch fpsCounter = Stopwatch();
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
 	bool update_terrain = true;
 
-	// reset OpenGl tests (TODO: Remove)
-	std::fstream f;
-	f.open("testOutput.txt", std::ofstream::out | std::ofstream::trunc);
-	f << "Clear" << std::endl;
-	f.close();
-
+	std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
+	std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
+	const double framerateFrequency = 500 / 60.0;
 	while (!should_close) // Loop
 	{
-		std::cout << "tick" << std::endl;
-		// DeltaTime
-		double nowtime = glfwGetTime();
-		deltatime = nowtime - oldtime; // Change in time
-		oldtime = nowtime;
+		// Limit framerate
+		a = std::chrono::system_clock::now();
+		const std::chrono::duration<double, std::milli> work_time = a - b;
+		deltatime = std::chrono::duration<double>(work_time).count();
+
+		if (work_time.count() < framerateFrequency)
+		{
+			std::chrono::duration<double, std::milli> delta_ms(framerateFrequency - work_time.count());
+			auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
+			std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
+		}
+
+		b = std::chrono::system_clock::now();
+		std::chrono::duration<double, std::milli> sleep_time = b - a;
 
 		// Lighting
-		
-		light_dir = glm::vec3((float)cos(nowtime * 0.1), -1.0f, (float)sin(nowtime * 0.1));
+		const double nowtime = glfwGetTime();
+		const glm::vec3 light_dir((float)cos(nowtime * 1.1), -1.0f, (float)sin(nowtime * 1.1));
 		sun.setDir(light_dir);
 		
 
@@ -220,7 +228,7 @@ int main() {
 		
 		// Perspective
 		objectShader.use();
-		objectShader.setFloat("wavetime", (float)nowtime);
+		objectShader.setFloat("wavetime", 2.0f * (float)glfwGetTime());
 
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
@@ -246,7 +254,6 @@ int main() {
 		}
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader);
-		std::cout << "\n" << std::endl;
 
 		///////////////////////////////////////////////////////////////////////
 
@@ -268,17 +275,6 @@ int main() {
 			fpsCounter.reset();
 			frameCount = 0;
 		}
-
-		// Limit framerate
-		const unsigned int max_framerate = 120; // why does this give ~63fps?
-		clock.stop();
-		unsigned int sleep = (1000 / max_framerate - clock.get_time());
-
-		if (sleep < 100) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
-
-		}
-		clock.start();
 	}
 
 	// Cleanup

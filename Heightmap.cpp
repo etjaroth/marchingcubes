@@ -33,7 +33,6 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 	//std::cout << "Generating Heightmap: " << coord.x << ", " << coord.y;
 	auto itr = heightmaps.find(key);
 	if (itr != heightmaps.end()) {
-		std::cout << "    Heightmap already exists! (" << itr->second.texture << ")" << std::endl;
 		return;
 	}
 
@@ -53,8 +52,6 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 	heightmap_generator.setVec3("offset", glm::vec3(coord.x, 0.0f, coord.y));
 	heightmap_generator.fillTexture(hmap.texture);
 	heightmap_generator.dontuse();
-
-	//std::cout << " (" << hmap.texture << ')' << std::endl;
 
 	heightmaps.insert({ key, hmap });
 }
