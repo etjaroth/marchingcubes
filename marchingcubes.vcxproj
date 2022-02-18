@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c" />
+    <ClCompile Include="Binding.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
@@ -169,8 +170,10 @@
     <ClCompile Include="Tests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Binding.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="ChunkManager.h" />
     <ClInclude Include="ComputeShader.h" />
@@ -189,6 +192,7 @@
     <ClInclude Include="SSBOComputeShader.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Structs.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
   </ItemGroup>
   <ItemGroup>
