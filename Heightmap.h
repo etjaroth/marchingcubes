@@ -4,8 +4,7 @@
 struct heightmap_tile;
 
 
-class Heightmap
-{
+class Heightmap {
 	std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction> heightmaps;
 	int vertex_cube_dimensions;
 

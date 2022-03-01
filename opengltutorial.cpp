@@ -23,6 +23,8 @@
 #include <chrono>
 #include <thread>
 
+#include "Binding.h"
+
 // Display
 unsigned int screenx = 800;
 unsigned int screeny = 600;
@@ -85,7 +87,34 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Generate terrain
-	ChunkManager terrain((32) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
+	const unsigned int chunkSize = 16; // should be a power of 2
+	const unsigned int chunkRadius = 3;
+	const unsigned int chunkCubeLength = 2 * chunkRadius + 1;
+
+	const unsigned int renderDistance = chunkSize * (chunkRadius + 1);
+
+	const unsigned int VERTEX_SSBO_SIZE = 4 * sizeof(float) * 3 * (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 12; // 12 edges per cube
+	const unsigned int HEIGHTMAP_SIZE = sizeof(float) * (chunkSize + 2); // 12 edges per cube
+	const unsigned int LANDSCAPE_SIZE = sizeof(float) * (chunkSize + 1) * (chunkSize + 1) * (chunkSize + 1); // 12 edges per cube
+	const unsigned int INDIRECT_SSBO_SIZE = 5 * sizeof(GLuint); // 12 edges per cube
+	const unsigned int EBO_SIZE = (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 15 * sizeof(GLuint); // 12 edges per cube
+	
+	const unsigned int VERTEX_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * VERTEX_SSBO_SIZE;
+	const unsigned int HEIGHTMAP_MEMORY = chunkCubeLength * chunkCubeLength * HEIGHTMAP_SIZE;
+	const unsigned int LANDSCAPE_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
+	const unsigned int INDIRECT_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
+	const unsigned int EBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * EBO_SIZE;
+
+	const unsigned int FINAL_MEMORY_USAGE = VERTEX_SSBO_MEMORY + HEIGHTMAP_MEMORY;
+	const unsigned int GENERATING_MEMORY_USAGE = FINAL_MEMORY_USAGE + LANDSCAPE_MEMORY + INDIRECT_SSBO_MEMORY + EBO_MEMORY;
+
+	ChunkManager terrain(chunkSize + 1 - 2, glm::vec3(0.0f), chunkRadius, "genHeightmap.comp", "drawTexture.comp");
+	std::cout << "Expected memory usage:\n    FINAL_MEMORY_USAGE (Upper Bound): "
+		<< static_cast<float>(FINAL_MEMORY_USAGE) / 100000000.0 << 
+		" GB\n    GENERATING_MEMORY_USAGE (Upper Bound): "
+		<< static_cast<float>(GENERATING_MEMORY_USAGE) / 100000000.0 << " GB" << std::endl;
+
+	//ChunkManager terrain((32) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -144,6 +173,10 @@ int main() {
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
 	bool update_terrain = true;
+
+	glm::mat4 A{ 1.0f };
+	glm::mat4 B{ 2.0f };
+	glm::mat4 C = (A * glm::transpose(B));
 
 	std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
 	std::chrono::system_clock::time_point b = std::chrono::system_clock::now();

@@ -189,38 +189,6 @@ void MarchingCubes::update_cubes() {
 			}
 			break;
 			case 5:
-				/*glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
-				glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
-
-				{
-					const unsigned int size = verticies_on_side_with_buffer * verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4;
-					GLfloat* pixels = new GLfloat[size];
-					glGetTexImage(GL_TEXTURE_3D, 0, GL_RGBA, GL_FLOAT, pixels);
-					
-					std::cout << "Pos: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
-					std::cout << "Tex: " << LANDSCAPE_DATA << std::endl;
-
-					if (pos.y != -3) {
-						std::cout << "\n\nHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n\n" << std::endl;
-					}
-
-					for (int i = 0; i < size; ++i) {
-						std::cout << pixels[i] << " ";
-						if ((i + 1) % 4 == 0) {
-							std::cout << "| ";
-						}
-						if ((i + 1) % (verticies_on_side_with_buffer * 4) == 0) {
-							std::cout << std::endl;
-						}
-						if ((i + 1) % (verticies_on_side_with_buffer * verticies_on_side_with_buffer * 4) == 0) {
-							std::cout << std::endl;
-						}
-					}
-					std::cout << "\n================\n" << std::endl;
-
-					delete[] pixels;
-				}
-				glBindTexture(GL_TEXTURE_3D, 0);*/
 			break;
 			case 6:
 				std::cout << "Something went wrong" << std::endl;
