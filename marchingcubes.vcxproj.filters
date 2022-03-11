@@ -64,6 +64,9 @@
     <Filter Include="Source Files\Rendering\Shading">
       <UniqueIdentifier>{9c85d0e5-5cb6-4450-bddd-b34fd24936c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\openGL Wrappers">
+      <UniqueIdentifier>{3034ca41-ce12-41b4-87c3-543675a2d675}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="opengltutorial.cpp">
@@ -120,10 +123,13 @@
     <ClCompile Include="CoordinateSystem.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
+    <ClCompile Include="Binding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Binding.cpp">
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\openGL Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -191,6 +197,9 @@
     <ClInclude Include="Binding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="drawTexture.comp">
@@ -211,5 +220,16 @@
     <None Include="genIndices.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
     </None>
+    <None Include="lightingCalculator.comp">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="settings.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="controls.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

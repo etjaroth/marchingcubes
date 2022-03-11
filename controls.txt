@@ -1,0 +1,19 @@
+GLFW_KEY_ESCAPE press quit
+GLFW_KEY_R press resetPos
+GLFW_KEY_F press resetViewDir
+
+GLFW_KEY_1 press toggleMeshView slow
+GLFW_KEY_2 press toggleTerrainUpdates slow
+
+GLFW_KEY_W press moveNorth
+GLFW_KEY_A press moveWest
+GLFW_KEY_S press moveSouth
+GLFW_KEY_D press moveEast
+GLFW_KEY_Q press moveUp
+GLFW_KEY_E press moveDown
+
+MouseRotatesCamera: false
+GLFW_KEY_I press rotateCameraNorth
+GLFW_KEY_J press rotateCameraWest
+GLFW_KEY_K press rotateCameraSouth
+GLFW_KEY_L press rotateCameraEast

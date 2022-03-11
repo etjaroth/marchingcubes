@@ -4,10 +4,14 @@
 #include <set>
 #include <sstream>
 
-unsigned int MarchingCubes::task_queue[6] = { 0, 0, 0, 0, 0, 0 };
-unsigned int MarchingCubes::task_queue_max[6] = { UINT_MAX, UINT_MAX, UINT_MAX, 4, 4, UINT_MAX };
-// start, heightmap, scalar field, indicies, verticies, done
-// 0      1          2             3         4          5
+unsigned int MarchingCubes::task_queue[static_cast<int>(MarchingCubes::RenderingStages::size)] = {}; // 0 initilize
+unsigned int MarchingCubes::task_queue_max[static_cast<int>(MarchingCubes::RenderingStages::size)] = { UINT_MAX, UINT_MAX, UINT_MAX, 4, 4, 4, UINT_MAX };
+// start, heightmap, scalar field, lighting, indicies, verticies, done
+// 0      1          2             3         4          5         6
+//unsigned int MarchingCubes::task_queue[7] = { 0, 0, 0, 0, 0, 0, 0 };
+//unsigned int MarchingCubes::task_queue_max[7] = { UINT_MAX, UINT_MAX, UINT_MAX, 4, 4, 4, UINT_MAX };
+// start, heightmap, scalar field, lighting, indicies, verticies, done
+// 0      1          2             3         4         5          6
 
 const int buffer = 2; // needs to be the same as buffer in ChunkManager.cpp and as int(2*overlap) in genHeightmap, and drawTexture
 
@@ -65,11 +69,12 @@ void gl_print_errors() {
 	}
 }
 
-MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
-	task_queue[current_step] += 1;
+MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, ComputeShader* lightingCalculatorPtr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
+	task_queue[static_cast<int>(current_step)] += 1;
 
 	heightmap_generator = heightmap_generator_ptr;
 	fillGenerator = fill_generator_ptr;
+	lightingCalculator = lightingCalculatorPtr;
 	gen_edges = gen_indices_ptr;
 	gen_verticies = gen_verticies_ptr;
 
@@ -127,7 +132,7 @@ MarchingCubes::~MarchingCubes() {
 	}
 
 	if (!waiting) {
-		task_queue[current_step] -= 1;
+		task_queue[static_cast<int>(current_step)] -= 1;
 	}
 
 	free_fence();
@@ -135,31 +140,33 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::update_cubes() {
 	bool task_complete = fence_is_done();
-	if (current_step >= 2) {
-		//std::cout << "Update: " << waiting << " " << current_step << " " << task_queue[current_step] << " " << task_complete << std::endl;
-	}
 	if (waiting) {
-		if (task_queue_max[current_step] == UINT_MAX || task_queue[current_step] < task_queue_max[current_step]) {
+		if (task_queue_max[static_cast<int>(current_step)] == UINT_MAX || 
+			task_queue[static_cast<int>(current_step)] < task_queue_max[static_cast<int>(current_step)]) {
 			set_fence();
-			task_queue[current_step] += 1;
+			task_queue[static_cast<int>(current_step)] += 1;
 			waiting = false;
 
 			switch (current_step) {
-			case 0:
+			case RenderingStages::start:
 				// Should never happen since current_step starts at 0 and we just added 1
 				break;
-			case 1:
+			case RenderingStages::genHeightmap:
 				generate_heightmap();
 				break;
-			case 2:
+			case RenderingStages::genField:
 				generate_terrain_fills();
 				break;
-			case 3:
+			case RenderingStages::genLighting:
+				calculateLighting();
+				break;
+			case RenderingStages::genIndicies:
 				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
 				HEIGHTMAP = 0;
 				generate_indices();
 				break;
-			case 4:
+//			case 5:
+			case RenderingStages::genVerticies:
 			{
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
 				GLuint data[5] = { 1, 1, 0, 0, 5 };
@@ -179,18 +186,18 @@ void MarchingCubes::update_cubes() {
 					VERTEX_SSBO = 0;
 					VAO = 0;
 
-					task_queue[current_step] -= 1;
-					current_step = 6;
-
+					task_queue[static_cast<int>(current_step)] -= 1;
+					current_step = RenderingStages::done;
 				}
 				else {
 					generate_verticies();
 				}
 			}
 			break;
-			case 5:
+//			case 6:
+			case RenderingStages::done:
 			break;
-			case 6:
+			case RenderingStages::size:
 				std::cout << "Something went wrong" << std::endl;
 				break;
 			}
@@ -202,7 +209,7 @@ void MarchingCubes::update_cubes() {
 	}
 	else {
 		if (task_complete) {
-			task_queue[current_step] -= 1;
+			task_queue[static_cast<int>(current_step)] -= 1;
 			++current_step;
 			waiting = true;
 			free_fence();
@@ -269,6 +276,17 @@ void MarchingCubes::generate_terrain_fills() {
 	fillGenerator->setVec3("offset", glm::vec3(pos));
 	fillGenerator->fillTexture(LANDSCAPE_DATA);
 	fillGenerator->dontuse();
+}
+
+void MarchingCubes::calculateLighting() {
+	// Scalar Field
+	glActiveTexture(GL_TEXTURE0 + LANDSCAPE_DATA_UNIT);
+	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
+	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	lightingCalculator->use();
+	lightingCalculator->fillTexture(LANDSCAPE_DATA);
+	lightingCalculator->dontuse();
 }
 
 void MarchingCubes::generate_indices() {
@@ -353,7 +371,8 @@ void MarchingCubes::renderCubes(Shader* shader) {
 
 	gl_print_errors();
 
-	if (current_step == 5) {
+//	if (current_step == 6) {
+	if (current_step == RenderingStages::done) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
 		glBindVertexArray(VAO);
@@ -402,7 +421,7 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	}
-	else if (current_step != 6) {
+	else if (current_step != RenderingStages::done) {
 		update_cubes();
 	}
 };
@@ -446,7 +465,7 @@ void MarchingCubes::free_fence() {
 void MarchingCubes::print_task() {
 	return;
 
-	std::cout << current_step << " ";
+	//std::cout << current_step << " ";
 	//return;
 	//switch (current_step) {
 	//case 0:

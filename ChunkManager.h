@@ -19,6 +19,7 @@ class ChunkManager
 	GLuint VAO;
 	Heightmap heightmap_generator;
 	ComputeShader fill_generator;
+	ComputeShader lightingCalculator;
 	SSBOComputeShader gen_indicies;
 	SSBOComputeShader gen_verticies;
 

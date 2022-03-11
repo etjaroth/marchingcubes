@@ -8,6 +8,7 @@ out vec4 FragColor;
 //in vec2 TexCoord;
 flat in vec3 normal;
 in vec3 FragPos;
+in float lightingConstant;
 
 // Material
 in vec3 Ambient;
@@ -91,12 +92,14 @@ void main()
     vec3 lightDir;
     vec3 result = vec3(0.0);
     
-    for(int i = 0; i < NUM_POINTLIGHTS; i++)
-  	    result += calculatePointLight(pointLights[i]);
-    for(int i = 0; i < NUM_DIRECTIONALLIGHTS; i++)
-  	    result += calculateDirectionalLight(dirLights[i]);
-    for(int i = 0; i < NUM_SPOTLIGHTS; i++)
-  	    result += calculateSpotlight(spotlights[i]);
+//    for(int i = 0; i < NUM_POINTLIGHTS; i++)
+//  	    result += calculatePointLight(pointLights[i]);
+//    for(int i = 0; i < NUM_DIRECTIONALLIGHTS; i++)
+//  	    result += calculateDirectionalLight(dirLights[i]);
+//    for(int i = 0; i < NUM_SPOTLIGHTS; i++)
+//  	    result += calculateSpotlight(spotlights[i]);
+
+    result = calculateLighting(vec3(0.0, 1.0, 0.0), lightingConstant, Ambient, Diffuse, Specular);
 
     //FragColor = vec4(result, Color.w);
     FragColor = vec4(result, 1.0);

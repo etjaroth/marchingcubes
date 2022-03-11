@@ -7,21 +7,22 @@ ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const 
 	gen_verticies("genVerticies.comp"),
 	gen_indicies("genIndices.comp"),
 	heightmap_generator(chunk_sz + buffer, heightmap_shader),
-	fill_generator(fill_shader, chunk_sz + buffer, chunk_sz + buffer, chunk_sz + buffer) {
+	fill_generator(fill_shader, chunk_sz + buffer, chunk_sz + buffer, chunk_sz + buffer),
+	lightingCalculator("lightingCalculator.comp", chunk_sz + buffer, 1, chunk_sz + buffer) {
 
-	chunk_size = chunk_sz;
-	set_pos(orgin);
-	radius = r;
+		chunk_size = chunk_sz;
+		set_pos(orgin);
+		radius = r;
 
-	// To be depricated
-	fill_generator.use();
-	fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
-	fill_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
-	fill_generator.setuInt("biome_type_A", 0);
-	fill_generator.setuInt("biome_type_B", 0);
-	fill_generator.dontuse();
+		// To be depricated
+		fill_generator.use();
+		fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
+		fill_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
+		fill_generator.setuInt("biome_type_A", 0);
+		fill_generator.setuInt("biome_type_B", 0);
+		fill_generator.dontuse();
 
-	update_chunks();
+		update_chunks();
 }
 
 // get sign of number
@@ -68,7 +69,7 @@ void ChunkManager::render(Shader* shader) {
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
 	std::sort(chunk_list.begin(), chunk_list.end(),
-		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a, 
+		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a,
 			const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& b) -> bool
 		{
 			/*const glm::vec3 va = (float)(this->chunk_size) * glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
@@ -83,8 +84,8 @@ void ChunkManager::render(Shader* shader) {
 			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
 			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
 
-			float arrA[3] = {fa.x, fa.z, fa.y};
-			float arrB[3] = {fb.x, fb.z, fb.y};
+			float arrA[3] = { fa.x, fa.z, fa.y };
+			float arrB[3] = { fb.x, fb.z, fb.y };
 
 			if (arrA[0] < arrB[0]) {
 				return true;
@@ -112,8 +113,8 @@ void ChunkManager::render(Shader* shader) {
 
 
 	for (std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
-		
-		
+
+
 		// Check if chunk is visable
 		bool corner_visable = false;
 		float angle = 0.0f;
@@ -183,7 +184,7 @@ void ChunkManager::update_chunks() {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
 					chunk_map.insert(std::pair<triple<int>,
 						std::shared_ptr<MarchingCubes>>(point,
-							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &gen_indicies, &gen_verticies)));
+							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &lightingCalculator, &gen_indicies, &gen_verticies)));
 				}
 			}
 		}
@@ -201,5 +202,4 @@ void ChunkManager::update_chunks() {
 			chunk = chunk_map.erase(chunk);
 		}
 	}
-
 }

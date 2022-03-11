@@ -18,6 +18,8 @@
 #include "MarchingCubes.h"
 #include "ChunkManager.h"
 
+#include "Settings.h"
+
 // FPS control
 #include "Stopwatch.h"
 #include <chrono>
@@ -25,18 +27,13 @@
 
 #include "Binding.h"
 
-// Display
-unsigned int screenx = 800;
-unsigned int screeny = 600;
+// Settings
+Settings settings{};
 
-float cameraSpeed = 20.0f;
-
-//glm::vec3 cam_spawn = glm::vec3(-1030.0f, -75.0f, 1000.0f);
-//glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, -26.0f);
-glm::vec3 cam_spawn = glm::vec3(0.0f, 0.0, 0.0f);
-
-FPSCamera camera(cam_spawn, glm::vec3(0.0f, 0.0f, -1.0f), cameraSpeed);
-//unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip);
+// Camera
+FPSCamera camera(settings.getConstants().spawnpoint,
+	settings.getConstants().spawnViewDir,
+	settings.getConstants().cameraSpeed);
 
 // Callbacks
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -44,7 +41,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void error_callback(int error, const char* description);
 
 int main() {
-
 	// Setup
 		// GLFW Initilisation
 	glfwInit();
@@ -55,8 +51,16 @@ int main() {
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+
 	// Window Creation
-	GLFWwindow* window = glfwCreateWindow(screenx, screeny, "openGL Tutorial", NULL, NULL); // Make window
+	GLFWwindow* window = 
+		glfwCreateWindow(settings.getConstants().screenSize.x, 
+			settings.getConstants().screenSize.y, "Marching Cubes Demo", NULL, NULL); // Make window
+	settings.loadControls(window);
+
+
+
+
 	if (window == NULL) // Window failed
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -67,8 +71,7 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // Resize the window with framebuffer_size_callback()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetErrorCallback(error_callback);
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+	
 	// Initilize GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -78,35 +81,36 @@ int main() {
 	}
 
 	// Declare window size and GL settings
-	glViewport(0, 0, screenx, screeny);
+	glViewport(0, 0, settings.getConstants().screenSize.x, settings.getConstants().screenSize.y);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND); // Transparencey isn't perfect
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 
+
+
 	// Generate terrain
-	const unsigned int chunkSize = 16; // should be a power of 2
-	const unsigned int chunkRadius = 3;
-	const unsigned int chunkCubeLength = 2 * chunkRadius + 1;
+	const unsigned long long chunkSize = settings.getConstants().chunkSize; // should be a power of 2
+	const unsigned long long chunkRadius = settings.getConstants().chunkRadius;
+	const unsigned long long chunkCubeLength = 2 * chunkRadius + 1;
 
-	const unsigned int renderDistance = chunkSize * (chunkRadius + 1);
+	const unsigned long long renderDistance = chunkSize * (chunkRadius + 1);
 
-	const unsigned int VERTEX_SSBO_SIZE = 4 * sizeof(float) * 3 * (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 12; // 12 edges per cube
-	const unsigned int HEIGHTMAP_SIZE = sizeof(float) * (chunkSize + 2); // 12 edges per cube
-	const unsigned int LANDSCAPE_SIZE = sizeof(float) * (chunkSize + 1) * (chunkSize + 1) * (chunkSize + 1); // 12 edges per cube
-	const unsigned int INDIRECT_SSBO_SIZE = 5 * sizeof(GLuint); // 12 edges per cube
-	const unsigned int EBO_SIZE = (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 15 * sizeof(GLuint); // 12 edges per cube
+	const unsigned long long VERTEX_SSBO_SIZE = 4 * sizeof(float) * 3 * (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 12; // 12 edges per cube
+	const unsigned long long HEIGHTMAP_SIZE = sizeof(float) * (chunkSize + 2); // 12 edges per cube
+	const unsigned long long LANDSCAPE_SIZE = sizeof(float) * (chunkSize + 1) * (chunkSize + 1) * (chunkSize + 1); // 12 edges per cube
+	const unsigned long long INDIRECT_SSBO_SIZE = 5 * sizeof(GLuint); // 12 edges per cube
+	const unsigned long long EBO_SIZE = (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 15 * sizeof(GLuint); // 12 edges per cube
 	
-	const unsigned int VERTEX_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * VERTEX_SSBO_SIZE;
-	const unsigned int HEIGHTMAP_MEMORY = chunkCubeLength * chunkCubeLength * HEIGHTMAP_SIZE;
-	const unsigned int LANDSCAPE_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
-	const unsigned int INDIRECT_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
-	const unsigned int EBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * EBO_SIZE;
+	const unsigned long long VERTEX_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * VERTEX_SSBO_SIZE;
+	const unsigned long long HEIGHTMAP_MEMORY = chunkCubeLength * chunkCubeLength * HEIGHTMAP_SIZE;
+	const unsigned long long LANDSCAPE_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
+	const unsigned long long INDIRECT_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
+	const unsigned long long EBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * EBO_SIZE;
 
-	const unsigned int FINAL_MEMORY_USAGE = VERTEX_SSBO_MEMORY + HEIGHTMAP_MEMORY;
-	const unsigned int GENERATING_MEMORY_USAGE = FINAL_MEMORY_USAGE + LANDSCAPE_MEMORY + INDIRECT_SSBO_MEMORY + EBO_MEMORY;
+	const unsigned long long FINAL_MEMORY_USAGE = VERTEX_SSBO_MEMORY + HEIGHTMAP_MEMORY;
+	const unsigned long long GENERATING_MEMORY_USAGE = FINAL_MEMORY_USAGE + LANDSCAPE_MEMORY + INDIRECT_SSBO_MEMORY + EBO_MEMORY;
 
 	ChunkManager terrain(chunkSize + 1 - 2, glm::vec3(0.0f), chunkRadius, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << "Expected memory usage:\n    FINAL_MEMORY_USAGE (Upper Bound): "
@@ -118,12 +122,9 @@ int main() {
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
-	Shader lightingShader("VertexShader.vert", "lightingShader.frag");
 
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 	// Load Shaders
 		// Normal Shader
-	//Shader objectShader("VertexShader.vert", "FragmentShader.frag");
 	objectShader.use();
 	objectShader.setInt("texture1", 0);
 	objectShader.setInt("texture2", 1);
@@ -133,37 +134,13 @@ int main() {
 	// Load texture
 	objectShader.use();
 	glm::mat4 texturetransformmat(1.0f);
+	objectShader.setMat4("model", glm::mat4(1.0f));
 
 	// Misc.
 	unsigned int transformLoc = glGetUniformLocation(objectShader.shaderProgram, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(texturetransformmat));
 
-	//////////////////////////////////////////////////////////////////////
-
-		// Lighting
-
-	//Light sun = Light();
-	//sun.setPos(camera.getPos());
-	//sun.setBrightness(0.9f);
-	//sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
-	//sun.useAsDirectionalLight(objectShader, 0);
-	Light sun = Light();
-	glm::vec3 light_dir = glm::vec3((float)cos(glfwGetTime() * 1), -1.0f, (float)sin(glfwGetTime() * 1));
-	sun.setPos(camera.getPos());
-	sun.setDir(light_dir);
-	sun.setBrightness(1.2f);
-	sun.setLighting(glm::vec3(0.5f), glm::vec3(0.75f), glm::vec3(1.0f));
-	sun.useAsDirectionalLight(objectShader, 0);
-
-	// filler lights (need at least 1 spotlight and 1 point light)
-	sun.setBrightness(0.0f);
-	sun.setAngle(glm::radians(30.0f));
-	sun.setPointLightFade(1.0f, 0.09f, 0.032f);
-	sun.useAsPointLight(objectShader, 0);
-	sun.useAsSpotlight(objectShader, 0);
-
-	objectShader.setVec3("viewPos", camera.getPos());
-	objectShader.setMat4("model", glm::mat4(1.0f));
+	
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -172,7 +149,7 @@ int main() {
 	Stopwatch fpsCounter = Stopwatch();
 	double oldtime = 0.0f;
 	double deltatime = 0.0f;
-	bool update_terrain = true;
+
 
 	glm::mat4 A{ 1.0f };
 	glm::mat4 B{ 2.0f };
@@ -181,6 +158,11 @@ int main() {
 	std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
 	std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 	const double framerateFrequency = 500 / 60.0;
+
+	// Toggles
+	bool meshViewToggle = true;
+	bool updateTerrain = true;
+
 	while (!should_close) // Loop
 	{
 		// Limit framerate
@@ -197,17 +179,9 @@ int main() {
 
 		b = std::chrono::system_clock::now();
 		std::chrono::duration<double, std::milli> sleep_time = b - a;
-
-		// Lighting
-		const double nowtime = glfwGetTime();
-		const glm::vec3 light_dir((float)cos(nowtime * 1.1), -1.0f, (float)sin(nowtime * 1.1));
-		sun.setDir(light_dir);
-		
-
 		
 		// Clear window
-		glClearColor(0.0f, 0.3f, 0.3f, 1.0f); // RGBA, f makes the literal a float instead of a double
-		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA, f makes the literal a float instead of a double
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//////////////////////////////////////////////////////////////////////
@@ -216,44 +190,48 @@ int main() {
 		
 		// Keyboard
 				// Misc Important
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) // exit on escape
-			glfwSetWindowShouldClose(window, true);
-		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-			camera = FPSCamera(cam_spawn, glm::vec3(0, 0, -1.0f), cameraSpeed);
-		if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-			camera = FPSCamera(camera.getPos(), glm::vec3(0, 0, -1.0f), cameraSpeed);
-		// Misc Unimportant
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-			update_terrain = true;
-		if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
-			update_terrain = false;
-		// Fps Movement
+		settings.readInput(window);
 
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		if (settings.getActions().quit) // exit on escape
+			glfwSetWindowShouldClose(window, true);
+		if (settings.getActions().resetPos)
+			camera = FPSCamera(settings.getConstants().spawnpoint, settings.getConstants().spawnViewDir, settings.getConstants().cameraSpeed);
+		if (settings.getActions().resetViewDir)
+			camera = FPSCamera(camera.getPos(), glm::vec3(0, 0, -1.0f), settings.getConstants().cameraSpeed);
+		// Misc Unimportant
+		if (settings.getActions().toggleMeshView) {
+			if (meshViewToggle) {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+			else {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			}
+			meshViewToggle = !meshViewToggle;
+		}
+		if (settings.getActions().toggleTerrainUpdates)
+			updateTerrain = !updateTerrain;
+		// Fps Movement
+		if (settings.getActions().moveNorth)
 			camera.pan(glm::vec3(0.0f, 0.0f, -deltatime)); // z
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		if (settings.getActions().moveSouth)
 			camera.pan(glm::vec3(0.0f, 0.0f, deltatime)); // z
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		if (settings.getActions().moveWest)
 			camera.pan(glm::vec3(-deltatime, 0.0f, 0.0f)); // x
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		if (settings.getActions().moveEast)
 			camera.pan(glm::vec3(deltatime, 0.0f, 0.0f)); // x
-		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		if (settings.getActions().moveUp)
 			camera.pan(glm::vec3(0.0f, -deltatime, 0.0f)); // yaw
-		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		if (settings.getActions().moveDown)
 			camera.pan(glm::vec3(0.0f, deltatime, 0.0f)); // yaw
 				// Fly Movement
 			// Rotation
-		if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+		if (settings.getActions().rotateCameraNorth)
 			camera.rotate((float)(-deltatime), 0.0f, 0.0f);
-		if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+		if (settings.getActions().rotateCameraSouth)
 			camera.rotate((float)deltatime, 0.0f, 0.0f);
-		if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+		if (settings.getActions().rotateCameraWest)
 			camera.rotate(0.0f, (float)(-deltatime), 0.0f);
-		if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+		if (settings.getActions().rotateCameraEast)
 			camera.rotate(0.0f, (float)deltatime, 0.0f);
 
 		//////////////////////////////////////////////////////////////////////
@@ -262,27 +240,23 @@ int main() {
 		// Perspective
 		objectShader.use();
 		objectShader.setFloat("wavetime", 2.0f * (float)glfwGetTime());
+		objectShader.setVec3("viewPos", -camera.getPos());
 
 		// View Matrix (Camera) (World -> View)
 		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
 		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader
 		// Projection Matrix
 		glm::mat4 projection = glm::mat4(1.0f); // Projection Matrix (View -> Clip)
-		if (((float)screenx / (float)screeny) < 1) { std::cout << "Perspective might be disorted" << std::endl; }
-		projection = glm::perspective(glm::radians(45.0f), std::max(((float)screenx / (float)screeny), 1.0f), 0.1f, 100.0f);
-		//projection = glm::ortho(glm::radians(45.0f), (float)screenx / (float)screeny, 0.1f, 100.0f);
+		if ((static_cast<float>(settings.getConstants().screenSize.x) / 
+			static_cast<float>(settings.getConstants().screenSize.y) < 1))
+		{ std::cout << "Perspective might be disorted" << std::endl; }
+		projection = glm::perspective(glm::radians(45.0f), std::max(((float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y), 1.0f), 0.1f, 100.0f);
+		//projection = glm::ortho(glm::radians(45.0f), (float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y, 0.1f, 100.0f);
 		objectShader.setMat4("projection", projection);
-
-		// Pass to lighting shader
-		lightingShader.use();
-		int lightingprojLoc = glGetUniformLocation(lightingShader.shaderProgram, "projection"); // Find shader
-		glUniformMatrix4fv(lightingprojLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		camera.setViewLoc(glGetUniformLocation(lightingShader.shaderProgram, "view"));
-		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader (shatters cube)
 
 		///////////////////////////////////////////////////////////////////////
 
-		if (update_terrain) {
+		if (updateTerrain) {
 			terrain.set_pos(-camera.getPos());
 		}
 		terrain.set_direction(camera.getDirection());
@@ -299,6 +273,7 @@ int main() {
 		///////////////////////////////////////////////////////////////////////
 		// Measure fps
 		frameCount++;
+
 		// If a second has passed.
 		if (fpsCounter.get_time() >= 1.0)
 		{
@@ -316,13 +291,12 @@ int main() {
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) { // Resizes window when needed
-	screenx = width;
-	screeny = height;
+	settings.setScreenSize(glm::uvec2(width, height));
 	glViewport(0, 0, width, height);
 }
 
-double lastmousex = screenx / 2.0;
-double lastmousey = screeny / 2.0;
+double lastmousex = settings.getConstants().screenSize.x / 2.0;
+double lastmousey = settings.getConstants().screenSize.y / 2.0;
 bool firstmousecallback = true;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {

@@ -7,8 +7,7 @@ layout(rgba32f, binding = 0) uniform image3D generated_data;
 struct Vertex {
 	vec4 pos;
 	vec4 normal;
-	vec4 material; // material_index, tex_coords
-	// The doccumentation warns against using vec3s
+	vec4 material; // material_index, tex_coords, lighting level
 };
 
 const uint sizeofVec4 = 4 * 4;
@@ -26,6 +25,24 @@ uniform float minFill = 0.0;
 uniform ivec3 chunk_size;
 
 const float isolevel = 0.0;
+
+float floatinterpolate(float v1, float f1, float v2, float f2) {
+	// Code adapted from paulbourke.net/geometry/polygonise/
+	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
+		return v1;
+	}
+	else if (abs(isolevel - f2) < 0.00001) {
+		return v2;
+	}
+	else if (abs(f1-f2) < 0.00001) {
+      return v1;
+	}
+
+	float mu = (isolevel - f1)/(f2-f1);
+
+	return v1 + mu * (v2 - v1);
+}
+
 vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 	// Code adapted from paulbourke.net/geometry/polygonise/
 	if (abs(isolevel - f1) < 0.00001 || abs(f1 - f2) < 0.00001) {
@@ -103,12 +120,7 @@ void main() {
 
 	vertex.material = data_a.x > data_b.y ? vec4(data_a.y, data_a.z, 0.0, 0.0) : vec4(data_b.y, data_b.z, 0.0, 0.0);
 	vertex.material.x = (waterlevel == 1.0) ? 0.0 : vertex.material.x;
-
-	//Output vertex
-	//verticies[idx] = vertex;
-
-	float edge_to_dir[12] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0};
-	// + vec3(gl_GlobalInvocationID.xyz)
+	vertex.material.w = floatinterpolate(data_a.w, data_a.x, data_b.w, data_b.x);
 
 	verticies[verticiesSize * idx + 0].x = vertex.pos.x;
 	verticies[verticiesSize * idx + 0].y = vertex.pos.y;
@@ -124,10 +136,4 @@ void main() {
 	verticies[verticiesSize * idx + 2].y = vertex.material.y;
 	verticies[verticiesSize * idx + 2].z = vertex.material.z;
 	verticies[verticiesSize * idx + 2].w = vertex.material.w;
-
-	// Testing 
-//	verticies[verticiesSize * idx + 2].x = data_a.x;
-//	verticies[verticiesSize * idx + 2].y = data_b.x;
-//	verticies[verticiesSize * idx + 2].z = 1.234;
-//	verticies[verticiesSize * idx + 2].w = 5.6789;
 }

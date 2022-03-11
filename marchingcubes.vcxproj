@@ -164,6 +164,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MinModel.cpp" />
     <ClCompile Include="opengltutorial.cpp" />
+    <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SSBOComputeShader.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="MarchingCubes.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MinModel.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SSBOComputeShader.h" />
     <ClInclude Include="Stopwatch.h" />
@@ -201,7 +203,12 @@
     <None Include="genHeightmap.comp" />
     <None Include="genIndices.comp" />
     <None Include="genVerticies.comp" />
+    <None Include="lightingCalculator.comp" />
     <None Include="VertexShader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="controls.txt" />
+    <Text Include="settings.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

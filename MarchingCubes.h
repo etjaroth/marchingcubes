@@ -17,6 +17,7 @@ private:
 	// Shaders
 	Heightmap* heightmap_generator;
 	ComputeShader* fillGenerator;
+	ComputeShader* lightingCalculator;
 	SSBOComputeShader* gen_edges;
 	SSBOComputeShader* gen_verticies;
 
@@ -47,9 +48,10 @@ private:
 	// start                                                                  0              Infinity    N/A     N/A                                
 	// Generate heightmap                                genHeightmap.comp    1              Infinity    Low?    ETex2 -> Tex2                      
 	// Generate scalar field                             drawTexture.comp     2              Infinity    Low?    ETex3, 1Tex2 -> Tex3               
-	// Mark verticies for generation, output indicies    genIndicies.comp     3              Infinity    Low?    ESSBO, ESSBO, 2Tex3 -> SSBO, SSBO  
-	// Generate verticies                                genVerticies.comp    4              Infinity?   Low?    ESSBO, 3SSBO, 3SSBO -> 3SSBO, 3SSBO
-	// done                                                                   5              Infinity    N/A     N/A                                
+	// Calculate Lighting                                lighting.comp        3              Infinity    High?   2Tex3 -> 2Tex3
+	// Mark verticies for generation, output indicies    genIndicies.comp     4              Infinity    Low?    ESSBO, ESSBO, 2Tex3 -> SSBO, SSBO  
+	// Generate verticies                                genVerticies.comp    5              Infinity?   Low?    ESSBO, 4SSBO, 4SSBO -> 4SSBO, 4SSBO
+	// done                                                                   6              Infinity    N/A     N/A                                
 	//                                                                                                                                              
 	// Pipe Legend:                                                                                                                                 
 	// E...    empty (required to be created for this stage)                                                                                        
@@ -61,10 +63,17 @@ private:
 	// Note: Input is listed in the same order as its stage's output                                                                                
 
 	// Pipeline Variables
-	unsigned int current_step = 0;
+	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, size}; // size should always be last
+	friend RenderingStages& operator++(RenderingStages& stage) {
+		stage = static_cast<RenderingStages>(static_cast<int>(stage) + 1);
+		return stage;
+	}
+
+	RenderingStages current_step = RenderingStages::start;
+
 	bool waiting = false;
-	static unsigned int task_queue[6];
-	static unsigned int task_queue_max[6];
+	static unsigned int task_queue[static_cast<int>(RenderingStages::size)];
+	static unsigned int task_queue_max[static_cast<int>(RenderingStages::size)];
 		// Fence
 	GLsync fence;
 	bool fence_is_active = false;
@@ -73,6 +82,7 @@ private:
 	void update_cubes();
 	void generate_heightmap();
 	void generate_terrain_fills();
+	void calculateLighting();
 	void generate_indices();
 	void generate_verticies();
 		// Fence
@@ -83,12 +93,12 @@ private:
 	void print_task();
 
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr);
+	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, ComputeShader* lightingCalculatorPtr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);
 	glm::vec3 getPos();
 	unsigned int getStep() {
-		return current_step;
+		return static_cast<unsigned int>(current_step);
 	};
 };

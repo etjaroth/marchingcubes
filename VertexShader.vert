@@ -3,7 +3,7 @@
 
 layout (location = 0) in vec4 aPos;
 layout (location = 1) in vec4 aNormal;
-layout (location = 2) in vec4 aMaterial; // x stores material index. Other three store texture coords?
+layout (location = 2) in vec4 aMaterial; // x stores material index. x, z stores texture coords, w stores light level
 
 // Coordinate Matricies
 uniform mat4 model;
@@ -17,6 +17,7 @@ uniform mat4 transform;
 // Output
 flat out vec3 normal;
 out vec3 FragPos;
+out float lightingConstant;
 
 // Material
 out vec3 Ambient;
@@ -28,64 +29,61 @@ out float Shininess;
 uniform float wavetime;
 
 vec3 materials_ambient[] = vec3[](
-                      vec3(0.514,0.843,0.933), // water
+                      vec3(0.15, 0.15, 0.3), // water
 
-                      vec3(0.0, 0.75, 0.0), // grass
-                      vec3(0.478, 0.286, 0.043), // dirt
-                      vec3(0.305, 0.403, 0.494), // stone
+                      vec3(0.1, 0.3, 0.15), // grass
+                      vec3(0.28, 0.21, 0.02), // dirt
+                      vec3(0.3), // stone
 
-                      vec3(0.878, 0.843, 0.693), // top sand
-                      vec3(0.725, 0.654, 0.254), // sand
-                      vec3(0.462, 0.403, 0.074), // packed sand
+                      vec3(0.3, 0.3, 0.0), // top sand
+                      vec3(0.0, 0.0, 0.0), // sand
+                      vec3(0.0, 0.0, 0.0), // packed sand
 
-                      vec3(1.0, 1.0, 1.0), // snow
-                      vec3(0.576, 0.768, 0.784), // permafrost
-                      vec3(0.713, 0.964, 0.964)); // ice
+                      vec3(0.0, 0.0, 0.0), // snow
+                      vec3(0.0, 0.0, 0.0), // permafrost
+                      vec3(0.0, 0.0, 0.0)); // ice
 
 vec3 materials_diffuse[] = vec3[](
-                      vec3(0.514,0.843,0.933), // water
+                      vec3(0.35, 0.8, 0.85), // water
 
-                      vec3(0.0, 0.75, 0.0), // grass
-                      vec3(0.478, 0.286, 0.043), // dirt
-                      vec3(0.305, 0.403, 0.494), // stone
+                      vec3(0.3, 0.8, 0.0), // grass
+                      vec3(0.5, 0.3, 0.1), // dirt
+                      vec3(0.6, 0.6, 0.6), // stone
 
-                      vec3(0.878, 0.843, 0.693), // top sand
-                      vec3(0.725, 0.654, 0.254), // sand
-                      vec3(0.462, 0.403, 0.074), // packed sand
+                      vec3(0.8, 0.8, 0.5), // top sand
+                      vec3(0.0, 0.0, 0.0), // sand
+                      vec3(0.0, 0.0, 0.0), // packed sand
 
-                      vec3(1.0, 1.0, 1.0), // snow
-                      vec3(0.576, 0.768, 0.784), // permafrost
-                      vec3(0.713, 0.964, 0.964)); // ice
+                      vec3(0.0, 0.0, 0.0), // snow
+                      vec3(0.0, 0.0, 0.0), // permafrost
+                      vec3(0.0, 0.0, 0.0)); // ice
 
 vec3 materials_specular[] = vec3[](
-                      vec3(0.514,0.843,0.933), // water
+                      vec3(0.7, 0.8, 0.7), // water
 
-                      vec3(0.0, 0.75, 0.0), // grass
-                      vec3(0.478, 0.286, 0.043), // dirt
-                      vec3(0.305, 0.403, 0.494), // stone
+                      vec3(0.2, 0.5, 0.2), // grass
+                      vec3(0.28, 0.21, 0.02), // dirt
+                      vec3(0.1, 0.1, 0.1), // stone
 
-                      vec3(0.878, 0.843, 0.693), // top sand
-                      vec3(0.725, 0.654, 0.254), // sand
-                      vec3(0.462, 0.403, 0.074), // packed sand
-
+                      vec3(0.9, 0.9, 0.7), // top sand
+                      vec3(1.0, 1.0, 1.0), // sand
+                      vec3(1.0, 1.0, 1.0), // packed sand
+                                 
                       vec3(1.0, 1.0, 1.0), // snow
-                      vec3(0.576, 0.768, 0.784), // permafrost
-                      vec3(0.713, 0.964, 0.964)); // ice
+                      vec3(1.0, 1.0, 1.0), // permafrost
+                      vec3(1.0, 1.0, 1.0)); // ice
 
 float materials_shininess[] = float[](
                       16.0, // water
-
-                      4.0, // grass
-                      4.0, // dirt
-                      4.0, // stone
-
-                      4.0, // top sand
-                      4.0, // sand
-                      4.0, // packed sand
-
-                      4.0, // snow
-                      4.0, // permafrost
-                      4.0); // ice
+                      8.0, // grass
+                      8.0, // dirt
+                      16.0, // stone
+                      32.0, // top sand
+                      32.0, // sand
+                      32.0, // packed sand
+                      32.0, // snow
+                      32.0, // permafrost
+                      32.0); // ice
 
 // Vectors are ordered so that their cross product has a positive y
 const vec3 wave_triangle_verticies[6][2] = {
@@ -104,24 +102,7 @@ const float waveamp = 0.5;
 const float wavespeed = 1.0;
 
 float wave(vec2 v) {
-    return waveamp * 0.5 * (sin(v.x / wavelength + wavespeed * wavetime) + cos(v.y / wavelength + wavespeed * wavetime));
-}
-
-vec2 wave_derivitive(vec2 v) {
-    // wave(v) = f(x, y) = waveamp * 0.5 * (sin(v.x / wavelength + wavespeed * wavetime) + cos(v.y / wavelength + wavespeed * wavetime))
-    // df/dx = (0.5 * waveamp * cos((x / wavelength) + wavetime * wavespeed)) / wavelength
-    // df/dy = - (0.5 * waveamp * cos((y / wavelength) + wavetime * wavespeed)) / wavelength
-
-    const float c = wavetime * wavespeed;
-    return 0.5 * waveamp * vec2(cos((v.x / wavelength) + c), -cos((v.y + wavelength) + c)) / wavelength;
-}
-
-vec3 find_wave_normal(vec2 pos) {
-    
-    vec3 normal;
-
-
-    return normal;
+    return waveamp * 0.5 * (sin(v.x / wavelength + wavespeed * wavetime) + cos(2.0 * v.y / wavelength + wavespeed * wavetime));
 }
 
 vec3 apply_wave(vec3 v) {
@@ -151,7 +132,7 @@ vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 void main()
 {
     vec4 vertex_position = aPos;
-    int material = int(aMaterial.x);
+    const int material = int(aMaterial.x);
 
     normal = aNormal.xyz;
 
@@ -159,24 +140,29 @@ void main()
 
     // Waves
     if (material == 0) {
-        Shininess = 32.0;
-        
-        
         vertex_position.y += wave(vertex_position.xz);
 
         // Recalculate normal
-        const vec3 pos = vertex_position.xyz;
-        const vec2 der = wave_derivitive(vertex_position.xz);
-        vec3 tangent_x = vec3(1.0, der.x, 0.0);
-        vec3 tangent_z = vec3(0.0, der.y, 1.0);
-        normal = -normalize(cross(tangent_x, tangent_z));
+        const vec3 P0 = vertex_position.xyz;
+        const vec3 P1 = P0 + vec3(1.0, 0.0, 0.0);
+        const vec3 P2 = P0 + vec3(0.0, 0.0, 1.0);
+        
+        const vec3 wave0 = apply_wave(P0);
+        const vec3 wave1 = apply_wave(P1);
+        const vec3 wave2 = apply_wave(P2);
+
+        const vec3 cross1 = wave1 - P0;
+        const vec3 cross2 = wave2 - P0;
+        
+        normal = -normalize(cross(cross1, cross2));
     }
     
     //////////////////////////////////////////////////////////////////////////
 
-    Ambient = 0.5 * materials_ambient[material];
+    lightingConstant = aMaterial.w;
+    Ambient = materials_ambient[material];
     Diffuse = materials_diffuse[material];
-    Specular = vec3(0.0);
+    Specular = materials_specular[material];
     Shininess = materials_shininess[material];
 
     //////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,20 @@
+#version 460
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(rgba32f, binding = 0) uniform image3D img;
+
+const float minLightLevel = 0.2;
+
+void main() {
+	ivec3 pixel_coords = ivec3(gl_GlobalInvocationID);
+
+	float lightLevel = 1.0;
+	for (uint y = imageSize(img).y; y >= 0; --y) {
+		const ivec3 pixelCoord = ivec3(pixel_coords.x, y, pixel_coords.z);
+
+		vec4 pixel = imageLoad(img, pixelCoord);
+
+		pixel.w = lightLevel;
+
+		imageStore(img, pixelCoord, pixel);
+	}
+}
