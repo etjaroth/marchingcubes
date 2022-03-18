@@ -16,7 +16,7 @@ class Sky
 public:
 	Sky(glm::uvec2 resolution=glm::uvec2(1024));
 
-	void generateSky(FPSCamera& camera);
+	void generateSky(FPSCamera& camera, double time);
 	void render();
 };
 

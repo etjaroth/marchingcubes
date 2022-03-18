@@ -14,8 +14,12 @@ uniform mat4 projection;
 // Texture
 uniform mat4 transform;
 
+// Brightness
+uniform float brightness;
+
 // Output
 flat out vec3 normal;
+//out vec3 normal;
 out vec3 FragPos;
 out float lightingConstant;
 
@@ -159,7 +163,7 @@ void main()
     
     //////////////////////////////////////////////////////////////////////////
 
-    lightingConstant = aMaterial.w;
+    lightingConstant = brightness * aMaterial.w;
     Ambient = materials_ambient[material];
     Diffuse = materials_diffuse[material];
     Specular = materials_specular[material];

@@ -166,6 +166,9 @@ int main() {
 	unsigned int counter = 0;
 	while (!should_close) // Loop
 	{
+
+		double frameStartTime = glfwGetTime();
+
 		++counter;
 		// Limit framerate
 		a = std::chrono::system_clock::now();
@@ -243,7 +246,7 @@ int main() {
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
 		if (true) {
-			sky.generateSky(camera);
+			sky.generateSky(camera, frameStartTime);
 		}
 		sky.render();
 		glClearDepth(1.0f);
@@ -271,7 +274,7 @@ int main() {
 			terrain.set_pos(-camera.getPos());
 		}
 		terrain.set_direction(camera.getDirection());
-		terrain.render(&objectShader);
+		terrain.render(&objectShader, frameStartTime);
 
 		///////////////////////////////////////////////////////////////////////
 

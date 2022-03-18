@@ -35,6 +35,7 @@ public:
 	void setRotate(float pitch, float yaw, float roll);
 
 	glm::mat4 getCameraRotationMat() const;
+	glm::vec3 getCameraRotationVec() const;
 
 	// Shader
 	glm::mat4 getView();

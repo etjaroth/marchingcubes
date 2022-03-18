@@ -32,6 +32,6 @@ public:
 	void set_pos(glm::vec3 pos);
 	void set_direction(glm::vec3 dir);
 
-	void render(Shader* shader);
+	void render(Shader* shader, double time);
 };
 

@@ -72,7 +72,6 @@ uniform float atmosphereRadius;
 uniform float earthRadius;
 uniform float sunDistanceRatio;
 
-uniform mat4 viewMat;
 uniform mat4 viewMatInverse;
 uniform vec3 cameraDir;
 
@@ -97,8 +96,8 @@ uniform float HEIGHT_MIE; /* and mie */
 uniform float HEIGHT_ABSORPTION; /* at what height the absorption is at it's maximum */
 
 // Quality
-#define PRIMARY_STEPS 1 /* primary steps, affects quality the most */
-#define LIGHT_STEPS 1 /* light steps, how much steps in the light direction are taken */
+#define PRIMARY_STEPS 8 /* primary steps, affects quality the most */
+#define LIGHT_STEPS 4 /* light steps, how much steps in the light direction are taken */
 #define ELEVATION_CONSTANT 0.26 // Keeps the camera above the horizen. Should always be above 0.25
 
 /*
@@ -316,10 +315,6 @@ vec2 ray_sphere_intersect(
     );
 }
 
-vec3 applyCameraRotation(vec3 v) {
-    return normalize((viewMat * vec4(v, 1.0)).xyz);
-}
-
 vec3 applyCameraRotationInverse(vec3 v) {
     return normalize((viewMatInverse * vec4(v, 1.0)).xyz);
 }
@@ -331,10 +326,8 @@ vec3 get_camera_vector(vec2 resolution, vec2 coord) {
 }
 
 vec3 calculateSunPos() {
-	//return sunDistanceRatio * atmosphereRadius * vec3(0.0, sin(time), cos(time));
-	return sunDistanceRatio * atmosphereRadius * vec3(0.0, 1.0, 0.0);
+	return vec3(0.0, sin(-time), cos(-time));
 }
-
 
 void main() {
     
@@ -346,11 +339,12 @@ void main() {
     vec3 camera_position = vec3(0.0, earthRadius + ELEVATION_CONSTANT, 0.0);
     // get the light direction
     //vec3 light_dir = normalize(camera_position - calculateSunPos());
-    vec3 light_dir = normalize(calculateSunPos());
+    vec3 light_dir = calculateSunPos(); // should be normalized
     
     // Add a sun
-    vec4 scene = vec4(vec3(dot(cameraDir, applyCameraRotationInverse(light_dir)) > 0.999998 ? 3.0 : 0.0), 1e12); // w is depth
-    
+    const float theta = dot(camera_vector, light_dir);
+    vec4 scene = vec4(vec3(theta > 0.9998 ? 3.0 : 0.0), 1e12); // w is depth
+
     // the color of this pixel
     vec3 col = vec3(0.0);
     

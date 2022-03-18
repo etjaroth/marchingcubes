@@ -77,6 +77,10 @@ glm::mat4 FPSCamera::getCameraRotationMat() const {
 	return m;
 }
 
+glm::vec3 FPSCamera::getCameraRotationVec() const {
+	return rotationVec;
+}
+
 // Misc.
 glm::mat4 FPSCamera::getView() {
 	return view;
