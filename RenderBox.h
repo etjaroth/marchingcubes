@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "shader.h"
 #include "texture.h"
+#include "FPSCamera.h"
 
 class RenderBox
 {
@@ -33,7 +34,7 @@ public:
 	RenderBox();
 	~RenderBox();
 
-	void render(Texture2D& texture) const;
-	void render(GLuint tex) const;
+	void render(Texture2D& texture, FPSCamera& camera, double time) const;
+	void render(GLuint tex, FPSCamera& camera, double time) const;
 };
 

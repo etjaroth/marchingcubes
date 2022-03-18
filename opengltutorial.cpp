@@ -164,10 +164,13 @@ int main() {
 	glEnable(GL_CULL_FACE);
 
 	unsigned int counter = 0;
+	double originalFrameStartTime = glfwGetTime();
 	while (!should_close) // Loop
 	{
 
-		double frameStartTime = glfwGetTime();
+		double frameStartTime = glfwGetTime() - originalFrameStartTime;
+		frameStartTime *= 2.0;
+		frameStartTime *= 0.0;
 
 		++counter;
 		// Limit framerate
@@ -248,7 +251,7 @@ int main() {
 		if (true) {
 			sky.generateSky(camera, frameStartTime);
 		}
-		sky.render();
+		sky.render(camera, frameStartTime);
 		glClearDepth(1.0f);
 		glEnable(GL_DEPTH_TEST);
 
@@ -274,7 +277,7 @@ int main() {
 			terrain.set_pos(-camera.getPos());
 		}
 		terrain.set_direction(camera.getDirection());
-		terrain.render(&objectShader, frameStartTime);
+		//terrain.render(&objectShader, frameStartTime);
 
 		///////////////////////////////////////////////////////////////////////
 

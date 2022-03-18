@@ -96,9 +96,9 @@ uniform float HEIGHT_MIE; /* and mie */
 uniform float HEIGHT_ABSORPTION; /* at what height the absorption is at it's maximum */
 
 // Quality
-#define PRIMARY_STEPS 8 /* primary steps, affects quality the most */
+#define PRIMARY_STEPS 12 /* primary steps, affects quality the most */
 #define LIGHT_STEPS 4 /* light steps, how much steps in the light direction are taken */
-#define ELEVATION_CONSTANT 0.26 // Keeps the camera above the horizen. Should always be above 0.25
+#define ELEVATION_CONSTANT (10000.0 + 0.26) // Keeps the camera above the horizen. Should always be above 0.25
 
 /*
 Next we'll define the main scattering function.
@@ -342,8 +342,9 @@ void main() {
     vec3 light_dir = calculateSunPos(); // should be normalized
     
     // Add a sun
-    const float theta = dot(camera_vector, light_dir);
-    vec4 scene = vec4(vec3(theta > 0.9998 ? 3.0 : 0.0), 1e12); // w is depth
+    //const float theta = dot(camera_vector, light_dir);
+    vec4 scene = vec4(vec3(0.0), 1e12); // w is depth
+    //vec4 scene = vec4(vec3(theta > 0.9998 ? 3.0 : 0.0), 1e12); // w is depth
 
     // the color of this pixel
     vec3 col = vec3(0.0);

@@ -26,6 +26,7 @@ Sky::Sky(glm::uvec2 resolution)
 	skyGenerator{ "SkyGenerator.comp", resolution.x, resolution.y, 1 },
 	resolution{ resolution } {
 
+	//skyTexture.setWrap(GL_CLAMP_TO_EDGE);
 	skyTexture.setWrap(GL_REPEAT);
 	skyTexture.setFilters(GL_LINEAR);
 
@@ -58,22 +59,18 @@ Sky::Sky(glm::uvec2 resolution)
 }
 
 void Sky::generateSky(FPSCamera& camera, double time) {
+
+	if (glm::sin(time) < 0.0) {
+		return; // nighttime
+	}
+
 	skyGenerator.use();
 	skyTexture.use();
 
-	time = 0.125 * time;
+	time = 0.25 * time;
 	skyGenerator.setFloat("time", time);
 
 	glm::vec3 rotationVec = camera.getCameraRotationVec();
-	rotationVec.x -= static_cast<float>(glm::radians(30.0f))
-		+ glm::asin(-std::min((camera.getPos().y + 0.26f) / 100.0f, 0.0f));
-	//rotationVec.x -= 0.5 + glm::sin(-std::min(camera.getPos().y / 100.0f, 0.0f));
-	if (rotationVec.x > glm::radians(89.9f)) {
-		rotationVec.x = glm::radians(89.9f);
-	}
-	if (rotationVec.x < glm::radians(-89.9f)) {
-		rotationVec.x = glm::radians(-89.9f);
-	}
 
 	glm::mat4 m(1.0f);
 	m = glm::rotate(m, rotationVec.x, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -83,9 +80,6 @@ void Sky::generateSky(FPSCamera& camera, double time) {
 	m = glm::translate(m, glm::vec3(0.0f, 0.26, 0.0f)); // 0.26 is from #define ELEVATION_CONSTANT 0.26
 
 	skyGenerator.setMat4("viewMatInverse", glm::inverse(m));
-	glm::vec4 g = m * glm::vec4(0.1f, 0.0f, 0.9f, 1.0f);
-	glm::vec4 h = m * glm::vec4(0.0f, 1.0f, 0.9f, 1.0f);
-	glm::vec4 i = m * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 	
 	skyGenerator.fillTexture();
 	skyGenerator.waitUntilDone();
@@ -94,6 +88,6 @@ void Sky::generateSky(FPSCamera& camera, double time) {
 	skyGenerator.dontuse();
 }
 
-void Sky::render() {
-	box.render(skyTexture);
+void Sky::render(FPSCamera& camera, double time) {
+	box.render(skyTexture, camera, 2.0 * 0.25 * time);
 }
