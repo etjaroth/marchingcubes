@@ -63,7 +63,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader) {
-	//std::cout << "[" << std::endl;
+	shader->setFloat("wavetime", 2.0f * (float)glfwGetTime());
 
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 

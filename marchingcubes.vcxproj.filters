@@ -123,14 +123,20 @@
     <ClCompile Include="CoordinateSystem.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
-    <ClCompile Include="Binding.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\openGL Wrappers</Filter>
     </ClCompile>
+    <ClCompile Include="RenderBox.cpp">
+      <Filter>Source Files\openGL Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Sky.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessingStage.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
     <ClCompile Include="Settings.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Misc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -159,9 +165,6 @@
       <Filter>Header Files\Rendering\Cameras</Filter>
     </ClInclude>
     <ClInclude Include="camera.h">
-      <Filter>Header Files\Rendering\Cameras</Filter>
-    </ClInclude>
-    <ClInclude Include="FPSCamera.h">
       <Filter>Header Files\Rendering\Cameras</Filter>
     </ClInclude>
     <ClInclude Include="ComputeShader.h">
@@ -200,19 +203,25 @@
     <ClInclude Include="Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Sky.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessingStage.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="FPSCamera.h">
+      <Filter>Header Files\Rendering\Cameras</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="drawTexture.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
     </None>
-    <None Include="VertexShader.vert">
-      <Filter>Source Files\Rendering\Shaders</Filter>
-    </None>
     <None Include="genVerticies.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
-    </None>
-    <None Include="FragmentShader.frag">
-      <Filter>Source Files\Rendering\Shaders</Filter>
     </None>
     <None Include="genHeightmap.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
@@ -222,6 +231,21 @@
     </None>
     <None Include="lightingCalculator.comp">
       <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+    <None Include="FragmentShader.frag">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+    <None Include="VertexShader.vert">
+      <Filter>Source Files\Rendering\Shaders\Marching Cubes</Filter>
+    </None>
+    <None Include="RenderBoxVertexShader.vert">
+      <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+    <None Include="RenderBoxFragmentShader.frag">
+      <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+    <None Include="SkyGenerator.comp">
+      <Filter>Source Files\Rendering\Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

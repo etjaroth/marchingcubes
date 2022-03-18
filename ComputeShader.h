@@ -17,9 +17,11 @@ public:
 	void dontuse() const;
 
     // 
-    void fillTexture(GLuint tex);
+    void fillTexture();
     GLuint generateTexture_3D(bool fill);
 	void printInfo();
+
+    void waitUntilDone();
 
     // Pass info to shaders
     void setBool(const std::string& name, bool value) const;
@@ -28,6 +30,8 @@ public:
     void setFloat(const std::string& name, float value) const;
     void setVec2(const std::string& name, const glm::vec2& value) const;
     void setVec2(const std::string& name, float x, float y) const;
+    void setUvec2(const std::string& name, const glm::uvec2& value) const;
+    void setUvec2(const std::string& name, unsigned int x, unsigned int y) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
     void setVec3(const std::string& name, float x, float y, float z) const;
     void setVec4(const std::string& name, const glm::vec4& value) const;

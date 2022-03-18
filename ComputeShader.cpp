@@ -74,20 +74,17 @@ void ComputeShader::dontuse() const {
 	glBindVertexArray(0);
 }
 
-void ComputeShader::fillTexture(GLuint tex) {
+void ComputeShader::fillTexture() {
 	use();
 
 	glDispatchCompute((GLuint)tex_x, (GLuint)tex_y, (GLuint)tex_z);
 
-	// make sure writing to image has finished before read
-	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	dontuse();
 };
 
 GLuint ComputeShader::generateTexture_3D(bool fill) {
 	GLuint tex_output;
 	glGenTextures(1, &tex_output);
-	//glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, tex_output);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -97,7 +94,7 @@ GLuint ComputeShader::generateTexture_3D(bool fill) {
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, tex_x, tex_y, tex_z, 0, GL_RGBA, GL_FLOAT, NULL);
 	glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	if (fill) {
-		fillTexture(tex_output);
+		fillTexture();
 	}
 	return tex_output;
 }
@@ -121,6 +118,12 @@ void ComputeShader::printInfo() {
 	int work_grp_inv;
 	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_grp_inv);
 	printf("max local work group invocations %i\n", work_grp_inv);
+}
+
+void ComputeShader::waitUntilDone() {
+	use();
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+	dontuse();
 }
 
 // utility uniform functions
@@ -152,6 +155,15 @@ void ComputeShader::setVec2(const std::string& name, const glm::vec2& value) con
 void ComputeShader::setVec2(const std::string& name, float x, float y) const
 {
 	glUniform2f(glGetUniformLocation(shader_program, name.c_str()), x, y);
+}
+// ------------------------------------------------------------------------
+void ComputeShader::setUvec2(const std::string& name, const glm::uvec2& value) const
+{
+	glUniform2uiv(glGetUniformLocation(shader_program, name.c_str()), 1, &value[0]);
+}
+void ComputeShader::setUvec2(const std::string& name, unsigned int x, unsigned int y) const
+{
+	glUniform2ui(glGetUniformLocation(shader_program, name.c_str()), x, y);
 }
 // ------------------------------------------------------------------------
 void ComputeShader::setVec3(const std::string& name, const glm::vec3& value) const

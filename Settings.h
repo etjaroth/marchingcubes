@@ -11,6 +11,7 @@ class Settings
 		chunkRadius,
 		controlConfigFile,
 		freeKey,
+		farClipPlain,
 
 		INVALID_ACTION
 	};
@@ -61,11 +62,17 @@ class Settings
 	struct Constants {
 		glm::uvec2 screenSize = glm::uvec2(100);
 		float cameraSpeed = 0.0f;
+
 		glm::vec3 spawnpoint = glm::vec3(0.0f);
 		glm::vec3 spawnViewDir = glm::vec3(0.0, 0.0, -1.0);
+
 		unsigned int chunkSize = 0;
 		unsigned int chunkRadius = 0;
+
+		float farClipPlain = 100.0f;
+
 		std::string controlConfigFile;
+
 	} constants;
 
 

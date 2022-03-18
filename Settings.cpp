@@ -145,6 +145,10 @@ Settings::SettingAction Settings::convertToSettingAction(std::string str) {
 	else if (str == "controlConfigFile") {
 		return SettingAction::controlConfigFile;
 	}
+	else if (str == "farClipPlain") {
+		return SettingAction::farClipPlain;
+	}
+
 	else {
 		return SettingAction::INVALID_ACTION;
 	}
@@ -251,22 +255,8 @@ Settings::Settings(std::string filename) {
 			case SettingAction::controlConfigFile:
 				linestream >> constants.controlConfigFile;
 				break;
-			}
-		}
-		else if (GLactionEnum != GL_INVALID_ENUM) { // Connect action to button press/relese
-			std::string boolStr;
-			linestream >> boolStr;
-			bool b = (boolStr == "true");
-			switch (GLactionEnum) {
-			case GL_CULL_FACE:
-				if (b) {
-					glEnable(GL_CULL_FACE);
-				}
-				else {
-					glDisable(GL_CULL_FACE);
-				}
-				break;
-			default:
+			case SettingAction::farClipPlain:
+				linestream >> constants.farClipPlain;
 				break;
 			}
 		}

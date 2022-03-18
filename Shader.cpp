@@ -259,11 +259,11 @@ Shader::~Shader() {
 
 }
 
-void Shader::use() {
+void Shader::use() const {
 	glUseProgram(shaderProgram);
 }
 
-void Shader::dontuse() {
+void Shader::dontuse() const {
 	glBindVertexArray(0);
 }
 

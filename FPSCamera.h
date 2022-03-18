@@ -10,6 +10,7 @@ private:
 	glm::vec3 cameraUp;
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
+	glm::quat orientation;
 	glm::mat4 view;
 	int viewMatLoc;
 
@@ -32,6 +33,8 @@ public:
 	void setPos(glm::vec3 newpos);
 	void rotate(float pitch, float yaw, float roll);
 	void setRotate(float pitch, float yaw, float roll);
+
+	glm::mat4 getCameraRotationMat() const;
 
 	// Shader
 	glm::mat4 getView();

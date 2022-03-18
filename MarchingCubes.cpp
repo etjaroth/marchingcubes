@@ -274,7 +274,7 @@ void MarchingCubes::generate_terrain_fills() {
 	// might be better to pass a pointer to the shader
 	fillGenerator->use();
 	fillGenerator->setVec3("offset", glm::vec3(pos));
-	fillGenerator->fillTexture(LANDSCAPE_DATA);
+	fillGenerator->fillTexture();
 	fillGenerator->dontuse();
 }
 
@@ -285,7 +285,7 @@ void MarchingCubes::calculateLighting() {
 	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	lightingCalculator->use();
-	lightingCalculator->fillTexture(LANDSCAPE_DATA);
+	lightingCalculator->fillTexture();
 	lightingCalculator->dontuse();
 }
 

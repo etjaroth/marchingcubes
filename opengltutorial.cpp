@@ -19,6 +19,7 @@
 #include "ChunkManager.h"
 
 #include "Settings.h"
+#include "Sky.h"
 
 // FPS control
 #include "Stopwatch.h"
@@ -57,9 +58,6 @@ int main() {
 		glfwCreateWindow(settings.getConstants().screenSize.x, 
 			settings.getConstants().screenSize.y, "Marching Cubes Demo", NULL, NULL); // Make window
 	settings.loadControls(window);
-
-
-
 
 	if (window == NULL) // Window failed
 	{
@@ -140,7 +138,7 @@ int main() {
 	unsigned int transformLoc = glGetUniformLocation(objectShader.shaderProgram, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(texturetransformmat));
 
-	
+	Sky sky{};
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -163,8 +161,12 @@ int main() {
 	bool meshViewToggle = true;
 	bool updateTerrain = true;
 
+	glEnable(GL_CULL_FACE);
+
+	unsigned int counter = 0;
 	while (!should_close) // Loop
 	{
+		++counter;
 		// Limit framerate
 		a = std::chrono::system_clock::now();
 		const std::chrono::duration<double, std::milli> work_time = a - b;
@@ -236,10 +238,19 @@ int main() {
 
 		//////////////////////////////////////////////////////////////////////
 
+		// Render in stages
 		
+		glDisable(GL_DEPTH_TEST);
+		glClearDepth(1.0f);
+		if (true) {
+			sky.generateSky(camera);
+		}
+		sky.render();
+		glClearDepth(1.0f);
+		glEnable(GL_DEPTH_TEST);
+
 		// Perspective
 		objectShader.use();
-		objectShader.setFloat("wavetime", 2.0f * (float)glfwGetTime());
 		objectShader.setVec3("viewPos", -camera.getPos());
 
 		// View Matrix (Camera) (World -> View)
@@ -250,7 +261,7 @@ int main() {
 		if ((static_cast<float>(settings.getConstants().screenSize.x) / 
 			static_cast<float>(settings.getConstants().screenSize.y) < 1))
 		{ std::cout << "Perspective might be disorted" << std::endl; }
-		projection = glm::perspective(glm::radians(45.0f), std::max(((float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y), 1.0f), 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), std::max(((float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y), 1.0f), 0.1f, settings.getConstants().farClipPlain);
 		//projection = glm::ortho(glm::radians(45.0f), (float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y, 0.1f, 100.0f);
 		objectShader.setMat4("projection", projection);
 
@@ -286,6 +297,7 @@ int main() {
 	}
 
 	// Cleanup
+	//glDeleteFramebuffers(1, &framebuffer);
 	glfwTerminate();
 	return 0;
 }

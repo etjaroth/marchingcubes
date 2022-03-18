@@ -19,20 +19,14 @@ FPSCamera::FPSCamera(glm::vec3 startingPos, glm::vec3 dir, float speed) {
 
 void FPSCamera::recalculateFPSView() {
 	view = glm::mat4(1.0f);
-	//cameraDirection = glm::normalize(cameraPos - cameraTarget);
-	//view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), cameraDirection, cameraUp);
 	if (rotationVec != glm::vec3(0.0f, 0.0f, 0.0f)) {
 		glm::vec4 temp = originalCameraDirection * glm::rotate(glm::mat4(1.0f), glm::length(rotationVec), rotationVec);
 		cameraDirection = glm::vec3(temp.x, temp.y, temp.z);
-		//view = glm::rotate(view, glm::length(rotationVec), rotationVec);
-		view = glm::rotate(view, rotationVec.x, glm::vec3(1.0f, 0.0f, 0.0f));
-		view = glm::rotate(view, rotationVec.y, glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::rotate(view, rotationVec.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		view = getCameraRotationMat();
 	}
 		
 	view = glm::translate(view, cameraPos);
-
-	//cameraDirection = glm::rotate(originalCameraDirection, glm::length(rotationVec), rotationVec);
 
 	cameraRight = glm::normalize(glm::cross(up, cameraDirection));
 	cameraUp = glm::cross(cameraDirection, cameraRight);
@@ -63,15 +57,7 @@ void FPSCamera::rotate(float pitch, float yaw, float roll) {
 		rotationVec.x = glm::radians(89.9f);
 	if (rotationVec.x < glm::radians(-89.9f))
 		rotationVec.x = glm::radians(-89.9f);
-	//cameraDirection.x += cos(glm::radians(direction.y)) * cos(glm::radians(direction.x));
-	//cameraDirection.y += sin(glm::radians(direction.x));
-	//cameraDirection.z += sin(glm::radians(direction.y)) * cos(glm::radians(direction.x));
 
-	//cameraDirection = glm::normalize(cameraDirection);
-	//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	//cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-	//cameraUp = glm::cross(cameraDirection, cameraRight);
-	//view = glm::lookAt(cameraPos, cameraDirection, cameraUp);
 	recalculateFPSView();
 
 }
@@ -79,6 +65,16 @@ void FPSCamera::rotate(float pitch, float yaw, float roll) {
 void FPSCamera::setRotate(float pitch, float yaw, float roll) {
 	cameraDirection = glm::vec3(pitch, yaw, roll);
 	recalculateFPSView();
+}
+
+glm::mat4 FPSCamera::getCameraRotationMat() const {
+	glm::mat4 m(1.0f);
+
+	m = glm::rotate(m, rotationVec.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	m = glm::rotate(m, rotationVec.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	m = glm::rotate(m, rotationVec.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	return m;
 }
 
 // Misc.

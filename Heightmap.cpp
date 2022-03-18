@@ -50,7 +50,7 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 
 	heightmap_generator.use();
 	heightmap_generator.setVec3("offset", glm::vec3(coord.x, 0.0f, coord.y));
-	heightmap_generator.fillTexture(hmap.texture);
+	heightmap_generator.fillTexture();
 	heightmap_generator.dontuse();
 
 	heightmaps.insert({ key, hmap });

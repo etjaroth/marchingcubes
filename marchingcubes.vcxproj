@@ -150,7 +150,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c" />
-    <ClCompile Include="Binding.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
@@ -164,8 +163,11 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MinModel.cpp" />
     <ClCompile Include="opengltutorial.cpp" />
+    <ClCompile Include="ProcessingStage.cpp" />
+    <ClCompile Include="RenderBox.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Sky.cpp" />
     <ClCompile Include="SSBOComputeShader.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
     <ClCompile Include="Tests.cpp">
@@ -189,8 +191,11 @@
     <ClInclude Include="MarchingCubes.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MinModel.h" />
+    <ClInclude Include="ProcessingStage.h" />
+    <ClInclude Include="RenderBox.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Sky.h" />
     <ClInclude Include="SSBOComputeShader.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Structs.h" />
@@ -204,6 +209,9 @@
     <None Include="genIndices.comp" />
     <None Include="genVerticies.comp" />
     <None Include="lightingCalculator.comp" />
+    <None Include="RenderBoxFragmentShader.frag" />
+    <None Include="RenderBoxVertexShader.vert" />
+    <None Include="SkyGenerator.comp" />
     <None Include="VertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
