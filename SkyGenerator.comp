@@ -96,7 +96,7 @@ uniform float HEIGHT_MIE; /* and mie */
 uniform float HEIGHT_ABSORPTION; /* at what height the absorption is at it's maximum */
 
 // Quality
-#define PRIMARY_STEPS 12 /* primary steps, affects quality the most */
+#define PRIMARY_STEPS 24 /* primary steps, affects quality the most */
 #define LIGHT_STEPS 4 /* light steps, how much steps in the light direction are taken */
 #define ELEVATION_CONSTANT (10000.0 + 0.26) // Keeps the camera above the horizen. Should always be above 0.25
 

@@ -31,8 +31,10 @@ Sky::Sky(glm::uvec2 resolution)
 	skyTexture.setFilters(GL_LINEAR);
 
 	skyGenerator.use();
-	const float earthRadius = 6371000.0f;
-	const float atmosphereRadius = 400000.0f;
+	//const float earthRadius = 6371000.0f;
+	//const float atmosphereRadius = 400000.0f;
+	const float earthRadius = 637100.0f;
+	const float atmosphereRadius = 40000.0f;
 	skyGenerator.setFloat("atmosphereRadius", earthRadius + atmosphereRadius);
 	skyGenerator.setFloat("earthRadius", earthRadius);
 	skyGenerator.setFloat("sunDistanceRatio", 8.0f);
