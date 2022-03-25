@@ -9,8 +9,9 @@ struct HeightmapTile {
 
 const int buffer = 4;
 
-Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : heightmap_generator(heightmap_shader, vertex_cube_dimension, 1, vertex_cube_dimension) {
-	vertex_cube_dimensions = vertex_cube_dimension;
+Heightmap::Heightmap(int vertex_cube_dimensions, const char* heightmap_shader)
+	: heightmap_generator(heightmap_shader, vertex_cube_dimensions, 1, vertex_cube_dimensions),
+	vertex_cube_dimensions{ vertex_cube_dimensions } {
 
 	// Set biomes for testing
 	heightmap_generator.use();
@@ -22,14 +23,14 @@ Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : 
 }
 
 Heightmap::~Heightmap() {
-	for (std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
-		std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator prev = i++;
-		delete_heightmap(glm::ivec2(prev->first.three[0], prev->first.three[2]));
+	for (std::unordered_map<glm::ivec3, HeightmapTile>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
+		std::unordered_map<glm::ivec3, HeightmapTile>::iterator prev = i++;
+		delete_heightmap(glm::ivec2(prev->first.x, prev->first.z));
 	}
 }
 
 void Heightmap::generate_heightmap(glm::ivec2 coord) {
-	triple<int> key = { {coord.x, 0, coord.y} };
+	glm::ivec3 key{coord.x, 0, coord.y};
 	//std::cout << "Generating Heightmap: " << coord.x << ", " << coord.y;
 	auto itr = heightmaps.find(key);
 	if (itr != heightmaps.end()) {
@@ -57,7 +58,7 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 }
 
 void Heightmap::delete_heightmap(glm::ivec2 coord) {
-	std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
+	std::unordered_map<glm::ivec3, HeightmapTile>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
 		return;
 	}
@@ -69,7 +70,7 @@ void Heightmap::delete_heightmap(glm::ivec2 coord) {
 }
 
 bool Heightmap::is_generated(glm::ivec2 coord) {
-	std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
+	std::unordered_map<glm::ivec3, HeightmapTile>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 
 	if (itr == heightmaps.end()) { // we haven't even started
 		return false;

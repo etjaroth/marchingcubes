@@ -162,7 +162,7 @@ int main() {
 	glEnable(GL_CULL_FACE);
 
 	unsigned int counter = 0;
-	double originalFrameStartTime = glfwGetTime();
+	double originalFrameStartTime = glfwGetTime() + 32.0;
 	while (!should_close) // Loop
 	{
 

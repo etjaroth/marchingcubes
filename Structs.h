@@ -1,43 +1,43 @@
 #pragma once
 
-template<class ttype>
-struct triple { // array of 3 that can be stored in a map
-	ttype three[3];
-	bool operator==(const triple& o) const {
-		return (three[0] == o.three[0]) && (three[1] == o.three[1]) && (three[2] == o.three[2]);
-	};
+//template<class ttype>
+//struct triple { // array of 3 that can be stored in a map
+//	ttype three[3];
+//	bool operator==(const triple& o) const {
+//		return (three[0] == o.three[0]) && (three[1] == o.three[1]) && (three[2] == o.three[2]);
+//	};
+//
+//	bool operator<(const triple& o) const {
+//
+//		if (three[0] < o.three[0]) {
+//			return true;
+//		}
+//		else if (three[0] == o.three[0]) {
+//			if (three[1] < o.three[1]) {
+//				return true;
+//			}
+//			else if (three[1] == o.three[1]) {
+//				return (three[2] < o.three[2]);
+//			}
+//			else {
+//				return false;
+//			}
+//		}
+//		else {
+//			return false;
+//		}
+//	};
+//};
 
-	bool operator<(const triple& o) const {
-
-		if (three[0] < o.three[0]) {
-			return true;
-		}
-		else if (three[0] == o.three[0]) {
-			if (three[1] < o.three[1]) {
-				return true;
-			}
-			else if (three[1] == o.three[1]) {
-				return (three[2] < o.three[2]);
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			return false;
-		}
-	};
-};
-
-struct tripleHashFunction {
-	template<class tType>
-	std::size_t operator() (const triple<tType>& trip) const {
-		std::size_t h = std::hash<tType>()(trip.three[0]);// +0x9e3779b9 + (h << 6) + (h >> 2);
-		h ^= std::hash<tType>()(trip.three[1]) + 0x9e3779b9 + (h << 6) + (h >> 2);
-		h ^= std::hash<tType>()(trip.three[2]) + 0x9e3779b9 + (h << 6) + (h >> 2);
-		return h;
-	}
-};
+//struct tripleHashFunction {
+//	template<class tType>
+//	std::size_t operator() (const triple<tType>& trip) const {
+//		std::size_t h = std::hash<tType>()(trip.three[0]);// +0x9e3779b9 + (h << 6) + (h >> 2);
+//		h ^= std::hash<tType>()(trip.three[1]) + 0x9e3779b9 + (h << 6) + (h >> 2);
+//		h ^= std::hash<tType>()(trip.three[2]) + 0x9e3779b9 + (h << 6) + (h >> 2);
+//		return h;
+//	}
+//};
 
 // Opengl
 struct Vertex {

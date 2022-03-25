@@ -1,7 +1,8 @@
 #include "DistantLandscape.h"
 
-DistantLandscape::DistantLandscape(glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies)
-	: pos{ pos },
+DistantLandscape::DistantLandscape(int vertexCubeDimensions, glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies)
+	: vertexCubeDimensions{ vertexCubeDimensions },
+	pos{ pos },
 	heightmapGenerator{ heightmapGenerator },
 	genVerticies{ genVerticies } {
 
@@ -11,6 +12,23 @@ DistantLandscape::DistantLandscape(glm::ivec2 pos, Heightmap& heightmapGenerator
 		// Wait
 	}
 
+	glBindBuffer(GL_TEXTURE_2D, HEIGHTMAP);
+	float* pixels = new float[4 * vertexCubeDimensions * vertexCubeDimensions];
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &pixels);
+	// elevation is in y
+	// watertable is in w
+	for (int y = 0; y < vertexCubeDimensions; ++y) {
+		for (int x = 0; x < vertexCubeDimensions; ++x) {
+			const unsigned int row = x * 4;
+			const unsigned int column = y * vertexCubeDimensions * 4;
+			const unsigned int px = row + column + 0;
+			const unsigned int py = row + column + 1;
+			const unsigned int pz = row + column + 2;
+			const unsigned int pw = row + column + 3;
+			std::cout << "[" << pixels[px] << ", " << pixels[py] << ", " << pixels[pz] << ", " << pixels[pw] << "], ";
+		}
+		std::cout << std::endl;
+	}
 }
 
 DistantLandscape::~DistantLandscape() {

@@ -7,6 +7,7 @@
 
 class DistantLandscape
 {
+	int vertexCubeDimensions;
 	glm::ivec2 pos;
 
 	Heightmap& heightmapGenerator;
@@ -24,7 +25,7 @@ class DistantLandscape
 	std::vector<unsigned int> indicies;
 
 public:
-	DistantLandscape(glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies);
+	DistantLandscape(int vertexCubeDimensions, glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies);
 	~DistantLandscape();
 	void renderCubes(Shader* shader);
 };

@@ -67,15 +67,15 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 	shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(dayNightSpeed * time), 0.0f)));
 	//shader->setFloat("brightness", abs((float)glm::sin(time)));
 
-	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
+	std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
 	std::sort(chunk_list.begin(), chunk_list.end(),
-		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a,
-			const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& b) -> bool
+		[this](const std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>& a,
+			const std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>& b) -> bool
 		{
-			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
-			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
+			glm::vec3 fa = glm::vec3(a.first);
+			glm::vec3 fb = glm::vec3(b.first);
 
 			float arrA[3] = { fa.x, fa.z, fa.y };
 			float arrB[3] = { fb.x, fb.z, fb.y };
@@ -105,7 +105,7 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 		});
 
 
-	for (std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
+	for (std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
 
 
 		// Check if chunk is visable
@@ -135,7 +135,7 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 
 void ChunkManager::update_chunks() {
 	// List legal points
-	std::unordered_set<triple<int>, tripleHashFunction> legal_points;
+	std::unordered_set<glm::ivec3> legal_points;
 
 	// Account for the giant cell at (0, 0, 0)
 	glm::vec3 offset = glm::vec3(0.0f);
@@ -163,18 +163,18 @@ void ChunkManager::update_chunks() {
 	for (int x = -radius; x <= radius; x++) {
 		for (int y = -radius; y <= radius; y++) {
 			for (int z = -radius; z <= radius; z++) {
-				triple<int> point =
-				{ {x + chunk_position.x + offset.x,
+				glm::ivec3 point{
+					x + chunk_position.x + offset.x,
 					y + chunk_position.y + offset.y,
-					z + chunk_position.z + offset.z} };
+					z + chunk_position.z + offset.z};
 
-				glm::ivec3 offset2 = glm::ivec3(point.three[0], point.three[1], point.three[2]);
+				glm::ivec3 offset2 = glm::ivec3(point);
 
 				legal_points.insert(point);
 
 				if (chunk_map.find(point) == chunk_map.end()) {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
-					chunk_map.insert(std::pair<triple<int>,
+					chunk_map.insert(std::pair<glm::ivec3,
 						std::shared_ptr<MarchingCubes>>(point,
 							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &lightingCalculator, &gen_indicies, &gen_verticies)));
 				}
@@ -185,7 +185,7 @@ void ChunkManager::update_chunks() {
 
 	// Create/Destroy MarchingCubes at legal/illegal points
 	for (auto chunk = chunk_map.begin(); chunk != chunk_map.end();) {
-		triple<int> point = chunk->first;
+		glm::ivec3 point = chunk->first;
 
 		if (legal_points.find(point) != legal_points.end()) {
 			++chunk;

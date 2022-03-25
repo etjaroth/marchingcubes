@@ -1,11 +1,11 @@
 #pragma once
-#include "config.h"
+#include "Config.h"
 #include "ComputeShader.h"
 struct HeightmapTile;
 
 
 class Heightmap {
-	std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction> heightmaps;
+	std::unordered_map<glm::ivec3, HeightmapTile> heightmaps;
 	int vertex_cube_dimensions;
 
 	void delete_heightmap(glm::ivec2 coord);

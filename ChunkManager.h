@@ -13,7 +13,7 @@ class ChunkManager
 	glm::ivec3 chunk_position;
 	unsigned int chunk_size;
 
-	std::unordered_map<triple<int>, std::shared_ptr<MarchingCubes>, tripleHashFunction> chunk_map; // 3D vector of pointers to MarchingCubes
+	std::unordered_map<glm::ivec3, std::shared_ptr<MarchingCubes>> chunk_map; // 3D vector of pointers to MarchingCubes
 	int radius; // distance from orgin that chunks are generated
 
 	GLuint VAO;
