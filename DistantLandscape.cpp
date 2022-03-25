@@ -6,35 +6,40 @@ DistantLandscape::DistantLandscape(int vertexCubeDimensions, glm::ivec2 pos, Hei
 	heightmapGenerator{ heightmapGenerator },
 	genVerticies{ genVerticies } {
 
-	// 
-	heightmapGenerator.generate_heightmap(pos);
-	while (!heightmapGenerator.is_generated(pos)) {
-		// Wait
-	}
+	//// 
+	//heightmapGenerator.generateHeightmap(pos);
+	//while (!heightmapGenerator.isGenerated(pos)) {
+	//	// Wait
+	//}
+	//HEIGHTMAP = heightmapGenerator.getHeightmap(pos);
 
-	glBindBuffer(GL_TEXTURE_2D, HEIGHTMAP);
-	float* pixels = new float[4 * vertexCubeDimensions * vertexCubeDimensions];
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &pixels);
-	// elevation is in y
-	// watertable is in w
-	for (int y = 0; y < vertexCubeDimensions; ++y) {
-		for (int x = 0; x < vertexCubeDimensions; ++x) {
-			const unsigned int row = x * 4;
-			const unsigned int column = y * vertexCubeDimensions * 4;
-			const unsigned int px = row + column + 0;
-			const unsigned int py = row + column + 1;
-			const unsigned int pz = row + column + 2;
-			const unsigned int pw = row + column + 3;
-			std::cout << "[" << pixels[px] << ", " << pixels[py] << ", " << pixels[pz] << ", " << pixels[pw] << "], ";
-		}
-		std::cout << std::endl;
-	}
+	//glBindBuffer(GL_TEXTURE_2D, HEIGHTMAP);
+	//float* pixels = new float[4 * vertexCubeDimensions * vertexCubeDimensions];
+	//glGetTextureImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, 4 * vertexCubeDimensions * vertexCubeDimensions, &pixels);
+	//// elevation is in y
+	//// watertable is in w
+	//for (int y = 0; y < vertexCubeDimensions; ++y) {
+	//	for (int x = 0; x < vertexCubeDimensions; ++x) {
+	//		const unsigned int row = x * 4;
+	//		const unsigned int column = y * vertexCubeDimensions * 4;
+	//		const unsigned int px = row + column + 0;
+	//		const unsigned int py = row + column + 1;
+	//		const unsigned int pz = row + column + 2;
+	//		const unsigned int pw = row + column + 3;
+	//		std::cout << "[" << pixels[py] <<  "], ";
+	//	}
+	//	std::cout << std::endl;
+	//}
+
+	//std::cout << "\n\n\n" << std::endl;
+
+	//delete[] pixels;
 }
 
 DistantLandscape::~DistantLandscape() {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &EBO);
-	heightmapGenerator.release_heightmap(pos);
+	heightmapGenerator.releaseHeightmap(pos);
 }
 
 void DistantLandscape::renderCubes(Shader* shader) {

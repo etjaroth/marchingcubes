@@ -69,22 +69,21 @@ void gl_print_errors() {
 	}
 }
 
-MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, ComputeShader* lightingCalculatorPtr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr) {
+MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 pos, Heightmap& heightmapGenerator, ComputeShader& fillGenerator, ComputeShader& lightingCalculator, SSBOComputeShader& genIndices, SSBOComputeShader& genVerticies)
+	: pos{ pos },
+	verticies_on_side{ cubeSize },
+	edges_on_side{ verticies_on_side - 1 },
+	verticies_on_side_with_buffer{ verticies_on_side + buffer },
+
+	heightmapGenerator{ heightmapGenerator },
+	fillGenerator{ fillGenerator },
+	lightingCalculator{ lightingCalculator },
+	genEdges{ genIndices },
+	genVerticies{ genVerticies }
+
+{
 	task_queue[static_cast<int>(current_step)] += 1;
 
-	heightmap_generator = heightmap_generator_ptr;
-	fillGenerator = fill_generator_ptr;
-	lightingCalculator = lightingCalculatorPtr;
-	gen_edges = gen_indices_ptr;
-	gen_verticies = gen_verticies_ptr;
-
-	verticies_on_side = cubeSize;
-	edges_on_side = verticies_on_side - 1;
-	verticies_on_side_with_buffer = verticies_on_side + buffer;
-
-	pos = position;
-
-	///////////////////////////////////////////////////////////////////////////
 
 	// Init SSBOs (output holds verticies, index holds number of verticies)
 	glGenBuffers(1, &VERTEX_SSBO);
@@ -128,7 +127,7 @@ MarchingCubes::~MarchingCubes() {
 	glDeleteBuffers(1, &VERTEX_SSBO);
 	glDeleteVertexArrays(1, &VAO);
 	if (HEIGHTMAP != 0) {
-		heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+		heightmapGenerator.releaseHeightmap(glm::ivec2(pos.x, pos.z));
 	}
 
 	if (!waiting) {
@@ -159,7 +158,7 @@ void MarchingCubes::update_cubes() {
 				calculateLighting();
 				break;
 			case RenderingStages::genIndicies:
-				heightmap_generator->release_heightmap(glm::ivec2(pos.x, pos.z));
+				heightmapGenerator.releaseHeightmap(glm::ivec2(pos.x, pos.z));
 				HEIGHTMAP = 0;
 				generate_indices();
 				break;
@@ -241,11 +240,11 @@ void MarchingCubes::update_cubes() {
 void MarchingCubes::generate_heightmap() {
 	glm::ivec2 coord = glm::ivec2(pos.x, pos.z);
 
-	if (!heightmap_generator->is_generated(coord)) {
-		heightmap_generator->generate_heightmap(coord);
+	if (!heightmapGenerator.isGenerated(coord)) {
+		heightmapGenerator.generateHeightmap(coord);
 	}
 
-	HEIGHTMAP = heightmap_generator->get_heightmap(coord);
+	HEIGHTMAP = heightmapGenerator.getHeightmap(coord);
 }
 
 void MarchingCubes::generate_terrain_fills() {
@@ -270,10 +269,10 @@ void MarchingCubes::generate_terrain_fills() {
 
 	// Fill texture with render data
 	// might be better to pass a pointer to the shader
-	fillGenerator->use();
-	fillGenerator->setVec3("offset", glm::vec3(pos));
-	fillGenerator->fillTexture();
-	fillGenerator->dontuse();
+	fillGenerator.use();
+	fillGenerator.setVec3("offset", glm::vec3(pos));
+	fillGenerator.fillTexture();
+	fillGenerator.dontuse();
 }
 
 void MarchingCubes::calculateLighting() {
@@ -282,9 +281,9 @@ void MarchingCubes::calculateLighting() {
 	glBindTexture(GL_TEXTURE_3D, LANDSCAPE_DATA);
 	glBindImageTexture(LANDSCAPE_DATA_UNIT, LANDSCAPE_DATA, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-	lightingCalculator->use();
-	lightingCalculator->fillTexture();
-	lightingCalculator->dontuse();
+	lightingCalculator.use();
+	lightingCalculator.fillTexture();
+	lightingCalculator.dontuse();
 }
 
 void MarchingCubes::generate_indices() {
@@ -319,13 +318,13 @@ void MarchingCubes::generate_indices() {
 
 	gl_print_errors();
 
-	gen_edges->use();
-	gen_edges->setVec3("pos", glm::vec3(pos));
-	//gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // issue here. Index trick doesn't work like that
-	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
+	genEdges.use();
+	genEdges.setVec3("pos", glm::vec3(pos));
+	//genEdges.setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // issue here. Index trick doesn't work like that
+	genEdges.setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
 	const int fillsize = verticies_on_side; // buffer is intentionally ommitted
-	gen_edges->fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
-	gen_edges->dontuse();
+	genEdges.fillSSBO(EBO, EBO_BINDING, fillsize, fillsize, fillsize);
+	genEdges.dontuse();
 }
 
 void MarchingCubes::generate_verticies() {
@@ -343,12 +342,12 @@ void MarchingCubes::generate_verticies() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 
 	// Generate vertex data
-	gen_verticies->use();
-	gen_verticies->setVec3("pos", glm::vec3(pos));
-	//gen_verticies->setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // Issue also here
-	gen_edges->setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
-	gen_verticies->fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
-	gen_verticies->dontuse();
+	genVerticies.use();
+	genVerticies.setVec3("pos", glm::vec3(pos));
+	//gen_verticies.setiVec3("chunk_size", glm::ivec3(verticies_on_side_with_buffer + 1)); // Issue also here
+	genEdges.setiVec3("chunk_size", glm::ivec3(verticies_on_side + 1));
+	genVerticies.fillSSBO(VERTEX_SSBO, VERTEX_SSBO_BINDING, VERTEX_SSBO_SIZE / SIZEOF_VERTEX, 1, 1);
+	genVerticies.dontuse();
 }
 
 //////////////////////////////////////////////////////////////////////////////

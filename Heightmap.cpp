@@ -25,11 +25,11 @@ Heightmap::Heightmap(int vertex_cube_dimensions, const char* heightmap_shader)
 Heightmap::~Heightmap() {
 	for (std::unordered_map<glm::ivec3, HeightmapTile>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
 		std::unordered_map<glm::ivec3, HeightmapTile>::iterator prev = i++;
-		delete_heightmap(glm::ivec2(prev->first.x, prev->first.z));
+		deleteHeightmap(glm::ivec2(prev->first.x, prev->first.z));
 	}
 }
 
-void Heightmap::generate_heightmap(glm::ivec2 coord) {
+void Heightmap::generateHeightmap(glm::ivec2 coord) {
 	glm::ivec3 key{coord.x, 0, coord.y};
 	//std::cout << "Generating Heightmap: " << coord.x << ", " << coord.y;
 	auto itr = heightmaps.find(key);
@@ -57,7 +57,7 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 	heightmaps.insert({ key, hmap });
 }
 
-void Heightmap::delete_heightmap(glm::ivec2 coord) {
+void Heightmap::deleteHeightmap(glm::ivec2 coord) {
 	std::unordered_map<glm::ivec3, HeightmapTile>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
 		return;
@@ -69,7 +69,7 @@ void Heightmap::delete_heightmap(glm::ivec2 coord) {
 	heightmaps.erase(itr);
 }
 
-bool Heightmap::is_generated(glm::ivec2 coord) {
+bool Heightmap::isGenerated(glm::ivec2 coord) {
 	std::unordered_map<glm::ivec3, HeightmapTile>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 
 	if (itr == heightmaps.end()) { // we haven't even started
@@ -80,7 +80,7 @@ bool Heightmap::is_generated(glm::ivec2 coord) {
 	}
 }
 
-GLuint Heightmap::get_heightmap(glm::ivec2 coord) {
+GLuint Heightmap::getHeightmap(glm::ivec2 coord) {
 	auto itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
 		return 0;
@@ -91,12 +91,12 @@ GLuint Heightmap::get_heightmap(glm::ivec2 coord) {
 	}
 }
 
-void Heightmap::release_heightmap(glm::ivec2 coord) {
+void Heightmap::releaseHeightmap(glm::ivec2 coord) {
 	auto itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr != heightmaps.end()) {
 		itr->second.refrence_count -= 1;
 		if (itr->second.refrence_count <= 0) {
-			delete_heightmap(coord);
+			deleteHeightmap(coord);
 		}
 	}
 }

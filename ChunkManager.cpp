@@ -55,8 +55,7 @@ void ChunkManager::set_pos(glm::vec3 pos) {
 
 ChunkManager::~ChunkManager() {
 	// Marching cubes need to be destructed before heightmap_generator
-	closeTerrain.clear();
-	farTerrain.clear();
+	chunks.clear();
 }
 
 void ChunkManager::set_direction(glm::vec3 dir) {
@@ -82,14 +81,12 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 		shader->setFloat("brightness", static_cast<float>(brightness));
 	}
 
-	//shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(dayNightSpeed * time), 0.0f)));
-
-	std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>> chunk_list(closeTerrain.begin(), closeTerrain.end());
+	std::vector<std::pair<glm::ivec3, std::shared_ptr<Chunk>>> chunk_list(chunks.begin(), chunks.end());
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
 	std::sort(chunk_list.begin(), chunk_list.end(),
-		[this](const std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>& a,
-			const std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>& b) -> bool
+		[this](const std::pair<glm::ivec3, std::shared_ptr<Chunk>>& a,
+			const std::pair<glm::ivec3, std::shared_ptr<Chunk>>& b) -> bool
 		{
 			glm::vec3 fa = glm::vec3(a.first);
 			glm::vec3 fb = glm::vec3(b.first);
@@ -115,8 +112,9 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 		});
 
 
-	for (std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
-		chunk->second->renderCubes(shader);
+	for (std::vector<std::pair<glm::ivec3, std::shared_ptr<Chunk>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
+		const double distance = glm::length(position - glm::vec3((int)chunk_size * chunk->first));
+		chunk->second->render(shader, distance);
 	}
 
 }
@@ -160,11 +158,18 @@ void ChunkManager::update_chunks() {
 
 				legal_points.insert(point);
 
-				if (closeTerrain.find(point) == closeTerrain.end()) {
+				if (chunks.find(point) == chunks.end()) {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
-					closeTerrain.insert(std::pair<glm::ivec3,
-						std::shared_ptr<MarchingCubes>>(point,
-							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &lightingCalculator, &gen_indicies, &gen_verticies)));
+					chunks.insert(
+						std::pair<glm::ivec3, std::shared_ptr<Chunk>>(point,
+							std::make_shared<Chunk>(
+								glm::sqrt(2.0) * 100.0,
+								chunk_size, offset3,
+								heightmap_generator,
+								fill_generator,
+								lightingCalculator,
+								gen_indicies,
+								gen_verticies)));
 				}
 			}
 		}
@@ -172,14 +177,14 @@ void ChunkManager::update_chunks() {
 
 
 	// Create/Destroy MarchingCubes at legal/illegal points
-	for (auto chunk = closeTerrain.begin(); chunk != closeTerrain.end();) {
+	for (auto chunk = chunks.begin(); chunk != chunks.end();) {
 		glm::ivec3 point = chunk->first;
 
 		if (legal_points.find(point) != legal_points.end()) {
 			++chunk;
 		}
 		else {
-			chunk = closeTerrain.erase(chunk);
+			chunk = chunks.erase(chunk);
 		}
 	}
 }

@@ -16,11 +16,11 @@ private:
 	int verticies_on_side_with_buffer;
 	
 	// Shaders
-	Heightmap* heightmap_generator;
-	ComputeShader* fillGenerator;
-	ComputeShader* lightingCalculator;
-	SSBOComputeShader* gen_edges;
-	SSBOComputeShader* gen_verticies;
+	Heightmap& heightmapGenerator;
+	ComputeShader& fillGenerator;
+	ComputeShader& lightingCalculator;
+	SSBOComputeShader& genEdges;
+	SSBOComputeShader& genVerticies;
 
 	// rendering
 	GLuint VAO = 0;
@@ -87,7 +87,7 @@ private:
 	void print_task();
 
 public:
-	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap* heightmap_generator_ptr, ComputeShader* fill_generator_ptr, ComputeShader* lightingCalculatorPtr, SSBOComputeShader* gen_indices_ptr, SSBOComputeShader* gen_verticies_ptr);
+	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap& heightmapGenerator, ComputeShader& fillGenerator, ComputeShader& lightingCalculatorPtr, SSBOComputeShader& genIndices, SSBOComputeShader& genVerticies);
 	~MarchingCubes();
 	void renderCubes(Shader* shader);
 	void setPos(glm::vec3 p);

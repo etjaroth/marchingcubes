@@ -147,6 +147,9 @@
     <ClCompile Include="Fence.cpp">
       <Filter>Source Files\openGL Wrappers</Filter>
     </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FastNoise.h">
@@ -226,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="Fence.h">
       <Filter>Header Files\opengGL wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.h">
+      <Filter>Header Files\World</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
