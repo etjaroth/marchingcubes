@@ -1,9 +1,9 @@
 #include "Heightmap.h"
+#include "Fence.h"
 
-struct heightmap_tile {
+struct HeightmapTile {
 	GLuint texture;
-	bool is_generated;
-	GLsync fence;
+	Fence fence;
 	unsigned int refrence_count;
 };
 
@@ -22,8 +22,8 @@ Heightmap::Heightmap(int vertex_cube_dimension, const char* heightmap_shader) : 
 }
 
 Heightmap::~Heightmap() {
-	for (std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
-		std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator prev = i++;
+	for (std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator i = heightmaps.begin(); i != heightmaps.end();) {
+		std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator prev = i++;
 		delete_heightmap(glm::ivec2(prev->first.three[0], prev->first.three[2]));
 	}
 }
@@ -36,7 +36,7 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 		return;
 	}
 
-	heightmap_tile hmap = { 0, false, glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0), 0 };
+	HeightmapTile hmap = { 0, Fence{true}, 0 };
 	glGenTextures(1, &hmap.texture);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
@@ -57,42 +57,25 @@ void Heightmap::generate_heightmap(glm::ivec2 coord) {
 }
 
 void Heightmap::delete_heightmap(glm::ivec2 coord) {
-	std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
+	std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
-		//std::cout << "Uh oh!" << std::endl;
 		return;
 	}
 
-	if (!(itr->second.is_generated)) {
-		glDeleteSync(itr->second.fence);
-	}
-
-	//std::cout << "Deleting Heightmap: " << coord.x << ", " << coord.y << " (" << itr->second.texture << ')' << std::endl;
+	itr->second.fence.release();
 
 	glDeleteTextures(1, &(itr->second.texture));
 	heightmaps.erase(itr);
 }
 
 bool Heightmap::is_generated(glm::ivec2 coord) {
-	std::unordered_map<triple<int>, heightmap_tile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
+	std::unordered_map<triple<int>, HeightmapTile, tripleHashFunction>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 
 	if (itr == heightmaps.end()) { // we haven't even started
 		return false;
 	}
-	else if (itr->second.is_generated) { // we already know it's done
-		return true;
-	}
-	else { // check if it's done
-		GLint syncStatus[1] = { GL_UNSIGNALED };
-		glGetSynciv(itr->second.fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
-		bool finished = syncStatus[0] == GL_SIGNALED;
-
-		if (finished) {
-			itr->second.is_generated = true;
-			glDeleteSync(itr->second.fence);
-		}
-
-		return finished;
+	else {
+		return itr->second.fence.isDone();
 	}
 }
 

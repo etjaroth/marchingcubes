@@ -167,8 +167,8 @@ int main() {
 	{
 
 		double frameStartTime = glfwGetTime() - originalFrameStartTime;
-
 		++counter;
+
 		// Limit framerate
 		a = std::chrono::system_clock::now();
 		const std::chrono::duration<double, std::milli> work_time = a - b;
@@ -242,12 +242,14 @@ int main() {
 
 		// Render in stages
 		
+		const double dayNightSpeed = 1.0 / 32.0;
+
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
 		if (true) {
-			sky.generateSky(camera, (1.0 / 32.0) * frameStartTime);
+			sky.generateSky(camera, dayNightSpeed * frameStartTime);
 		}
-		sky.render(camera, (1.0 / 32.0) * frameStartTime);
+		sky.render(camera, dayNightSpeed * frameStartTime);
 		glClearDepth(1.0f);
 		glEnable(GL_DEPTH_TEST);
 
@@ -273,7 +275,7 @@ int main() {
 			terrain.set_pos(-camera.getPos());
 		}
 		terrain.set_direction(camera.getDirection());
-		terrain.render(&objectShader, frameStartTime);
+		terrain.render(&objectShader, frameStartTime, dayNightSpeed);
 
 		///////////////////////////////////////////////////////////////////////
 

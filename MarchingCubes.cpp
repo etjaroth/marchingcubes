@@ -134,8 +134,6 @@ MarchingCubes::~MarchingCubes() {
 	if (!waiting) {
 		task_queue[static_cast<int>(current_step)] -= 1;
 	}
-
-	fence.release();
 }
 
 void MarchingCubes::update_cubes() {

@@ -145,7 +145,7 @@
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Fence.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\openGL Wrappers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -62,9 +62,9 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 	direction = dir;
 }
 
-void ChunkManager::render(Shader* shader, double time) {
+void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 	shader->setFloat("wavetime", 2.0f * (float)time);
-	shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(time), 0.0f)));
+	shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(dayNightSpeed * time), 0.0f)));
 	//shader->setFloat("brightness", abs((float)glm::sin(time)));
 
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
@@ -74,15 +74,6 @@ void ChunkManager::render(Shader* shader, double time) {
 		[this](const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& a,
 			const std::pair<triple<int>, std::shared_ptr<MarchingCubes>>& b) -> bool
 		{
-			/*const glm::vec3 va = (float)(this->chunk_size) * glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
-			const glm::vec3 vb = (float)(this->chunk_size) * glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
-
-			const glm::vec3 dist_a = va - this->position;
-			const glm::vec3 dist_b = vb - this->position;
-
-			return glm::length(dist_a)
-				< glm::length(dist_b);*/
-
 			glm::vec3 fa = glm::vec3(a.first.three[0], a.first.three[1], a.first.three[2]);
 			glm::vec3 fb = glm::vec3(b.first.three[0], b.first.three[1], b.first.three[2]);
 
@@ -182,7 +173,6 @@ void ChunkManager::update_chunks() {
 				legal_points.insert(point);
 
 				if (chunk_map.find(point) == chunk_map.end()) {
-					//glm::ivec3 offset3 = static_cast<int>(chunk_size - 1) * offset2; // temporary?
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
 					chunk_map.insert(std::pair<triple<int>,
 						std::shared_ptr<MarchingCubes>>(point,
