@@ -64,8 +64,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 
 void ChunkManager::render(Shader* shader, double time) {
 	shader->setFloat("wavetime", 2.0f * (float)time);
-	time *= 0.25;
-	shader->setFloat("brightness", std::max((float)glm::sin(time), 0.0f));
+	shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(time), 0.0f)));
 	//shader->setFloat("brightness", abs((float)glm::sin(time)));
 
 	std::vector<std::pair<triple<int>, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());

@@ -170,7 +170,6 @@ int main() {
 
 		double frameStartTime = glfwGetTime() - originalFrameStartTime;
 		frameStartTime *= 0.5;
-		//frameStartTime *= 0.0;
 
 		++counter;
 		// Limit framerate
@@ -277,7 +276,7 @@ int main() {
 			terrain.set_pos(-camera.getPos());
 		}
 		terrain.set_direction(camera.getDirection());
-		//terrain.render(&objectShader, frameStartTime);
+		terrain.render(&objectShader, frameStartTime);
 
 		///////////////////////////////////////////////////////////////////////
 

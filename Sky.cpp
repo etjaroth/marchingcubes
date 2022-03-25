@@ -31,10 +31,10 @@ Sky::Sky(glm::uvec2 resolution)
 	skyTexture.setFilters(GL_LINEAR);
 
 	skyGenerator.use();
-	//const float earthRadius = 6371000.0f;
-	//const float atmosphereRadius = 400000.0f;
-	const float earthRadius = 637100.0f;
-	const float atmosphereRadius = 40000.0f;
+	const float earthRadius = 6371000.0f;
+	const float atmosphereRadius = 400000.0f;
+	//const float earthRadius = 637100.0f;
+	//const float atmosphereRadius = 40000.0f;
 	skyGenerator.setFloat("atmosphereRadius", earthRadius + atmosphereRadius);
 	skyGenerator.setFloat("earthRadius", earthRadius);
 	skyGenerator.setFloat("sunDistanceRatio", 8.0f);
@@ -50,9 +50,6 @@ Sky::Sky(glm::uvec2 resolution)
 
 	skyGenerator.setFloat("G", 0.7);
 	// and the heights (how far to go up before the scattering has no effect)
-	//skyGenerator.setFloat("HEIGHT_RAY", 80000.0);
-	//skyGenerator.setFloat("HEIGHT_MIE", 12000.0);
-	//skyGenerator.setFloat("HEIGHT_ABSORPTION", 300000.0);
 	skyGenerator.setFloat("HEIGHT_RAY", 8000.0);
 	skyGenerator.setFloat("HEIGHT_MIE", 1200.0);
 	skyGenerator.setFloat("HEIGHT_ABSORPTION", 30000.0);
@@ -69,7 +66,9 @@ void Sky::generateSky(FPSCamera& camera, double time) {
 	skyGenerator.use();
 	skyTexture.use();
 
-	time = 0.25 * time;
+	GLsync fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+	time = 1.0 * time;
 	skyGenerator.setFloat("time", time);
 
 	glm::vec3 rotationVec = camera.getCameraRotationVec();
@@ -84,7 +83,13 @@ void Sky::generateSky(FPSCamera& camera, double time) {
 	skyGenerator.setMat4("viewMatInverse", glm::inverse(m));
 	
 	skyGenerator.fillTexture();
-	skyGenerator.waitUntilDone();
+	
+	// Wait until texture is filled
+	GLint syncStatus[1] = { GL_UNSIGNALED };
+	while (syncStatus[0] != GL_SIGNALED) {
+		glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
+	}
+	glDeleteSync(fence);
 
 	skyTexture.dontuse();
 	skyGenerator.dontuse();

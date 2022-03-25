@@ -7,6 +7,6 @@ spawnViewDir 0.0 0.0 -1.0
 farClipPlain 100.0
 
 GL_CULL_FACE true
-chunkSize 8
+chunkSize 32
 chunkRadius 3
 controlConfigFile controls.txt

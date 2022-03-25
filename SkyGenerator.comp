@@ -342,9 +342,9 @@ void main() {
     vec3 light_dir = calculateSunPos(); // should be normalized
     
     // Add a sun
-    //const float theta = dot(camera_vector, light_dir);
-    vec4 scene = vec4(vec3(0.0), 1e12); // w is depth
-    //vec4 scene = vec4(vec3(theta > 0.9998 ? 3.0 : 0.0), 1e12); // w is depth
+    const float theta = dot(camera_vector, light_dir);
+    //vec4 scene = vec4(vec3(0.0), 1e12); // w is depth
+    vec4 scene = vec4(vec3(theta > 0.9998 ? 3.0 : 0.0), 1e12); // w is depth
 
     // the color of this pixel
     vec3 col = vec3(0.0);
@@ -373,6 +373,10 @@ void main() {
         
     // apply exposure
     col = 1.0 - exp(-col);
+
+    if (isnan(col.x)) {
+        col = vec3(0.0);
+    }
     
     // Output to screen
     const vec4 pixel = vec4(col, 1.0);
