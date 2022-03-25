@@ -58,11 +58,6 @@ Sky::Sky(glm::uvec2 resolution)
 }
 
 void Sky::generateSky(FPSCamera& camera, double time) {
-
-	if (glm::sin(time) < 0.0) {
-		return; // nighttime
-	}
-
 	skyGenerator.use();
 	skyTexture.use();
 
