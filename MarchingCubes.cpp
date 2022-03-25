@@ -135,15 +135,15 @@ MarchingCubes::~MarchingCubes() {
 		task_queue[static_cast<int>(current_step)] -= 1;
 	}
 
-	free_fence();
+	fence.release();
 }
 
 void MarchingCubes::update_cubes() {
-	bool task_complete = fence_is_done();
+	bool task_complete = fence.isDone();
 	if (waiting) {
-		if (task_queue_max[static_cast<int>(current_step)] == UINT_MAX || 
+		if (task_queue_max[static_cast<int>(current_step)] == UINT_MAX ||
 			task_queue[static_cast<int>(current_step)] < task_queue_max[static_cast<int>(current_step)]) {
-			set_fence();
+			fence.set();
 			task_queue[static_cast<int>(current_step)] += 1;
 			waiting = false;
 
@@ -165,7 +165,7 @@ void MarchingCubes::update_cubes() {
 				HEIGHTMAP = 0;
 				generate_indices();
 				break;
-//			case 5:
+				//			case 5:
 			case RenderingStages::genVerticies:
 			{
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
@@ -173,7 +173,7 @@ void MarchingCubes::update_cubes() {
 				glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 5 * sizeof(GLuint), data);
 
 				if (data[0] == 0) { // If there are no verticies to be generated
-					free_fence();
+					fence.release();
 					glDeleteTextures(1, &LANDSCAPE_DATA);
 					glDeleteBuffers(1, &INDIRECT_SSBO);
 					glDeleteBuffers(1, &EBO);
@@ -194,9 +194,9 @@ void MarchingCubes::update_cubes() {
 				}
 			}
 			break;
-//			case 6:
+			//			case 6:
 			case RenderingStages::done:
-			break;
+				break;
 			case RenderingStages::size:
 				std::cout << "Something went wrong" << std::endl;
 				break;
@@ -212,7 +212,7 @@ void MarchingCubes::update_cubes() {
 			task_queue[static_cast<int>(current_step)] -= 1;
 			++current_step;
 			waiting = true;
-			free_fence();
+			fence.release();
 			update_cubes();
 		}
 		else {
@@ -356,22 +356,8 @@ void MarchingCubes::generate_verticies() {
 //////////////////////////////////////////////////////////////////////////////
 
 void MarchingCubes::renderCubes(Shader* shader) {
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindTexture(GL_TEXTURE_3D, 0);
-
-	glBindVertexArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, INDIRECT_SSBO_BINDING, 0);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, 0);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-
 	gl_print_errors();
 
-//	if (current_step == 6) {
 	if (current_step == RenderingStages::done) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
@@ -380,41 +366,9 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ARRAY_BUFFER, VERTEX_SSBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-		// For testing:
-		// 0 draws triangles only (normal)
-		// 1 draws verticies only
-		// 2 draws both
-		const unsigned int render_mode = 0;
-		unsigned int data[5] = { edges_on_side * edges_on_side * edges_on_side * edges_on_side, 0, 0, 0, 0 };
-		switch (render_mode) {
-		case 0:
-		{
-			shader->use();
-			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
-			shader->dontuse();
-			break;
-		}
-		case 1:
-			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
-			shader->use();
-			glPointSize(10.0f);
-			glDrawArraysIndirect(GL_POINTS, 0);
-			shader->dontuse();
-			break;
-		case 2:
-			shader->use();
-			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
-
-
-			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, INDIRECT_SSBO);
-			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(GLuint), data);
-
-
-			glPointSize(10.0f);
-			glDrawArraysIndirect(GL_POINTS, 0);
-			shader->dontuse();
-			break;
-		}
+		shader->use();
+		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0);
+		shader->dontuse();
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -436,31 +390,6 @@ void MarchingCubes::setPos(glm::vec3 p) {
 glm::vec3 MarchingCubes::getPos() {
 	return pos;
 }
-
-bool MarchingCubes::fence_is_done() {
-	if (!fence_is_active) {
-		return true;
-	}
-
-	GLint syncStatus[1] = { GL_UNSIGNALED };
-	glGetSynciv(fence, GL_SYNC_STATUS, sizeof(GLint), NULL, syncStatus);
-	return (syncStatus[0] == GL_SIGNALED);
-}
-
-void MarchingCubes::set_fence() {
-	if (!fence_is_active) {
-		fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-		fence_is_active = true;
-	}
-}
-
-void MarchingCubes::free_fence() {
-	if (fence_is_active) {
-		glDeleteSync(fence);
-		fence_is_active = false;
-	}
-}
-
 
 void MarchingCubes::print_task() {
 	return;

@@ -26,8 +26,6 @@
 #include <chrono>
 #include <thread>
 
-#include "Binding.h"
-
 // Settings
 Settings settings{};
 
@@ -169,7 +167,6 @@ int main() {
 	{
 
 		double frameStartTime = glfwGetTime() - originalFrameStartTime;
-		frameStartTime *= 0.5;
 
 		++counter;
 		// Limit framerate
@@ -248,9 +245,9 @@ int main() {
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
 		if (true) {
-			sky.generateSky(camera, frameStartTime);
+			sky.generateSky(camera, (1.0 / 32.0) * frameStartTime);
 		}
-		sky.render(camera, frameStartTime);
+		sky.render(camera, (1.0 / 32.0) * frameStartTime);
 		glClearDepth(1.0f);
 		glEnable(GL_DEPTH_TEST);
 

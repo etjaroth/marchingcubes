@@ -5,6 +5,7 @@
 #include "SSBOComputeShader.h"
 #include "Heightmap.h"
 #include "CoordinateSystem.h"
+#include "Fence.h"
 
 class MarchingCubes
 {
@@ -63,20 +64,15 @@ private:
 	// Note: Input is listed in the same order as its stage's output                                                                                
 
 	// Pipeline Variables
-	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, size}; // size should always be last
+	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, size} current_step = RenderingStages::start; // size should always be last
 	friend RenderingStages& operator++(RenderingStages& stage) {
 		stage = static_cast<RenderingStages>(static_cast<int>(stage) + 1);
 		return stage;
 	}
 
-	RenderingStages current_step = RenderingStages::start;
-
 	bool waiting = false;
 	static unsigned int task_queue[static_cast<int>(RenderingStages::size)];
 	static unsigned int task_queue_max[static_cast<int>(RenderingStages::size)];
-		// Fence
-	GLsync fence;
-	bool fence_is_active = false;
 
 	// Render Pipeline Functions
 	void update_cubes();
@@ -86,9 +82,7 @@ private:
 	void generate_indices();
 	void generate_verticies();
 		// Fence
-	bool fence_is_done();
-	void set_fence();
-	void free_fence();
+	Fence fence;
 
 	void print_task();
 

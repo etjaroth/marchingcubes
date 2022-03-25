@@ -67,6 +67,9 @@
     <Filter Include="Source Files\openGL Wrappers">
       <UniqueIdentifier>{3034ca41-ce12-41b4-87c3-543675a2d675}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\opengGL wrappers">
+      <UniqueIdentifier>{2bf66ea2-dc8a-4642-8a84-39967327b68b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="opengltutorial.cpp">
@@ -126,9 +129,6 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\openGL Wrappers</Filter>
     </ClCompile>
-    <ClCompile Include="RenderBox.cpp">
-      <Filter>Source Files\openGL Wrappers</Filter>
-    </ClCompile>
     <ClCompile Include="Sky.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
@@ -137,6 +137,15 @@
     </ClCompile>
     <ClCompile Include="Settings.cpp">
       <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="DistantLandscape.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderBox.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Fence.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -194,19 +203,7 @@
     <ClInclude Include="glm.h">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Binding.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Settings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Sky.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ProcessingStage.h">
@@ -214,6 +211,21 @@
     </ClInclude>
     <ClInclude Include="FPSCamera.h">
       <Filter>Header Files\Rendering\Cameras</Filter>
+    </ClInclude>
+    <ClInclude Include="DistantLandscape.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Sky.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderBox.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files\opengGL wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Fence.h">
+      <Filter>Header Files\opengGL wrappers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
