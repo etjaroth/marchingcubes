@@ -10,19 +10,19 @@ ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const 
 	fill_generator(fill_shader, chunk_sz + buffer, chunk_sz + buffer, chunk_sz + buffer),
 	lightingCalculator("lightingCalculator.comp", chunk_sz + buffer, 1, chunk_sz + buffer) {
 
-		chunk_size = chunk_sz;
-		set_pos(orgin);
-		radius = r;
+	chunk_size = chunk_sz;
+	set_pos(orgin);
+	radius = r;
 
-		// To be depricated
-		fill_generator.use();
-		fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
-		fill_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
-		fill_generator.setuInt("biome_type_A", 0);
-		fill_generator.setuInt("biome_type_B", 0);
-		fill_generator.dontuse();
+	// To be depricated
+	fill_generator.use();
+	fill_generator.setVec3("boundryA", glm::vec3(10.0f, 0.0f, 1.0f));
+	fill_generator.setVec3("boundryB", glm::vec3(100.0f, 0.0f, 1.0f));
+	fill_generator.setuInt("biome_type_A", 0);
+	fill_generator.setuInt("biome_type_B", 0);
+	fill_generator.dontuse();
 
-		update_chunks();
+	update_chunks();
 }
 
 // get sign of number
@@ -55,7 +55,8 @@ void ChunkManager::set_pos(glm::vec3 pos) {
 
 ChunkManager::~ChunkManager() {
 	// Marching cubes need to be destructed before heightmap_generator
-	chunk_map.clear();
+	closeTerrain.clear();
+	farTerrain.clear();
 }
 
 void ChunkManager::set_direction(glm::vec3 dir) {
@@ -64,10 +65,26 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 
 void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 	shader->setFloat("wavetime", 2.0f * (float)time);
-	shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(dayNightSpeed * time), 0.0f)));
-	//shader->setFloat("brightness", abs((float)glm::sin(time)));
 
-	std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>> chunk_list(chunk_map.begin(), chunk_map.end());
+	// Calculate brightness
+	{
+		const double minBrightness = 0.2;
+		double brightness = glm::sin(-time * dayNightSpeed);
+		if (brightness + 0.1 > 0.0) { // should still be a little bright over the horizen
+			double a = 80.0 * (brightness + 0.1);
+			brightness = 1.0 / (a * a + 1.0); // applies abs, peaks near 0 (sunrise/sunset)
+			brightness = std::max(1.0 - brightness, 0.2);
+		}
+		else {
+			brightness = minBrightness;
+		}
+
+		shader->setFloat("brightness", static_cast<float>(brightness));
+	}
+
+	//shader->setFloat("brightness", std::max(0.2f, std::max(-(float)glm::sin(dayNightSpeed * time), 0.0f)));
+
+	std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>> chunk_list(closeTerrain.begin(), closeTerrain.end());
 
 	// Sort chunks by distance to the player so that closer chunks are loaded first
 	std::sort(chunk_list.begin(), chunk_list.end(),
@@ -77,6 +94,7 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 			glm::vec3 fa = glm::vec3(a.first);
 			glm::vec3 fb = glm::vec3(b.first);
 
+			// Define order
 			float arrA[3] = { fa.x, fa.z, fa.y };
 			float arrB[3] = { fb.x, fb.z, fb.y };
 
@@ -91,44 +109,14 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 					if (arrA[2] < arrB[2]) {
 						return true;
 					}
-					else {
-						return false;
-					}
-				}
-				else {
-					return false;
 				}
 			}
-			else {
-				return false;
-			}
+			return false;
 		});
 
 
 	for (std::vector<std::pair<glm::ivec3, std::shared_ptr<MarchingCubes>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
-
-
-		// Check if chunk is visable
-		bool corner_visable = false;
-		float angle = 0.0f;
-
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, 0.0f, 0.0f)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, 0.0f, 0.0f)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, chunk_size, 0.0f)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, 0.0f)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, 0.0f, chunk_size)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, 0.0f, chunk_size)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(0.0f, chunk_size, chunk_size)) >= angle;
-		corner_visable = corner_visable || glm::dot(chunk->second->getPos() - position, direction - glm::vec3(chunk_size, chunk_size, chunk_size)) >= angle;
-
-		corner_visable = true;
-
-
-		if (corner_visable) {
-			chunk->second->renderCubes(shader);
-		}
-		else {
-		}
+		chunk->second->renderCubes(shader);
 	}
 
 }
@@ -166,15 +154,15 @@ void ChunkManager::update_chunks() {
 				glm::ivec3 point{
 					x + chunk_position.x + offset.x,
 					y + chunk_position.y + offset.y,
-					z + chunk_position.z + offset.z};
+					z + chunk_position.z + offset.z };
 
 				glm::ivec3 offset2 = glm::ivec3(point);
 
 				legal_points.insert(point);
 
-				if (chunk_map.find(point) == chunk_map.end()) {
+				if (closeTerrain.find(point) == closeTerrain.end()) {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
-					chunk_map.insert(std::pair<glm::ivec3,
+					closeTerrain.insert(std::pair<glm::ivec3,
 						std::shared_ptr<MarchingCubes>>(point,
 							std::make_shared<MarchingCubes>(chunk_size, offset3, &heightmap_generator, &fill_generator, &lightingCalculator, &gen_indicies, &gen_verticies)));
 				}
@@ -184,14 +172,14 @@ void ChunkManager::update_chunks() {
 
 
 	// Create/Destroy MarchingCubes at legal/illegal points
-	for (auto chunk = chunk_map.begin(); chunk != chunk_map.end();) {
+	for (auto chunk = closeTerrain.begin(); chunk != closeTerrain.end();) {
 		glm::ivec3 point = chunk->first;
 
 		if (legal_points.find(point) != legal_points.end()) {
 			++chunk;
 		}
 		else {
-			chunk = chunk_map.erase(chunk);
+			chunk = closeTerrain.erase(chunk);
 		}
 	}
 }

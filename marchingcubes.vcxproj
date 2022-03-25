@@ -164,7 +164,7 @@
     <ClCompile Include="MarchingCubes.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MinModel.cpp" />
-    <ClCompile Include="opengltutorial.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessingStage.cpp" />
     <ClCompile Include="RenderBox.cpp" />
     <ClCompile Include="Settings.cpp" />

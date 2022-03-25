@@ -162,7 +162,7 @@ int main() {
 	glEnable(GL_CULL_FACE);
 
 	unsigned int counter = 0;
-	double originalFrameStartTime = glfwGetTime() + 32.0;
+	double originalFrameStartTime = glfwGetTime() + 10.0;
 	while (!should_close) // Loop
 	{
 
@@ -242,7 +242,8 @@ int main() {
 
 		// Render in stages
 		
-		const double dayNightSpeed = 1.0 / 32.0;
+		//const double dayNightSpeed = 1.0 / 32.0;
+		const double dayNightSpeed = 1.0 / 16.0;
 
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);

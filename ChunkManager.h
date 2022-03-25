@@ -1,6 +1,7 @@
 #pragma once
 #include "Config.h"
 #include "MarchingCubes.h"
+#include "DistantLandscape.h"
 #include "Shader.h"
 #include "ComputeShader.h"
 #include "SSBOComputeShader.h"
@@ -13,7 +14,8 @@ class ChunkManager
 	glm::ivec3 chunk_position;
 	unsigned int chunk_size;
 
-	std::unordered_map<glm::ivec3, std::shared_ptr<MarchingCubes>> chunk_map; // 3D vector of pointers to MarchingCubes
+	std::unordered_map<glm::ivec3, std::shared_ptr<MarchingCubes>> closeTerrain; // 3D vector of pointers to MarchingCubes
+	std::unordered_map<glm::ivec2, std::shared_ptr<DistantLandscape>> farTerrain; // 3D vector of pointers to MarchingCubes
 	int radius; // distance from orgin that chunks are generated
 
 	GLuint VAO;
