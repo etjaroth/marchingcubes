@@ -3,7 +3,7 @@
 
 struct HeightmapTile {
 	GLuint texture;
-	Fence fence;
+	std::shared_ptr<Fence> fence;
 	unsigned int refrence_count;
 };
 
@@ -37,7 +37,7 @@ void Heightmap::generateHeightmap(glm::ivec2 coord) {
 		return;
 	}
 
-	HeightmapTile hmap = { 0, Fence{true}, 0 };
+	HeightmapTile hmap = { 0, std::make_shared<Fence>(true), 0 };
 	glGenTextures(1, &hmap.texture);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
@@ -57,13 +57,17 @@ void Heightmap::generateHeightmap(glm::ivec2 coord) {
 	heightmaps.insert({ key, hmap });
 }
 
+void Heightmap::waitUntilDone() {
+	heightmap_generator.waitUntilDone();
+}
+
 void Heightmap::deleteHeightmap(glm::ivec2 coord) {
 	std::unordered_map<glm::ivec3, HeightmapTile>::iterator itr = heightmaps.find({ coord.x, 0, coord.y });
 	if (itr == heightmaps.end()) {
 		return;
 	}
 
-	itr->second.fence.release();
+	itr->second.fence->release();
 
 	glDeleteTextures(1, &(itr->second.texture));
 	heightmaps.erase(itr);
@@ -76,7 +80,11 @@ bool Heightmap::isGenerated(glm::ivec2 coord) {
 		return false;
 	}
 	else {
-		return itr->second.fence.isDone();
+		bool r = itr->second.fence->isDone();
+		if (r) {
+			itr->second.fence->release();
+		}
+		return r;
 	}
 }
 

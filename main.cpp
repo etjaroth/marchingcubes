@@ -38,6 +38,8 @@ FPSCamera camera(settings.getConstants().spawnpoint,
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void error_callback(int error, const char* description);
+void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
+	GLsizei length, const char* message, const void* userParam); // Debug log
 
 int main() {
 	// Setup
@@ -52,8 +54,8 @@ int main() {
 #endif
 
 	// Window Creation
-	GLFWwindow* window = 
-		glfwCreateWindow(settings.getConstants().screenSize.x, 
+	GLFWwindow* window =
+		glfwCreateWindow(settings.getConstants().screenSize.x,
 			settings.getConstants().screenSize.y, "Marching Cubes Demo", NULL, NULL); // Make window
 	settings.loadControls(window);
 
@@ -66,14 +68,31 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // Resize the window with framebuffer_size_callback()
 	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetErrorCallback(error_callback);
-	
+	//glfwSetErrorCallback(error_callback);
+
+	// Debug Output
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
 	// Initilize GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		glfwTerminate(); // End program
 		return -1;
+	}
+
+	// Debug output
+	{
+		int flags;
+		glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+		//if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_FALSE);
+		glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_PERFORMANCE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_FALSE);
+		//}
 	}
 
 	// Declare window size and GL settings
@@ -89,32 +108,8 @@ int main() {
 	// Generate terrain
 	const unsigned long long chunkSize = settings.getConstants().chunkSize; // should be a power of 2
 	const unsigned long long chunkRadius = settings.getConstants().chunkRadius;
-	const unsigned long long chunkCubeLength = 2 * chunkRadius + 1;
-
-	const unsigned long long renderDistance = chunkSize * (chunkRadius + 1);
-
-	const unsigned long long VERTEX_SSBO_SIZE = 4 * sizeof(float) * 3 * (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 12; // 12 edges per cube
-	const unsigned long long HEIGHTMAP_SIZE = sizeof(float) * (chunkSize + 2); // 12 edges per cube
-	const unsigned long long LANDSCAPE_SIZE = sizeof(float) * (chunkSize + 1) * (chunkSize + 1) * (chunkSize + 1); // 12 edges per cube
-	const unsigned long long INDIRECT_SSBO_SIZE = 5 * sizeof(GLuint); // 12 edges per cube
-	const unsigned long long EBO_SIZE = (chunkSize - 1) * (chunkSize - 1) * (chunkSize - 1) * 15 * sizeof(GLuint); // 12 edges per cube
-	
-	const unsigned long long VERTEX_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * VERTEX_SSBO_SIZE;
-	const unsigned long long HEIGHTMAP_MEMORY = chunkCubeLength * chunkCubeLength * HEIGHTMAP_SIZE;
-	const unsigned long long LANDSCAPE_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
-	const unsigned long long INDIRECT_SSBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * LANDSCAPE_SIZE;
-	const unsigned long long EBO_MEMORY = chunkCubeLength * chunkCubeLength * chunkCubeLength * EBO_SIZE;
-
-	const unsigned long long FINAL_MEMORY_USAGE = VERTEX_SSBO_MEMORY + HEIGHTMAP_MEMORY;
-	const unsigned long long GENERATING_MEMORY_USAGE = FINAL_MEMORY_USAGE + LANDSCAPE_MEMORY + INDIRECT_SSBO_MEMORY + EBO_MEMORY;
 
 	ChunkManager terrain(chunkSize + 1 - 2, glm::vec3(0.0f), chunkRadius, "genHeightmap.comp", "drawTexture.comp");
-	std::cout << "Expected memory usage:\n    FINAL_MEMORY_USAGE (Upper Bound): "
-		<< static_cast<float>(FINAL_MEMORY_USAGE) / 100000000.0 << 
-		" GB\n    GENERATING_MEMORY_USAGE (Upper Bound): "
-		<< static_cast<float>(GENERATING_MEMORY_USAGE) / 100000000.0 << " GB" << std::endl;
-
-	//ChunkManager terrain((32) + 1 - 2, glm::vec3(0.0f), 3, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
 	// Describe Shapes(s)
 	Shader objectShader("VertexShader.vert", "FragmentShader.frag");
@@ -160,13 +155,16 @@ int main() {
 	bool updateTerrain = true;
 
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEBUG_OUTPUT);
 
 	unsigned int counter = 0;
-	double originalFrameStartTime = glfwGetTime() + 10.0;
+	//double originalFrameStartTime = glfwGetTime() + 10.0;
+	double originalFrameStartTime = glfwGetTime() + 32.0;
 	while (!should_close) // Loop
 	{
 
 		double frameStartTime = glfwGetTime() - originalFrameStartTime;
+		//frameStartTime = 0.0;
 		++counter;
 
 		// Limit framerate
@@ -183,15 +181,15 @@ int main() {
 
 		b = std::chrono::system_clock::now();
 		std::chrono::duration<double, std::milli> sleep_time = b - a;
-		
+
 		// Clear window
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//////////////////////////////////////////////////////////////////////
 		// Handle input
-		
-		
+
+
 		// Keyboard
 				// Misc Important
 		settings.readInput(window);
@@ -241,9 +239,9 @@ int main() {
 		//////////////////////////////////////////////////////////////////////
 
 		// Render in stages
-		
+
 		//const double dayNightSpeed = 1.0 / 32.0;
-		const double dayNightSpeed = 1.0 / 16.0;
+		const double dayNightSpeed = 1.0 / 24.0;
 
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
@@ -263,9 +261,11 @@ int main() {
 		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader
 		// Projection Matrix
 		glm::mat4 projection = glm::mat4(1.0f); // Projection Matrix (View -> Clip)
-		if ((static_cast<float>(settings.getConstants().screenSize.x) / 
+		if ((static_cast<float>(settings.getConstants().screenSize.x) /
 			static_cast<float>(settings.getConstants().screenSize.y) < 1))
-		{ std::cout << "Perspective might be disorted" << std::endl; }
+		{
+			std::cout << "Perspective might be disorted" << std::endl;
+		}
 		projection = glm::perspective(glm::radians(45.0f), std::max(((float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y), 1.0f), 0.1f, settings.getConstants().farClipPlain);
 		//projection = glm::ortho(glm::radians(45.0f), (float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y, 0.1f, 100.0f);
 		objectShader.setMat4("projection", projection);
@@ -364,4 +364,76 @@ unsigned int loadTexture(const std::string filename, unsigned int colortype, boo
 	stbi_image_free(data); // Frees memory used when loading texture
 	return texture;
 }
-//*/
+
+void APIENTRY glDebugOutput(GLenum source,
+	GLenum type,
+	unsigned int id,
+	GLenum severity,
+	GLsizei length,
+	const char* message,
+	const void* userParam)
+{
+	// ignore non-significant error/warning codes
+	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+
+	std::cout << "---------------" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+	bool printNewline = true;
+	bool printLastNewline = false;
+
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+	default:                              printNewline = false; break;
+	}
+
+	if (printNewline) {
+		std::cout << std::endl;
+		printLastNewline = true;
+	}
+	printNewline = true;
+
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+	case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+	case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+	case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+	default:                              printNewline = false; break;
+	}
+
+	if (printNewline) {
+		std::cout << std::endl;
+		printLastNewline = true;
+	}
+	printNewline = true;
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+	default:                             printNewline = false; break;
+	}
+
+	if (printNewline) {
+		std::cout << std::endl;
+		printLastNewline = true;
+	}
+
+	if (printLastNewline) {
+		std::cout << std::endl;
+	}
+}

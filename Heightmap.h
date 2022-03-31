@@ -15,6 +15,7 @@ public:
 	Heightmap(int vertex_cube_dimensions, const char* heightmap_shader);
 	~Heightmap();
 	void generateHeightmap(glm::ivec2 coord);
+	void waitUntilDone();
 	bool isGenerated(glm::ivec2 coord);
 	GLuint getHeightmap(glm::ivec2 coord);
 	void releaseHeightmap(glm::ivec2 coord);

@@ -4,7 +4,7 @@ cameraSpeed 20.0
 spawnpoint 0.0 0.0 0.0
 spawnViewDir 0.0 0.0 -1.0
 
-farClipPlain 100.0
+farClipPlain 500.0
 
 GL_CULL_FACE true
 chunkSize 32

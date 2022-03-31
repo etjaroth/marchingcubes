@@ -18,14 +18,16 @@ class DistantLandscape
 
 	// rendering
 	GLuint VAO = 0;
+	GLuint VBO = 0;
 	GLuint EBO = 0;
 	GLuint HEIGHTMAP = 0;
 	const unsigned int SIZEOF_VERTEX = 4 * sizeof(float) * 3;
-	std::vector<float> verticies;
+	struct Vertex;
+	std::vector<Vertex> verticies;
 	std::vector<unsigned int> indicies;
 
 public:
-	DistantLandscape(int vertexCubeDimensions, glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies);
+	DistantLandscape(int _vertexCubeDimensions, glm::ivec2 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies);
 	~DistantLandscape();
 	void renderCubes(Shader* shader);
 };

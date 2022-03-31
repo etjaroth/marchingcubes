@@ -7,10 +7,14 @@ class Fence
 	bool active = false;
 
 public:
-	Fence(bool active = false);
+	explicit Fence(bool active = false);
+	Fence(const Fence& other) = delete;
+	Fence& operator=(const Fence& other) = delete;
 	~Fence();
 
 	bool isDone();
+	void waitUntilDone();
+
 	void set();
 	void release();
 };

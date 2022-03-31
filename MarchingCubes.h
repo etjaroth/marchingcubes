@@ -64,7 +64,7 @@ private:
 	// Note: Input is listed in the same order as its stage's output                                                                                
 
 	// Pipeline Variables
-	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, size} current_step = RenderingStages::start; // size should always be last
+	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, empty, size} current_step = RenderingStages::start; // size should always be last
 	friend RenderingStages& operator++(RenderingStages& stage) {
 		stage = static_cast<RenderingStages>(static_cast<int>(stage) + 1);
 		return stage;

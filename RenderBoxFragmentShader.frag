@@ -21,5 +21,6 @@ vec4 get_camera_vector(vec2 resolution, vec2 coord) {
 void main() {
     FragColor = vec4(texture(Texture, texturePos).xyz, 1.0); // w is depth
 
-    if (length(FragColor.xyz) < 0.0001) { FragColor.xyz = texture(Texture, ivec2(texturePos.x, 0.5 - texturePos.y)).xyz; }
+    //if (length(FragColor.xyz) < 0.0001) { FragColor.xyz = texture(Texture, ivec2(texturePos.x, 0.5 - texturePos.y)).xyz; }
+    if (length(FragColor.xyz) < 0.0001) { FragColor.xyz = sin(-time) * vec3(0.0, 0.9, 1.0); }
 }

@@ -75,7 +75,7 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 			brightness = std::max(1.0 - brightness, 0.2);
 		}
 		else {
-			brightness = minBrightness;
+			brightness = minBrightness; 
 		}
 
 		shader->setFloat("brightness", static_cast<float>(brightness));
@@ -164,7 +164,8 @@ void ChunkManager::update_chunks() {
 						std::pair<glm::ivec3, std::shared_ptr<Chunk>>(point,
 							std::make_shared<Chunk>(
 								glm::sqrt(2.0) * 100.0,
-								chunk_size, offset3,
+								chunk_size, 
+								offset3,
 								heightmap_generator,
 								fill_generator,
 								lightingCalculator,

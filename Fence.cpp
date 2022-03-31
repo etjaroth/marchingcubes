@@ -21,6 +21,15 @@ bool Fence::isDone() {
 	return (syncStatus[0] == GL_SIGNALED);
 }
 
+void Fence::waitUntilDone() {
+	while (true) {
+		GLenum e = glClientWaitSync(fence, 0, 100);
+		if (e == GL_CONDITION_SATISFIED || e == GL_ALREADY_SIGNALED) {
+			break;
+		}
+	}
+}
+
 void Fence::set() {
 	if (!active) {
 		fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
