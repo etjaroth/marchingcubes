@@ -354,7 +354,13 @@ void MarchingCubes::generate_verticies() {
 void MarchingCubes::renderCubes(Shader* shader) {
 	if (current_step == RenderingStages::empty) { return; }
 
-	if (current_step == RenderingStages::done) {
+	if (current_step != RenderingStages::done) {
+		update_cubes();
+	}
+
+	if (current_step == RenderingStages::empty) { return; }
+
+	if (isDone()) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		// Draw
 		glBindVertexArray(VAO);
@@ -371,14 +377,8 @@ void MarchingCubes::renderCubes(Shader* shader) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	}
-	else if (current_step != RenderingStages::done) {
-		update_cubes();
 
-		// Don't waste a frame
-		if (current_step == RenderingStages::done) {
-			renderCubes(shader);
-		}
-	}
+
 };
 
 void MarchingCubes::setPos(glm::vec3 p) {

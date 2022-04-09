@@ -3,12 +3,14 @@
 
 const int buffer = 2;
 
-ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader) :
+ChunkManager::ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader, float scale) :
 	gen_verticies("genVerticies.comp"),
 	gen_indicies("genIndices.comp"),
 	heightmap_generator(chunk_sz + buffer, heightmap_shader),
 	fill_generator(fill_shader, chunk_sz + buffer, chunk_sz + buffer, chunk_sz + buffer),
-	lightingCalculator("lightingCalculator.comp", chunk_sz + buffer, 1, chunk_sz + buffer) {
+	lightingCalculator("lightingCalculator.comp", chunk_sz + buffer, 1, chunk_sz + buffer),
+	model{ glm::mat4(scale) },
+	invModel{ glm::inverse(model) } {
 
 	chunk_size = chunk_sz;
 	set_pos(orgin);
@@ -32,16 +34,17 @@ template <typename T> int sgn(T val) {
 
 void ChunkManager::set_pos(glm::vec3 pos) {
 	glm::vec3 oldpos = position;
-	position = pos;
+	position = invModel * glm::vec4(pos, 1.0f);
 
 	glm::ivec3 old_chunk_pos = chunk_position;
 	// Find location as a chunk
 	unsigned int real_chunk_size = chunk_size + 1;
 	real_chunk_size = chunk_size;
+	glm::vec3 chunkSizeVec = model * glm::vec4(glm::vec3(real_chunk_size), 1.0f);
 
-	chunk_position.x = (int)((position.x) / real_chunk_size);
-	chunk_position.y = (int)((position.y) / real_chunk_size);
-	chunk_position.z = (int)((position.z) / real_chunk_size);
+	chunk_position.x = (int)((position.x) / chunkSizeVec.x);
+	chunk_position.y = (int)((position.y) / chunkSizeVec.y);
+	chunk_position.z = (int)((position.z) / chunkSizeVec.z);
 
 	if (old_chunk_pos != chunk_position) {
 		update_chunks();
@@ -65,6 +68,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 	shader->use();
 	shader->setFloat("wavetime", 2.0f * (float)time);
+	shader->setMat4("model", model);
 
 	// Calculate brightness
 	{
@@ -76,7 +80,7 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 			brightness = std::max(1.0 - brightness, 0.2);
 		}
 		else {
-			brightness = minBrightness; 
+			brightness = minBrightness;
 		}
 
 		shader->setFloat("brightness", static_cast<float>(brightness));
@@ -114,7 +118,8 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 
 
 	for (std::vector<std::pair<glm::ivec3, std::shared_ptr<Chunk>>>::iterator chunk = chunk_list.begin(); chunk != chunk_list.end(); chunk++) {
-		const double distance = glm::length(position - glm::vec3((int)chunk_size * chunk->first));
+		const glm::vec3 p = model * glm::vec4(glm::vec3((int)chunk_size * chunk->first), 1.0f);
+		const double distance = glm::length(position - p);
 		chunk->second->render(shader, distance);
 	}
 
@@ -166,7 +171,7 @@ void ChunkManager::update_chunks() {
 						std::pair<glm::ivec3, std::shared_ptr<Chunk>>(point,
 							std::make_shared<Chunk>(
 								cutoffDistance,
-								chunk_size, 
+								chunk_size,
 								offset3,
 								heightmap_generator,
 								fill_generator,

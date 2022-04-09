@@ -12,6 +12,8 @@ class ChunkManager
 	glm::vec3 direction;
 	glm::ivec3 chunk_position;
 	unsigned int chunk_size;
+	glm::mat4 model;
+	glm::mat4 invModel;
 
 	std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunks; // 3D vector of pointers to MarchingCubes
 	int radius; // distance from orgin that chunks are generated
@@ -27,7 +29,7 @@ class ChunkManager
 
 public:
 
-	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader);
+	ChunkManager(unsigned int chunk_sz, glm::vec3 orgin, int r, const char* heightmap_shader, const char* fill_shader, float scale=2.0f);
 	~ChunkManager();
 	void set_pos(glm::vec3 pos);
 	void set_direction(glm::vec3 dir);

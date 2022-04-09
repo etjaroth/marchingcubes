@@ -242,8 +242,8 @@ int main() {
 
 		// Render in stages
 
-		//const double dayNightSpeed = 1.0 / 32.0;
-		const double dayNightSpeed = 1.0 / 24.0;
+		const double dayNightSpeed = 1.0 / 32.0;
+		//const double dayNightSpeed = 1.0 / 24.0;
 
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);

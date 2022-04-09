@@ -8,7 +8,7 @@ layout (location = 1) in vec4 aNormal;
 layout (location = 2) in vec4 aMaterial; // x stores material index. x, z stores texture coords, w stores light level
 
 // Coordinate Matricies
-uniform mat4 model;
+uniform mat4 model = mat4(1.0);
 //uniform mat4 model_inverse;
 uniform mat4 view;
 uniform mat4 projection;
@@ -104,7 +104,7 @@ const vec3 wave_triangle_verticies[6][2] = {
 const vec3 index_colors[6] = {vec3(1,0,0), vec3(0,1,0), vec3(0,0,1), vec3(0,1,1), vec3(1,0,1), vec3(1,1,0)};
 
 const float wavelength = 2.0;
-const float waveamp = 0.5;
+const float waveamp = 0.75;
 const float wavespeed = 1.0;
 
 float wave(vec2 v) {
@@ -137,7 +137,7 @@ vec3 vec3interpolate(vec3 v1, float f1, vec3 v2, float f2) {
 
 void main()
 {
-    vec4 vertex_position = aPos;
+    vec4 vertex_position = model * aPos;
     const int material = int(aMaterial.x);
 
     normal = aNormal.xyz;
@@ -175,5 +175,5 @@ void main()
 
     FragPos = (model * vertex_position).xyz;
     normal = normalize(normal);
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    gl_Position = projection * view * model * vec4(FragPos, 1.0);
 }
