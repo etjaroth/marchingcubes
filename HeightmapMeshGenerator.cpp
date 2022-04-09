@@ -28,7 +28,7 @@ glm::vec4 HeightmapMeshGenerator::getArrayElement(glm::ivec2 coord, int width, f
 	return glm::vec4(fx, fy, fz, fw);
 }
 
-HeightmapMeshGenerator::HeightmapMeshGenerator(unsigned int vertexCubeDimensions, float* pixels, glm::vec3 pos)
+HeightmapMeshGenerator::HeightmapMeshGenerator(int vertexCubeDimensions, float* pixels, glm::vec3 pos)
 	: 
 	//AbstractThreadTaskTemplate<std::shared_ptr<TerrainMesh>>(),
 	vertexCubeDimensions{ vertexCubeDimensions },
@@ -69,21 +69,28 @@ void HeightmapMeshGenerator::operator()() {
 			}
 
 			if (firstChecked) {
-				bool firstChecked = false;
+				firstChecked = false;
 				minHeight = position.y;
 				maxHeight = position.y;
 			}
 
 			minHeight = std::min(position.y, minHeight);
 			maxHeight = std::max(position.y, maxHeight);
-			verticies.push_back({ position, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), material });
+
+			// I don't know why we need that correction to the position
+			verticies.push_back({ position + glm::vec4(0.0f, -1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), material });
 		}
 	}
 
-	if (minHeight > (pos.y + (vertexCubeDimensions - 2)) && maxHeight < pos.y) {
-		// data = nullptr;
-	}
-	else {
+	const float bottomHeight = pos.y;
+	const float topHeight = (pos.y + (vertexCubeDimensions - 2));
+	const bool topInBox = (bottomHeight <= maxHeight && maxHeight <= topHeight); // top of mesh is in box
+	const bool bottomInBox = (bottomHeight <= minHeight && minHeight <= topHeight); // bottom of mesh is in box
+	const bool tallMesh = (minHeight <= bottomHeight && topHeight <= maxHeight); // mesh is taller than box
+
+	bool containsMesh = topInBox || bottomInBox || tallMesh;
+
+	if (containsMesh) {
 		// EBO data
 		for (unsigned int x = 1; x <= vertexCubeDimensions / 2; ++x) {
 			for (unsigned int z = 1; z <= vertexCubeDimensions / 2; ++z) {
@@ -119,10 +126,15 @@ void HeightmapMeshGenerator::operator()() {
 			verticies[indicies[i + 2]].normal = normal;
 		}
 
-		//data = std::make_shared<TerrainMesh>(verticies, indicies);
-
+		//mesh = std::make_shared<TerrainMesh>(verticies, indicies);
+		data = std::make_shared<TerrainMesh>(verticies, indicies);
 	}
+	else {
 
-	delete[] pixels;
+		// do nothing
+
+		//mesh = nullptr;
+		data = nullptr;
+	}
 	
 }

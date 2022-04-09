@@ -4,9 +4,9 @@
 #include "TerrainMesh.h"
 
 class HeightmapMeshGenerator
-//    : public AbstractThreadTaskTemplate<std::shared_ptr<TerrainMesh>>
+    : public AbstractThreadTaskTemplate<std::shared_ptr<TerrainMesh>>
 {
-    unsigned int vertexCubeDimensions;
+    int vertexCubeDimensions;
     float* pixels;
     glm::vec3 pos;
 
@@ -15,10 +15,10 @@ class HeightmapMeshGenerator
     glm::vec4 getArrayElement(glm::ivec2 coord, int width, float* pixels);
 
 public:
-    HeightmapMeshGenerator(unsigned int vertexCubeDimensions, float* pixels, glm::vec3 pos);
+    HeightmapMeshGenerator(int vertexCubeDimensions, float* pixels, glm::vec3 pos);
     ~HeightmapMeshGenerator();
 
-    void operator()()// override
+    void operator()() override
         ;
 };
 
