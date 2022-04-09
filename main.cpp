@@ -153,10 +153,10 @@ int main() {
 	const double framerateFrequency = 500 / 60.0;
 
 	// Toggles
-	bool meshViewToggle = true;
+	bool meshViewToggle = false;
 	bool updateTerrain = true;
 
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEBUG_OUTPUT);
 
 	unsigned int counter = 0;
