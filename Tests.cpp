@@ -1,7 +1,9 @@
 #include "config.h"
 #ifndef STB_IMAGE_IMPLEMENTATION // Causes errors if in Config.h
 #define STB_IMAGE_IMPLEMENTATION
+#pragma warning(push, 0)
 #include "stb_image.h"
+#pragma warning(pop)
 #endif
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>

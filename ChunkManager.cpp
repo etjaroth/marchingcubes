@@ -63,6 +63,7 @@ void ChunkManager::set_direction(glm::vec3 dir) {
 }
 
 void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
+	shader->use();
 	shader->setFloat("wavetime", 2.0f * (float)time);
 
 	// Calculate brightness
@@ -160,10 +161,11 @@ void ChunkManager::update_chunks() {
 
 				if (chunks.find(point) == chunks.end()) {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
+					const float cutoffDistance = glm::sqrt(2.0) * 100.0;
 					chunks.insert(
 						std::pair<glm::ivec3, std::shared_ptr<Chunk>>(point,
 							std::make_shared<Chunk>(
-								glm::sqrt(2.0) * 100.0,
+								cutoffDistance,
 								chunk_size, 
 								offset3,
 								heightmap_generator,

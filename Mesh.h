@@ -5,15 +5,24 @@
 class Mesh
 {
 public:
-    // mesh data
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-    //std::vector<Texture> textures;
+    struct Vertex {
+        glm::vec4 pos;
+        glm::vec4 normal;
+        glm::vec4 material;
+    };
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices);// , std::vector<Texture> textures);
-    void draw(Shader& shader, Material material);
-private:
-    //  render data
-    unsigned int VAO, VBO, EBO;
-    void setupMesh();
+    GLuint size = 0;
+
+public:
+    GLuint VAO = 0;
+    GLuint VBO = 0;
+    GLuint EBO = 0;
+    virtual void setupVAO() = 0;
+    virtual void bufferData(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) = 0;
+
+public:
+    explicit Mesh(unsigned int size);
+    virtual ~Mesh();
+    void render(Shader& shader);
+    void init();
 };

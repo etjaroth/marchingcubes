@@ -12,8 +12,9 @@ public:
 	Fence& operator=(const Fence& other) = delete;
 	~Fence();
 
-	bool isDone();
-	void waitUntilDone();
+	bool isDone() const;
+	bool isActive() const;
+	void waitUntilDone() const;
 
 	void set();
 	void release();

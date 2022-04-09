@@ -2,7 +2,9 @@
 #include "Config.h"
 #ifndef STB_IMAGE_IMPLEMENTATION // Causes errors if in Config.h
 #define STB_IMAGE_IMPLEMENTATION
+#pragma warning(push, 0)
 #include "stb_image.h"
+#pragma warning(pop)
 #endif
 #include <iomanip>
 
@@ -14,7 +16,6 @@
 #include "FPSCamera.h"
 #include "FlyCamera.h"
 
-#include "MinModel.h"
 #include "MarchingCubes.h"
 #include "ChunkManager.h"
 
@@ -131,7 +132,8 @@ int main() {
 	unsigned int transformLoc = glGetUniformLocation(objectShader.shaderProgram, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(texturetransformmat));
 
-	Sky sky{};
+	//Sky sky{};
+	Sky sky{ glm::uvec2(1024), "SimpleSkyGenerator.comp" };
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -154,7 +156,7 @@ int main() {
 	bool meshViewToggle = true;
 	bool updateTerrain = true;
 
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glEnable(GL_DEBUG_OUTPUT);
 
 	unsigned int counter = 0;
@@ -275,6 +277,7 @@ int main() {
 		if (updateTerrain) {
 			terrain.set_pos(-camera.getPos());
 		}
+		//std::cout << glm::to_string(-camera.getPos()) << std::endl;
 		terrain.set_direction(camera.getDirection());
 		terrain.render(&objectShader, frameStartTime, dayNightSpeed);
 

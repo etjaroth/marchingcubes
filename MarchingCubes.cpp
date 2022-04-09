@@ -91,8 +91,6 @@ MarchingCubes::MarchingCubes(int cubeSize, glm::ivec3 pos, Heightmap& heightmapG
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_BINDING, VERTEX_SSBO);
 	VERTEX_SSBO_SIZE = SIZEOF_VERTEX * verticies_on_side * verticies_on_side * verticies_on_side * 12; // 12 edges per cube
 	glBufferData(GL_SHADER_STORAGE_BUFFER, VERTEX_SSBO_SIZE, NULL, GL_STATIC_COPY);
-	//GLfloat clear_value = 0.0f;
-	//glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_RGBA32F, GL_R32F, GL_RGBA32F, &clear_value);
 
 	GLint size = 0;
 	glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
@@ -375,6 +373,11 @@ void MarchingCubes::renderCubes(Shader* shader) {
 	}
 	else if (current_step != RenderingStages::done) {
 		update_cubes();
+
+		// Don't waste a frame
+		if (current_step == RenderingStages::done) {
+			renderCubes(shader);
+		}
 	}
 };
 
@@ -412,4 +415,8 @@ void MarchingCubes::print_task() {
 	//case 6:
 	//	break;
 	//}
+}
+
+bool MarchingCubes::isDone() const {
+	return (current_step == RenderingStages::done || current_step == RenderingStages::empty);
 }

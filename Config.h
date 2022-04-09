@@ -21,11 +21,4 @@
 #include <GLFW/glfw3.h>
 // Opengl Vector Math
 #include "glm.h"
-// Model Loading
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-// Data
-#include "Structs.h"
 

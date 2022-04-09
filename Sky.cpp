@@ -21,9 +21,9 @@ glm::mat3 rotateAlign(glm::vec3 v1, glm::vec3 v2)
 	return result;
 }
 
-Sky::Sky(glm::uvec2 resolution)
+Sky::Sky(glm::uvec2 resolution, std::string skyShaderName)
 	: skyTexture{ resolution },
-	skyGenerator{ "SkyGenerator.comp", resolution.x, resolution.y, 1 },
+	skyGenerator{ skyShaderName.c_str(), resolution.x, resolution.y, 1 },
 	resolution{ resolution } {
 
 	//skyTexture.setWrap(GL_CLAMP_TO_EDGE);
@@ -68,14 +68,15 @@ void Sky::generateSky(FPSCamera& camera, double time) {
 
 	glm::vec3 rotationVec = camera.getCameraRotationVec();
 
-	glm::mat4 m(1.0f);
-	m = glm::rotate(m, rotationVec.x, glm::vec3(1.0f, 0.0f, 0.0f));
-	m = glm::rotate(m, rotationVec.y, glm::vec3(0.0f, 1.0f, 0.0f));
-	m = glm::rotate(m, rotationVec.z, glm::vec3(0.0f, 0.0f, 1.0f));
+	//glm::mat4 m(1.0f);
+	//m = glm::rotate(m, rotationVec.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	//m = glm::rotate(m, rotationVec.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	//m = glm::rotate(m, rotationVec.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-	m = glm::translate(m, glm::vec3(0.0f, 0.26, 0.0f)); // 0.26 is from #define ELEVATION_CONSTANT 0.26
+	//m = glm::translate(m, glm::vec3(0.0f, 0.26, 0.0f)); // 0.26 is from #define ELEVATION_CONSTANT 0.26
 
-	skyGenerator.setMat4("viewMatInverse", glm::inverse(m));
+	//skyGenerator.setMat4("viewMatInverse", glm::inverse(m));
+	//skyGenerator.setMat4("viewMatInverse", glm::inverse(camera.getView()));
 	
 	skyGenerator.fillTexture();
 	

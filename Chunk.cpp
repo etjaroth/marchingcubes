@@ -3,8 +3,7 @@
 Chunk::Chunk(unsigned int cutoffDistance, int cubeSize, glm::ivec3 position, Heightmap& heightmap_generator_ptr, ComputeShader& fill_generator_ptr, ComputeShader& lightingCalculatorPtr, SSBOComputeShader& gen_indices_ptr, SSBOComputeShader& gen_verticies_ptr)
 	: cutoffDistance{ cutoffDistance } {
 	highDetail = new MarchingCubes(cubeSize, position, heightmap_generator_ptr, fill_generator_ptr, lightingCalculatorPtr, gen_indices_ptr, gen_verticies_ptr);
-	//lowDetail = new DistantLandscape(cubeSize, glm::ivec2(position.x, position.z), heightmap_generator_ptr, gen_verticies_ptr);
-	lowDetail = nullptr;
+	lowDetail = new DistantLandscape(cubeSize, position, heightmap_generator_ptr, gen_verticies_ptr);
 }
 
 Chunk::~Chunk() {
@@ -26,13 +25,18 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept {
 }
 
 void Chunk::render(Shader* shader, double distance) {
-	bool b = distance < cutoffDistance;
-	//b = true;
+	bool b = distance <= cutoffDistance;
+	// b = false;
 
-	//if (b) {
+	if (b) {
 		highDetail->renderCubes(shader);
-	//}
-	//else {
-		//lowDetail->renderCubes(shader);
-	//}
+	}
+	else {
+		lowDetail->renderCubes(shader);
+	}
+
+	// Draw the low detail version if the complex version isn't ready
+	if (!highDetail->isDone()) {
+		lowDetail->renderCubes(shader);
+	}
 }

@@ -70,6 +70,12 @@
     <Filter Include="Header Files\opengGL wrappers">
       <UniqueIdentifier>{2bf66ea2-dc8a-4642-8a84-39967327b68b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Misc\Threading">
+      <UniqueIdentifier>{d8d60f0c-1662-4b90-9c6e-7f5647944448}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc\Threading">
+      <UniqueIdentifier>{5f7f0f14-2619-40db-a786-d783371697d9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -82,9 +88,6 @@
       <Filter>Source Files\Misc</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
-    <ClCompile Include="MinModel.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
     <ClCompile Include="Tests.cpp">
@@ -150,6 +153,18 @@
     <ClCompile Include="Chunk.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
+    <ClCompile Include="TerrainMesh.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadManager.cpp">
+      <Filter>Source Files\Misc\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="AbstractThreadTask.cpp">
+      <Filter>Source Files\Misc\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="HeightmapMeshGenerator.cpp">
+      <Filter>Source Files\Misc\Threading</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FastNoise.h">
@@ -164,13 +179,7 @@
     <ClInclude Include="Structs.h">
       <Filter>Header Files\Misc</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadSafeQueue.h">
-      <Filter>Header Files\Misc</Filter>
-    </ClInclude>
     <ClInclude Include="Mesh.h">
-      <Filter>Header Files\Model</Filter>
-    </ClInclude>
-    <ClInclude Include="MinModel.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
     <ClInclude Include="FlyCamera.h">
@@ -206,9 +215,6 @@
     <ClInclude Include="glm.h">
       <Filter>Header Files\Libraries</Filter>
     </ClInclude>
-    <ClInclude Include="Settings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ProcessingStage.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
@@ -232,6 +238,24 @@
     </ClInclude>
     <ClInclude Include="Chunk.h">
       <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadManager.h">
+      <Filter>Header Files\Misc\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadSafeQueue.h">
+      <Filter>Header Files\Misc\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractThreadTask.h">
+      <Filter>Header Files\Misc\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="HeightmapMeshGenerator.h">
+      <Filter>Header Files\Misc\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainMesh.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Settings.h">
+      <Filter>Header Files\Misc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +287,9 @@
       <Filter>Source Files\Rendering\Shaders</Filter>
     </None>
     <None Include="SkyGenerator.comp">
+      <Filter>Source Files\Rendering\Shaders</Filter>
+    </None>
+    <None Include="SimpleSkyGenerator.comp">
       <Filter>Source Files\Rendering\Shaders</Filter>
     </None>
   </ItemGroup>

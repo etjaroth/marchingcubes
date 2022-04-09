@@ -17,6 +17,8 @@ public:
     const char* geometryShaderSource;
     const char* fragmentShaderSource;
 
+    bool bound = false;
+
     void makeShader(const char* shaderPath, GLenum shaderType);
 
     //public:

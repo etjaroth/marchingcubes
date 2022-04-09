@@ -14,7 +14,7 @@ private:
 	int verticies_on_side;
 	int edges_on_side;
 	int verticies_on_side_with_buffer;
-	
+
 	// Shaders
 	Heightmap& heightmapGenerator;
 	ComputeShader& fillGenerator;
@@ -43,7 +43,7 @@ private:
 
 	GLuint LANDSCAPE_DATA = 0;
 	const int LANDSCAPE_DATA_UNIT = 0;
-	
+
 	// Task                                              Shader Name         Task Number    Limit       Cost    Pipe                                                
 	//                                                                                                                                              
 	// start                                                                  0              Infinity    N/A     N/A                                
@@ -64,7 +64,7 @@ private:
 	// Note: Input is listed in the same order as its stage's output                                                                                
 
 	// Pipeline Variables
-	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, empty, size} current_step = RenderingStages::start; // size should always be last
+	enum class RenderingStages { start = 0, genHeightmap, genField, genLighting, genIndicies, genVerticies, done, empty, size } current_step = RenderingStages::start; // size should always be last
 	friend RenderingStages& operator++(RenderingStages& stage) {
 		stage = static_cast<RenderingStages>(static_cast<int>(stage) + 1);
 		return stage;
@@ -81,7 +81,7 @@ private:
 	void calculateLighting();
 	void generate_indices();
 	void generate_verticies();
-		// Fence
+	// Fence
 	Fence fence;
 
 	void print_task();
@@ -89,10 +89,15 @@ private:
 public:
 	MarchingCubes(int cubeSize, glm::ivec3 position, Heightmap& heightmapGenerator, ComputeShader& fillGenerator, ComputeShader& lightingCalculatorPtr, SSBOComputeShader& genIndices, SSBOComputeShader& genVerticies);
 	~MarchingCubes();
+
 	void renderCubes(Shader* shader);
+
 	void setPos(glm::vec3 p);
 	glm::vec3 getPos();
+
 	unsigned int getStep() {
 		return static_cast<unsigned int>(current_step);
 	};
+
+	bool isDone() const;
 };

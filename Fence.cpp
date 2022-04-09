@@ -11,7 +11,7 @@ Fence::~Fence() {
 }
 
 
-bool Fence::isDone() {
+bool Fence::isDone() const {
 	if (!active) {
 		return true;
 	}
@@ -21,7 +21,11 @@ bool Fence::isDone() {
 	return (syncStatus[0] == GL_SIGNALED);
 }
 
-void Fence::waitUntilDone() {
+bool Fence::isActive() const {
+	return active;
+}
+
+void Fence::waitUntilDone() const {
 	while (true) {
 		GLenum e = glClientWaitSync(fence, 0, 100);
 		if (e == GL_CONDITION_SATISFIED || e == GL_ALREADY_SIGNALED) {

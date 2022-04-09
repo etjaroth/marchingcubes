@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\cpplibs\openglDependencies\$(Configuration);C:\Users\Ethan\Documents\cpplibs\lib\opengl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c" />
+    <ClCompile Include="AbstractThreadTask.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
@@ -161,10 +162,10 @@
     <ClCompile Include="FlyCamera.cpp" />
     <ClCompile Include="FPSCamera.cpp" />
     <ClCompile Include="Heightmap.cpp" />
+    <ClCompile Include="HeightmapMeshGenerator.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="MarchingCubes.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MinModel.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessingStage.cpp" />
     <ClCompile Include="RenderBox.cpp" />
@@ -173,12 +174,15 @@
     <ClCompile Include="Sky.cpp" />
     <ClCompile Include="SSBOComputeShader.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
+    <ClCompile Include="TerrainMesh.cpp" />
     <ClCompile Include="Tests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="ThreadManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractThreadTask.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkManager.h" />
@@ -192,10 +196,10 @@
     <ClInclude Include="FPSCamera.h" />
     <ClInclude Include="glm.h" />
     <ClInclude Include="Heightmap.h" />
+    <ClInclude Include="HeightmapMeshGenerator.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MarchingCubes.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MinModel.h" />
     <ClInclude Include="ProcessingStage.h" />
     <ClInclude Include="RenderBox.h" />
     <ClInclude Include="Settings.h" />
@@ -204,7 +208,9 @@
     <ClInclude Include="SSBOComputeShader.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Structs.h" />
+    <ClInclude Include="TerrainMesh.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +222,7 @@
     <None Include="lightingCalculator.comp" />
     <None Include="RenderBoxFragmentShader.frag" />
     <None Include="RenderBoxVertexShader.vert" />
+    <None Include="SimpleSkyGenerator.comp" />
     <None Include="SkyGenerator.comp" />
     <None Include="VertexShader.vert" />
   </ItemGroup>
