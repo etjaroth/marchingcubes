@@ -1,9 +1,8 @@
 #include "DistantLandscape.h"
 #include "Fence.h"
-#include "HeightmapMeshGenerator.h"
 
 glm::ivec2 getCoord(unsigned int idx, int width, int objSize) {
-	glm::ivec2 coord;
+	glm::ivec2 coord{};
 	coord.x = idx / (width * objSize);
 	coord.y = idx % (width * objSize);
 	return coord;
@@ -36,11 +35,12 @@ struct DistantLandscape::Vertex {
 	glm::vec4 material;
 };
 
-DistantLandscape::DistantLandscape(int _vertexCubeDimensions, glm::ivec3 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies)
+DistantLandscape::DistantLandscape(int _vertexCubeDimensions, glm::ivec3 pos, Heightmap& heightmapGenerator, SSBOComputeShader& genVerticies, std::shared_ptr<ThreadManager> threadManager)
 	: vertexCubeDimensions{ _vertexCubeDimensions + 2 },
 	pos{ pos },
 	heightmapGenerator{ heightmapGenerator },
-	genVerticies{ genVerticies } {
+	genVerticies{ genVerticies },
+	threadManager{ threadManager } {
 
 	// Gen heightmap
 	Fence fence{ true };
@@ -55,9 +55,9 @@ DistantLandscape::~DistantLandscape() {
 	if (PBO) {
 		glDeleteBuffers(1, &PBO);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-		delete[] pixels;
 		heightmapGenerator.releaseHeightmap(glm::ivec2(pos.x, pos.z));
 	}
+	delete[] pixels;
 }
 
 void DistantLandscape::renderCubes(Shader* shader) {
@@ -101,32 +101,36 @@ void DistantLandscape::loadHeightmap() {
 		return;
 	}
 
-
 	fence.release();
 	glDeleteBuffers(1, &PBO);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	PBO = 0;
+	//heightmapGenerator.releaseHeightmap(glm::ivec2(pos.x, pos.z));
 	currentStep = RenderingStages::genVerticies;
-	generate();
 }
 
 void DistantLandscape::generate() {
-	// generate in HeightmapMeshGenerator
-	
-	HeightmapMeshGenerator gen{vertexCubeDimensions, pixels, pos};
-	gen();
-	mesh = gen.getData();
-	
-	// generate in HeightmapMeshGenerator
+	if (hGen) {
+		if (hGen->isDone()) {
+			std::shared_ptr<HeightmapData> data = hGen->getData();
 
-	delete[] pixels;
+			if (data) {
+				mesh = std::make_shared<TerrainMesh>(data->verticies, data->indicies);
+				currentStep = RenderingStages::done;
+			}
+			else {
+				currentStep = RenderingStages::empty;
+			}
 
-	if (mesh) {
-		currentStep = RenderingStages::done;
+		}
 	}
 	else {
-		currentStep = RenderingStages::empty;
+		hGen = std::make_shared<HeightmapMeshGenerator>(vertexCubeDimensions, pixels, pos);
+
+		threadManager->scheduleThread(hGen);
+
+		//(*hGen)();
+
 	}
 
-	
 }

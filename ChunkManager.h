@@ -5,6 +5,7 @@
 #include "ComputeShader.h"
 #include "SSBOComputeShader.h"
 #include "Heightmap.h"
+#include "ThreadManager.h"
 
 class ChunkManager
 {
@@ -24,6 +25,9 @@ class ChunkManager
 	ComputeShader lightingCalculator;
 	SSBOComputeShader gen_indicies;
 	SSBOComputeShader gen_verticies;
+
+	std::shared_ptr<ThreadManager> threadManager = std::make_shared<ThreadManager>();
+	//std::shared_ptr<ThreadManager> threadManager = nullptr;
 
 	void update_chunks();
 

@@ -165,6 +165,9 @@
     <ClCompile Include="HeightmapMeshGenerator.cpp">
       <Filter>Source Files\Misc\Threading</Filter>
     </ClCompile>
+    <ClCompile Include="ThreadHolder.cpp">
+      <Filter>Source Files\Misc\Threading</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FastNoise.h">
@@ -256,6 +259,9 @@
     </ClInclude>
     <ClInclude Include="Settings.h">
       <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadHolder.h">
+      <Filter>Header Files\Misc\Threading</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -179,6 +179,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="ThreadHolder.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -210,6 +211,7 @@
     <ClInclude Include="Structs.h" />
     <ClInclude Include="TerrainMesh.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="ThreadHolder.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
   </ItemGroup>

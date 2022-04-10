@@ -1,21 +1,16 @@
 #pragma once
 #include "AbstractThreadTask.h"
-#include <map>
-#include <memory>
-#include <thread>
-#include <queue>
+#include "ThreadHolder.h"
+#include <vector>
 
 class ThreadManager
 {
-	static unsigned int timestamp;
-	unsigned int numThreads;
-	std::map<std::shared_ptr<AbstractThreadTask>, std::thread> activeThreads;
-	std::priority_queue<std::pair<unsigned int, std::shared_ptr<AbstractThreadTask>>> pqueue;
+	std::vector<std::shared_ptr<ThreadHolder>> threads;
+	unsigned int itr = 0; // making the assumption that all tasks take the same amount of time on average
 
 public:
-	explicit ThreadManager(unsigned int numThreads);
-	~ThreadManager();
+	explicit ThreadManager(unsigned int numThreads = 3);
 
 	void scheduleThread(std::shared_ptr<AbstractThreadTask> task);
-	void iterate();
+	
 };

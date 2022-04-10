@@ -3,6 +3,7 @@
 
 class AbstractThreadTask
 {
+protected:
 	std::atomic_flag done;
 
 public:
@@ -11,7 +12,7 @@ public:
 
 	virtual void operator()() = 0;
 
-	bool isDone() const {
+	bool isDone() const { // atomic
 		return done.test();
 	}
 };

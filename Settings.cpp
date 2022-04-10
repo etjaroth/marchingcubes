@@ -148,6 +148,9 @@ Settings::SettingAction Settings::convertToSettingAction(std::string str) {
 	else if (str == "farClipPlain") {
 		return SettingAction::farClipPlain;
 	}
+	else if (str == "cullFace") {
+		return SettingAction::cullFace;
+	}
 
 	else {
 		return SettingAction::INVALID_ACTION;
@@ -258,6 +261,18 @@ Settings::Settings(std::string filename) {
 			case SettingAction::farClipPlain:
 				linestream >> constants.farClipPlain;
 				break;
+			case SettingAction::cullFace:
+			{
+				std::string boolStr;
+				linestream >> boolStr;
+				if (boolStr == "true") {
+					constants.cullFace = true;
+				}
+				else if (boolStr == "false") {
+					constants.cullFace = false;
+				}
+			}
+			break;
 			}
 		}
 	}
@@ -287,7 +302,7 @@ void Settings::loadControls(GLFWwindow* window) {
 
 			linestream >> action;
 			if (action == "slow") {
-				keyLocks.insert({GLactionEnum, false});
+				keyLocks.insert({ GLactionEnum, false });
 			}
 
 			bindings.insert({ GLactionEnum , {pressRelease, actionEnum} });

@@ -10,7 +10,7 @@ class Chunk
 	DistantLandscape* lowDetail;
 
 public:
-	Chunk(unsigned int cutoffDistance, int cubeSize, glm::ivec3 position, Heightmap& heightmap_generator_ptr, ComputeShader& fill_generator_ptr, ComputeShader& lightingCalculatorPtr, SSBOComputeShader& gen_indices_ptr, SSBOComputeShader& gen_verticies_ptr);
+	Chunk(unsigned int cutoffDistance, int cubeSize, glm::ivec3 position, Heightmap& heightmap_generator_ptr, ComputeShader& fill_generator_ptr, ComputeShader& lightingCalculatorPtr, SSBOComputeShader& gen_indices_ptr, SSBOComputeShader& gen_verticies_ptr, std::shared_ptr<ThreadManager> threadManager);
 	~Chunk();
 	Chunk(Chunk& other) = delete;
 	Chunk(Chunk&& other) noexcept;

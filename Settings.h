@@ -12,6 +12,7 @@ class Settings
 		controlConfigFile,
 		freeKey,
 		farClipPlain,
+		cullFace,
 
 		INVALID_ACTION
 	};
@@ -70,6 +71,7 @@ class Settings
 		unsigned int chunkRadius = 0;
 
 		float farClipPlain = 100.0f;
+		bool cullFace = true;
 
 		std::string controlConfigFile;
 

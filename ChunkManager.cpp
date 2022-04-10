@@ -166,7 +166,7 @@ void ChunkManager::update_chunks() {
 
 				if (chunks.find(point) == chunks.end()) {
 					glm::ivec3 offset3 = static_cast<int>(chunk_size) * offset2;
-					float cutoffDistance = glm::sqrt(3.0) * (model * glm::vec4(glm::vec3(100.0), 1.0f)).x;
+					float cutoffDistance = glm::sqrt(2.0) * (model * glm::vec4(glm::vec3(100.0), 1.0f)).x;
 					chunks.insert(
 						std::pair<glm::ivec3, std::shared_ptr<Chunk>>(point,
 							std::make_shared<Chunk>(
@@ -177,7 +177,8 @@ void ChunkManager::update_chunks() {
 								fill_generator,
 								lightingCalculator,
 								gen_indicies,
-								gen_verticies)));
+								gen_verticies,
+								threadManager)));
 				}
 			}
 		}

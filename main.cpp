@@ -156,7 +156,9 @@ int main() {
 	bool meshViewToggle = false;
 	bool updateTerrain = true;
 
-	glEnable(GL_CULL_FACE);
+	if (settings.getConstants().cullFace) {
+		glEnable(GL_CULL_FACE);
+	}
 	glEnable(GL_DEBUG_OUTPUT);
 
 	unsigned int counter = 0;

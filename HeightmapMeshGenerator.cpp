@@ -1,7 +1,7 @@
 #include "HeightmapMeshGenerator.h"
 
 glm::ivec2 HeightmapMeshGenerator::getCoord(unsigned int idx, int width, int objSize) {
-	glm::ivec2 coord;
+	glm::ivec2 coord{};
 	coord.x = idx / (width * objSize);
 	coord.y = idx % (width * objSize);
 	return coord;
@@ -28,22 +28,24 @@ glm::vec4 HeightmapMeshGenerator::getArrayElement(glm::ivec2 coord, int width, f
 	return glm::vec4(fx, fy, fz, fw);
 }
 
-HeightmapMeshGenerator::HeightmapMeshGenerator(int vertexCubeDimensions, float* pixels, glm::vec3 pos)
+HeightmapMeshGenerator::HeightmapMeshGenerator(int vertexCubeDimensions, float*& refPixels, glm::vec3 pos)
 	: 
 	//AbstractThreadTaskTemplate<std::shared_ptr<TerrainMesh>>(),
 	vertexCubeDimensions{ vertexCubeDimensions },
-	pixels{pixels},
+	pixels{ refPixels },
 	pos{pos} {
-
+	refPixels = nullptr; // take ownership of pixels
 }
 
 HeightmapMeshGenerator::~HeightmapMeshGenerator() {
-
+	delete[] pixels;
 }
 
 void HeightmapMeshGenerator::operator()() {
-	std::vector<TerrainMesh::Vertex> verticies;
-	std::vector<unsigned int> indicies;
+	data = std::make_shared<HeightmapData>();
+
+	std::vector<TerrainMesh::Vertex>& verticies = data->verticies;
+	std::vector<unsigned int>& indicies = data->indicies;
 
 	float minHeight = 0.0f;
 	float maxHeight = 0.0f;
@@ -126,15 +128,14 @@ void HeightmapMeshGenerator::operator()() {
 			verticies[indicies[i + 2]].normal = normal;
 		}
 
-		//mesh = std::make_shared<TerrainMesh>(verticies, indicies);
-		data = std::make_shared<TerrainMesh>(verticies, indicies);
+		data = std::make_shared<HeightmapData>(verticies, indicies);
 	}
 	else {
-
-		// do nothing
-
-		//mesh = nullptr;
 		data = nullptr;
 	}
 	
+	delete[] pixels;
+	pixels = nullptr;
+	done.test_and_set();
+
 }
