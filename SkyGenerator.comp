@@ -73,6 +73,7 @@ uniform float earthRadius;
 uniform float sunDistanceRatio;
 
 uniform mat4 viewMatInverse;
+uniform vec3 cameraPos;
 uniform vec3 cameraDir;
 
 uniform float time;
@@ -96,9 +97,9 @@ uniform float HEIGHT_MIE; /* and mie */
 uniform float HEIGHT_ABSORPTION; /* at what height the absorption is at it's maximum */
 
 // Quality
-#define PRIMARY_STEPS 16 /* primary steps, affects quality the most */
-#define LIGHT_STEPS 8 /* light steps, how much steps in the light direction are taken */
-#define ELEVATION_CONSTANT (10000.0 + 0.26) // Keeps the camera above the horizen. Should always be above 0.25
+#define PRIMARY_STEPS 8 /* primary steps, affects quality the most */
+#define LIGHT_STEPS 2 /* light steps, how much steps in the light direction are taken */
+#define ELEVATION_CONSTANT 100.0 // Keeps the camera above the horizen. Should always be above 0.25
 
 /*
 Next we'll define the main scattering function.
@@ -336,7 +337,7 @@ void main() {
     vec3 camera_vector = applyCameraRotationInverse(simple_camera_vector);
 
     // get the camera position, switch based on the defines
-    vec3 camera_position = vec3(0.0, earthRadius + ELEVATION_CONSTANT, 0.0);
+    //vec3 camera_position = vec3(0.0, earthRadius + ELEVATION_CONSTANT, 0.0);
     // get the light direction
     //vec3 light_dir = normalize(camera_position - calculateSunPos());
     vec3 light_dir = calculateSunPos(); // should be normalized
@@ -351,7 +352,7 @@ void main() {
     
     // get the atmosphere color
     col += calculate_scattering(
-    	camera_position,				// the position of the camera
+    	cameraPos + vec3(0.0, earthRadius + ELEVATION_CONSTANT, 0.0), // the position of the camera
         camera_vector, 					// the camera vector (ray direction of this pixel)
         scene.w, 						// max dist, essentially the scene depth
         scene.xyz,						// scene color, the color of the current pixel being rendered

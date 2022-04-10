@@ -74,14 +74,8 @@ void ChunkManager::render(Shader* shader, double time, double dayNightSpeed) {
 	{
 		const double minBrightness = 0.2;
 		double brightness = glm::sin(-time * dayNightSpeed);
-		if (brightness + 0.1 > 0.0) { // should still be a little bright over the horizen
-			double a = 80.0 * (brightness + 0.1);
-			brightness = 1.0 / (a * a + 1.0); // applies abs, peaks near 0 (sunrise/sunset)
-			brightness = std::max(1.0 - brightness, 0.2);
-		}
-		else {
-			brightness = minBrightness;
-		}
+		brightness = std::min(1.0, std::max(glm::sin(-time * dayNightSpeed), minBrightness));
+		
 
 		shader->setFloat("brightness", static_cast<float>(brightness));
 	}

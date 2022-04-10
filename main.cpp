@@ -168,7 +168,7 @@ int main() {
 	{
 
 		double frameStartTime = glfwGetTime() - originalFrameStartTime;
-		//frameStartTime = 0.0;
+		//frameStartTime = -3.0;
 		++counter;
 
 		// Limit framerate

@@ -153,7 +153,8 @@ void main() {
 				 + get_snoise(vec3(noise_coords.x, 0.0, noise_coords.z), biome.ampC, biome.freqC)
 				 + elevationD
 				 + extra_roughness;
-	float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
+	//float watertable = get_snoise(noise_coords + vec3(128.0), baseAmp/2.0, baseFreq*0.001) - baseAmp/4.0;
+	float watertable = 0.99;
 
 	vec4 pixel = vec4(base_elevation, elevation, elevationD, watertable);
 

@@ -26,7 +26,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept {
 
 void Chunk::render(Shader* shader, double distance) {
 	bool b = distance <= cutoffDistance;
-	b = false;
+	//b = false;
 
 	if (b) {
 		highDetail->renderCubes(shader);

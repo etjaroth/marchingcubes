@@ -8,7 +8,7 @@ uniform vec3 incidentLight;
 const float incidentLightIntensity = length(incidentLight); // I_0
 
 uniform mat4 viewMatInverse;
-uniform vec3 cameraDir;
+uniform vec3 cameraPos;
 
 uniform float time;
 uniform uvec2 skyTextureSize;
@@ -31,59 +31,30 @@ vec3 calculateMoonPos() {
 	return vec3(cos(time), sin(time), 0.0);
 }
 
-
-float circleIntegral(float x, float rSquared) {
-    // where c = sqrt(r^2 - x^2)
-    const float c = sqrt(rSquared - x * x);
-    return 0.5 * (x * c + rSquared * atan(x / c));
-}
-
-float fractionOfCircleAboveHorizen(float x, float r) {
-// Calculus
-// int from -r to b of sqrt(r^2 - x^2) / (PI * r^2)
-    const float rSquared = r * r;
-    const float num = circleIntegral(x, rSquared) - circleIntegral(-r, rSquared);
-    const float denom = 3.0 * PI;
-    float ret = num / denom;
-    ret = isnan(ret) ? 1.0 : 0.0;
-    ret = x < r ? 0.0 : 1.0;
-    return ret;
-}
-
 void main() {
     
     // get the camera vector
     vec3 simple_camera_vector = get_camera_vector(skyTextureSize, ivec2(gl_GlobalInvocationID.xy));
     vec3 camera_vector = applyCameraRotationInverse(simple_camera_vector);
-
-    // get the camera position, switch based on the defines
-    vec3 camera_position = vec3(0.0);
     
     // Add a sun and moon
-    const float cosSunRadius  = 0.0005;
-    const float cosMoonRadius = 0.001;
+    const float cosSunRadius  = 0.01;
+    const float cosMoonRadius = 0.1;
     const vec3 sunPos = calculateSunPos();
     const vec3 moonPos = calculateMoonPos();
     const float theta = dot(camera_vector, sunPos);
     const float phi = dot(camera_vector, calculateMoonPos());
 
-    // the color of this pixel
-    float b = max(sunPos.y + 1 - 0.999, 0.0);
-
-    const float r = 1.0;
-    float fracAboveHorizen = fractionOfCircleAboveHorizen(sunPos.y + r, r);
-    fracAboveHorizen = isnan(fracAboveHorizen) ? sunPos.y : fracAboveHorizen;
+    float fracAboveHorizen = sunPos.y;
     
     vec3 col = vec3(0.3, 1.0, 3.0) * max(min(1.0, fracAboveHorizen), 0.0); // percentage of circle above horizen
-    //col = theta > 0.9998 ? vec3(3.0) : col;
-    col = theta > (1.0 - 2.0 * cosSunRadius) ? vec3(3.0, 3.0, 1.0) : col;
-    col = phi > (1.0 - 2.0 * cosMoonRadius) ? vec3(3.0, 3.0, 3.0) : col;
+    //col = theta > (1.0 - cosSunRadius) ? vec3(3.0, 2.0, 1.0) : col;
     
     // apply exposure
     col = 1.0 - exp(-col);
     
     // Output to screen
-    //const vec4 pixel = vec4(col, 1.0);
-    const vec4 pixel = (camera_vector.y <= 0.0) ? vec4(1.0) : vec4(col, 1.0);
+    const vec4 pixel = vec4(col, 1.0);
+    //const vec4 pixel = (camera_vector.y <= 0.0) ? vec4(1.0) : vec4(col, 1.0);
 	imageStore(skyTexture, ivec2(gl_GlobalInvocationID.xy), pixel);
 }
