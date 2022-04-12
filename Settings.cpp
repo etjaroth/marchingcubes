@@ -273,6 +273,9 @@ Settings::Settings(std::string filename) {
 				}
 			}
 			break;
+			case SettingAction::dayNightSpeed:
+				linestream >> constants.dayNightSpeed;
+				break;
 			}
 		}
 	}

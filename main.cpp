@@ -59,8 +59,8 @@ int main() {
 	}
 
 	// Generate terrain
-	const unsigned long long chunkSize = settings.getConstants().chunkSize; // should be a power of 2
-	const unsigned long long chunkRadius = settings.getConstants().chunkRadius;
+	const unsigned int chunkSize = settings.getConstants().chunkSize; // should be a power of 2
+	const unsigned int chunkRadius = settings.getConstants().chunkRadius;
 
 	ChunkManager terrain(chunkSize + 1 - 2, glm::vec3(0.0f), chunkRadius, "genHeightmap.comp", "drawTexture.comp");
 	std::cout << std::setprecision(6);
@@ -109,7 +109,7 @@ int main() {
 	bool updateTerrain = true;
 
 	// Bullet Setup
-	BulletPhysicsWorld physics();
+	//BulletPhysicsWorld physics();
 
 
 	unsigned int counter = 0;
@@ -195,15 +195,12 @@ int main() {
 
 		// Render in stages
 
-		const double dayNightSpeed = 1.0 / 32.0;
-		//const double dayNightSpeed = 1.0 / 24.0;
-
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
 		if (true) {
-			sky.generateSky(camera, dayNightSpeed * frameStartTime);
+			sky.generateSky(camera, settings.getConstants().dayNightSpeed * frameStartTime);
 		}
-		sky.render(camera, dayNightSpeed * frameStartTime);
+		sky.render(camera, settings.getConstants().dayNightSpeed * frameStartTime);
 		glClearDepth(1.0f);
 		glEnable(GL_DEPTH_TEST);
 
@@ -222,7 +219,6 @@ int main() {
 			std::cout << "Perspective might be disorted" << std::endl;
 		}
 		projection = glm::perspective(glm::radians(45.0f), std::max(((float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y), 1.0f), 0.1f, settings.getConstants().farClipPlain);
-		//projection = glm::ortho(glm::radians(45.0f), (float)settings.getConstants().screenSize.x / (float)settings.getConstants().screenSize.y, 0.1f, 100.0f);
 		objectShader.setMat4("projection", projection);
 
 		///////////////////////////////////////////////////////////////////////
@@ -232,7 +228,7 @@ int main() {
 		}
 		//std::cout << glm::to_string(-camera.getPos()) << std::endl;
 		terrain.set_direction(camera.getDirection());
-		terrain.render(&objectShader, frameStartTime, dayNightSpeed);
+		terrain.render(&objectShader, frameStartTime, settings.getConstants().dayNightSpeed);
 
 		///////////////////////////////////////////////////////////////////////
 

@@ -13,6 +13,7 @@ class Settings
 		freeKey,
 		farClipPlain,
 		cullFace,
+		dayNightSpeed,
 
 		INVALID_ACTION
 	};
@@ -72,6 +73,8 @@ class Settings
 
 		float farClipPlain = 100.0f;
 		bool cullFace = true;
+
+		double dayNightSpeed = 1.0 / 32.0;
 
 		std::string controlConfigFile;
 

@@ -10,3 +10,5 @@ cullFace true
 chunkSize 32
 chunkRadius 5
 controlConfigFile controls.txt
+
+dayNightSpeed 1.0

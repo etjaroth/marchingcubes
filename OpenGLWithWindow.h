@@ -11,7 +11,7 @@ class OpenGLWithWindow
 
 	double lastmousex;
 	double lastmousey;
-	bool firstmousecallback;
+	bool firstmousecallback = true;
 
 	void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 	void mouse_callback(GLFWwindow* window, double xpos, double ypos);
