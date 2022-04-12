@@ -76,6 +76,24 @@
     <Filter Include="Header Files\Misc\Threading">
       <UniqueIdentifier>{5f7f0f14-2619-40db-a786-d783371697d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Misc\Threading\Basic">
+      <UniqueIdentifier>{befb22d8-f3ed-4818-89ae-e313bdf0d982}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Misc\Threading\Task">
+      <UniqueIdentifier>{43b5a767-2b23-4c9f-959b-b9a8cfd4a94d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc\Threading\Basic">
+      <UniqueIdentifier>{89105afb-7b92-4675-8508-9b65d13b89be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc\Threading\Task">
+      <UniqueIdentifier>{7083a31d-8bde-4328-94ad-c7ec648aa7ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\World\Physics">
+      <UniqueIdentifier>{a2b96f42-90f5-4f57-a780-82c3030483f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\World\Physics">
+      <UniqueIdentifier>{5bc2f306-ffbd-4bf0-b0e4-2b46f414997d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -156,17 +174,26 @@
     <ClCompile Include="TerrainMesh.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
+    <ClCompile Include="ThreadHolder.cpp">
+      <Filter>Source Files\Misc\Threading\Basic</Filter>
+    </ClCompile>
     <ClCompile Include="ThreadManager.cpp">
-      <Filter>Source Files\Misc\Threading</Filter>
+      <Filter>Source Files\Misc\Threading\Basic</Filter>
     </ClCompile>
     <ClCompile Include="AbstractThreadTask.cpp">
-      <Filter>Source Files\Misc\Threading</Filter>
+      <Filter>Source Files\Misc\Threading\Basic</Filter>
     </ClCompile>
     <ClCompile Include="HeightmapMeshGenerator.cpp">
-      <Filter>Source Files\Misc\Threading</Filter>
+      <Filter>Source Files\Misc\Threading\Task</Filter>
     </ClCompile>
-    <ClCompile Include="ThreadHolder.cpp">
-      <Filter>Source Files\Misc\Threading</Filter>
+    <ClCompile Include="TriangleMeshGenerator.cpp">
+      <Filter>Source Files\Misc\Threading\Task</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLWithWindow.cpp">
+      <Filter>Source Files\openGL Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="BulletPhysicsWorld.cpp">
+      <Filter>Source Files\World\Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -177,9 +204,6 @@
       <Filter>Header Files\Misc</Filter>
     </ClInclude>
     <ClInclude Include="Stopwatch.h">
-      <Filter>Header Files\Misc</Filter>
-    </ClInclude>
-    <ClInclude Include="Structs.h">
       <Filter>Header Files\Misc</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
@@ -242,26 +266,35 @@
     <ClInclude Include="Chunk.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadManager.h">
-      <Filter>Header Files\Misc\Threading</Filter>
-    </ClInclude>
-    <ClInclude Include="ThreadSafeQueue.h">
-      <Filter>Header Files\Misc\Threading</Filter>
-    </ClInclude>
-    <ClInclude Include="AbstractThreadTask.h">
-      <Filter>Header Files\Misc\Threading</Filter>
-    </ClInclude>
-    <ClInclude Include="HeightmapMeshGenerator.h">
-      <Filter>Header Files\Misc\Threading</Filter>
-    </ClInclude>
     <ClInclude Include="TerrainMesh.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
     <ClInclude Include="Settings.h">
       <Filter>Header Files\Misc</Filter>
     </ClInclude>
+    <ClInclude Include="HeightmapMeshGenerator.h">
+      <Filter>Header Files\Misc\Threading\Task</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractThreadTask.h">
+      <Filter>Header Files\Misc\Threading\Basic</Filter>
+    </ClInclude>
     <ClInclude Include="ThreadHolder.h">
+      <Filter>Header Files\Misc\Threading\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadManager.h">
+      <Filter>Header Files\Misc\Threading\Basic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadSafeQueue.h">
       <Filter>Header Files\Misc\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="TriangleMeshGenerator.h">
+      <Filter>Header Files\Misc\Threading\Task</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGLWithWindow.h">
+      <Filter>Header Files\opengGL wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="BulletPhysicsWorld.h">
+      <Filter>Header Files\World\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

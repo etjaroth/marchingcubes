@@ -22,6 +22,9 @@
 #include "Settings.h"
 #include "Sky.h"
 
+#include "BulletPhysicsWorld.h"
+#include "OpenGLWithWindow.h"
+
 // FPS control
 #include "Stopwatch.h"
 #include <chrono>
@@ -35,76 +38,25 @@ FPSCamera camera(settings.getConstants().spawnpoint,
 	settings.getConstants().spawnViewDir,
 	settings.getConstants().cameraSpeed);
 
-// Callbacks
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void error_callback(int error, const char* description);
+// Callback
 void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
 	GLsizei length, const char* message, const void* userParam); // Debug log
 
 int main() {
-	// Setup
-		// GLFW Initilisation
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SAMPLES, 4);
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-	// Window Creation
-	GLFWwindow* window =
-		glfwCreateWindow(settings.getConstants().screenSize.x,
-			settings.getConstants().screenSize.y, "Marching Cubes Demo", NULL, NULL); // Make window
-	settings.loadControls(window);
-
-	if (window == NULL) // Window failed
-	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate(); // End program
-		return -1;
-	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // Resize the window with framebuffer_size_callback()
-	glfwSetCursorPosCallback(window, mouse_callback);
-	//glfwSetErrorCallback(error_callback);
-
-	// Debug Output
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-
-	// Initilize GLAD
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		glfwTerminate(); // End program
-		return -1;
-	}
+	OpenGLWithWindow opengl{ camera, settings };
 
 	// Debug output
 	{
 		int flags;
 		glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-		//if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 		glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_FALSE);
 		glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_PERFORMANCE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_FALSE);
-		//}
 	}
-
-	// Declare window size and GL settings
-	glViewport(0, 0, settings.getConstants().screenSize.x, settings.getConstants().screenSize.y);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glEnable(GL_MULTISAMPLE);
-
-
 
 	// Generate terrain
 	const unsigned long long chunkSize = settings.getConstants().chunkSize; // should be a power of 2
@@ -137,7 +89,7 @@ int main() {
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool should_close = glfwWindowShouldClose(window);
+	bool should_close = opengl.shouldClose();
 	int frameCount = 0;
 	Stopwatch fpsCounter = Stopwatch();
 	double oldtime = 0.0f;
@@ -156,10 +108,9 @@ int main() {
 	bool meshViewToggle = false;
 	bool updateTerrain = true;
 
-	if (settings.getConstants().cullFace) {
-		glEnable(GL_CULL_FACE);
-	}
-	glEnable(GL_DEBUG_OUTPUT);
+	// Bullet Setup
+	BulletPhysicsWorld physics();
+
 
 	unsigned int counter = 0;
 	//double originalFrameStartTime = glfwGetTime() + 10.0;
@@ -196,10 +147,10 @@ int main() {
 
 		// Keyboard
 				// Misc Important
-		settings.readInput(window);
+		opengl.readInputToSettings();
 
 		if (settings.getActions().quit) // exit on escape
-			glfwSetWindowShouldClose(window, true);
+			opengl.close();
 		if (settings.getActions().resetPos)
 			camera = FPSCamera(settings.getConstants().spawnpoint, settings.getConstants().spawnViewDir, settings.getConstants().cameraSpeed);
 		if (settings.getActions().resetViewDir)
@@ -287,9 +238,7 @@ int main() {
 
 		// Display
 
-		glfwSwapBuffers(window);
-		glfwPollEvents(); // Calls functions from inputs
-		should_close = glfwWindowShouldClose(window);
+		should_close = opengl.update();
 
 		///////////////////////////////////////////////////////////////////////
 		// Measure fps
@@ -306,44 +255,7 @@ int main() {
 		}
 	}
 
-	// Cleanup
-	//glDeleteFramebuffers(1, &framebuffer);
-	glfwTerminate();
 	return 0;
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) { // Resizes window when needed
-	settings.setScreenSize(glm::uvec2(width, height));
-	glViewport(0, 0, width, height);
-}
-
-double lastmousex = settings.getConstants().screenSize.x / 2.0;
-double lastmousey = settings.getConstants().screenSize.y / 2.0;
-bool firstmousecallback = true;
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	if (firstmousecallback) {
-		firstmousecallback = false;
-		lastmousex = xpos;
-		lastmousey = ypos;
-	}
-	else {
-		double xoffset = xpos - lastmousex;
-		double yoffset = ypos - lastmousey; // y-coordinates are inverted
-
-		const float sensitivity = 0.001f;
-		xoffset *= sensitivity;
-		yoffset *= sensitivity;
-
-		lastmousex = xpos;
-		lastmousey = ypos;
-
-		camera.rotate((float)yoffset, (float)xoffset, 0.0f);
-	};
-}
-
-void error_callback(int error, const char* description) {
-	fprintf(stderr, "Error: %s\n", description);
 }
 
 unsigned int loadTexture(const std::string filename, unsigned int colortype, bool flip) {
