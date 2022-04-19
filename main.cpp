@@ -1,10 +1,9 @@
 // General
+#pragma warning(push, 0)
 #include "Config.h"
 #ifndef STB_IMAGE_IMPLEMENTATION // Causes errors if in Config.h
 #define STB_IMAGE_IMPLEMENTATION
-#pragma warning(push, 0)
 #include "stb_image.h"
-#pragma warning(pop)
 #endif
 #include <iomanip>
 
@@ -12,9 +11,7 @@
 #include "Shader.h" // Shading
 #include "Light.h"
 
-#include "camera.h" // Cameras
-#include "FPSCamera.h"
-#include "FlyCamera.h"
+#include "PC.h"
 
 #include "MarchingCubes.h"
 #include "ChunkManager.h"
@@ -23,7 +20,9 @@
 #include "Sky.h"
 
 #include "BulletPhysicsWorld.h"
+
 #include "OpenGLWithWindow.h"
+#pragma warning(pop)
 
 // FPS control
 #include "Stopwatch.h"
@@ -33,17 +32,18 @@
 // Settings
 Settings settings{};
 
-// Camera
-FPSCamera camera(settings.getConstants().spawnpoint,
-	settings.getConstants().spawnViewDir,
-	settings.getConstants().cameraSpeed);
+// Physics and Camera
+std::shared_ptr<BulletPhysicsWorld> physics = std::make_shared<BulletPhysicsWorld>();
+PC pc(physics, settings);
 
 // Callback
 void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
 	GLsizei length, const char* message, const void* userParam); // Debug log
 
+const double framerateTarget = 60.0;
+
 int main() {
-	OpenGLWithWindow opengl{ camera, settings };
+	OpenGLWithWindow opengl{ pc.getCamera(), settings };
 
 	// Debug output
 	{
@@ -109,7 +109,7 @@ int main() {
 	bool updateTerrain = true;
 
 	// Bullet Setup
-	//BulletPhysicsWorld physics();
+	physics->setGravity(-9.8f);
 
 
 	unsigned int counter = 0;
@@ -152,9 +152,9 @@ int main() {
 		if (settings.getActions().quit) // exit on escape
 			opengl.close();
 		if (settings.getActions().resetPos)
-			camera = FPSCamera(settings.getConstants().spawnpoint, settings.getConstants().spawnViewDir, settings.getConstants().cameraSpeed);
+			pc.getCamera() = FPSCamera(settings.getConstants().spawnpoint, settings.getConstants().spawnViewDir, settings.getConstants().cameraSpeed);
 		if (settings.getActions().resetViewDir)
-			camera = FPSCamera(camera.getPos(), glm::vec3(0, 0, -1.0f), settings.getConstants().cameraSpeed);
+			pc.getCamera() = FPSCamera(pc.getCamera().getPos(), glm::vec3(0, 0, -1.0f), settings.getConstants().cameraSpeed);
 		// Misc Unimportant
 		if (settings.getActions().toggleMeshView) {
 			if (meshViewToggle) {
@@ -169,27 +169,27 @@ int main() {
 			updateTerrain = !updateTerrain;
 		// Fps Movement
 		if (settings.getActions().moveNorth)
-			camera.pan(glm::vec3(0.0f, 0.0f, -deltatime)); // z
+			pc.getCamera().pan(glm::vec3(0.0f, 0.0f, -deltatime)); // z
 		if (settings.getActions().moveSouth)
-			camera.pan(glm::vec3(0.0f, 0.0f, deltatime)); // z
+			pc.getCamera().pan(glm::vec3(0.0f, 0.0f, deltatime)); // z
 		if (settings.getActions().moveWest)
-			camera.pan(glm::vec3(-deltatime, 0.0f, 0.0f)); // x
+			pc.getCamera().pan(glm::vec3(-deltatime, 0.0f, 0.0f)); // x
 		if (settings.getActions().moveEast)
-			camera.pan(glm::vec3(deltatime, 0.0f, 0.0f)); // x
+			pc.getCamera().pan(glm::vec3(deltatime, 0.0f, 0.0f)); // x
 		if (settings.getActions().moveUp)
-			camera.pan(glm::vec3(0.0f, -deltatime, 0.0f)); // yaw
+			pc.getCamera().pan(glm::vec3(0.0f, -deltatime, 0.0f)); // yaw
 		if (settings.getActions().moveDown)
-			camera.pan(glm::vec3(0.0f, deltatime, 0.0f)); // yaw
+			pc.getCamera().pan(glm::vec3(0.0f, deltatime, 0.0f)); // yaw
 				// Fly Movement
 			// Rotation
 		if (settings.getActions().rotateCameraNorth)
-			camera.rotate((float)(-deltatime), 0.0f, 0.0f);
+			pc.getCamera().rotate((float)(-deltatime), 0.0f, 0.0f);
 		if (settings.getActions().rotateCameraSouth)
-			camera.rotate((float)deltatime, 0.0f, 0.0f);
+			pc.getCamera().rotate((float)deltatime, 0.0f, 0.0f);
 		if (settings.getActions().rotateCameraWest)
-			camera.rotate(0.0f, (float)(-deltatime), 0.0f);
+			pc.getCamera().rotate(0.0f, (float)(-deltatime), 0.0f);
 		if (settings.getActions().rotateCameraEast)
-			camera.rotate(0.0f, (float)deltatime, 0.0f);
+			pc.getCamera().rotate(0.0f, (float)deltatime, 0.0f);
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -198,19 +198,19 @@ int main() {
 		glDisable(GL_DEPTH_TEST);
 		glClearDepth(1.0f);
 		if (true) {
-			sky.generateSky(camera, settings.getConstants().dayNightSpeed * frameStartTime);
+			sky.generateSky(pc.getCamera(), settings.getConstants().dayNightSpeed * frameStartTime);
 		}
-		sky.render(camera, settings.getConstants().dayNightSpeed * frameStartTime);
+		sky.render(pc.getCamera(), settings.getConstants().dayNightSpeed * frameStartTime);
 		glClearDepth(1.0f);
 		glEnable(GL_DEPTH_TEST);
 
 		// Perspective
 		objectShader.use();
-		objectShader.setVec3("viewPos", -camera.getPos());
+		objectShader.setVec3("viewPos", -pc.getCamera().getPos());
 
 		// View Matrix (Camera) (World -> View)
-		camera.setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
-		glUniformMatrix4fv(camera.getViewLoc(), 1, GL_FALSE, glm::value_ptr(camera.getView())); // Pass to shader
+		pc.getCamera().setViewLoc(glGetUniformLocation(objectShader.shaderProgram, "view"));
+		glUniformMatrix4fv(pc.getCamera().getViewLoc(), 1, GL_FALSE, glm::value_ptr(pc.getCamera().getView())); // Pass to shader
 		// Projection Matrix
 		glm::mat4 projection = glm::mat4(1.0f); // Projection Matrix (View -> Clip)
 		if ((static_cast<float>(settings.getConstants().screenSize.x) /
@@ -224,10 +224,10 @@ int main() {
 		///////////////////////////////////////////////////////////////////////
 
 		if (updateTerrain) {
-			terrain.set_pos(-camera.getPos());
+			terrain.set_pos(-pc.getCamera().getPos());
 		}
 		//std::cout << glm::to_string(-camera.getPos()) << std::endl;
-		terrain.set_direction(camera.getDirection());
+		terrain.set_direction(pc.getCamera().getDirection());
 		terrain.render(&objectShader, frameStartTime, settings.getConstants().dayNightSpeed);
 
 		///////////////////////////////////////////////////////////////////////

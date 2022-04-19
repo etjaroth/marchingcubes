@@ -17,6 +17,12 @@ public:
 	BulletPhysicsWorld& operator=(BulletPhysicsWorld&& world) noexcept;
 	~BulletPhysicsWorld();
 
+	void update(double deltatime);
+
+	btDiscreteDynamicsWorld* getWorld();
+
+	void addRigidBody(btRigidBody* body);
+	void removeRigidBody(btRigidBody* body);
 	void setGravity(float strength);
 };
 

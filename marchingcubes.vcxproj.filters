@@ -195,6 +195,27 @@
     <ClCompile Include="BulletPhysicsWorld.cpp">
       <Filter>Source Files\World\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="PC.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsObject.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="CapsuleObject.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="TriangleMeshObject.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxObject.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryLeakChecker.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="SphereObject.cpp">
+      <Filter>Source Files\World\Physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FastNoise.h">
@@ -294,6 +315,27 @@
       <Filter>Header Files\opengGL wrappers</Filter>
     </ClInclude>
     <ClInclude Include="BulletPhysicsWorld.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="CapsuleObject.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PC.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsObject.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="TriangleMeshObject.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryLeakChecker.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxObject.h">
+      <Filter>Header Files\World\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereObject.h">
       <Filter>Header Files\World\Physics</Filter>
     </ClInclude>
   </ItemGroup>

@@ -151,8 +151,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\Documents\cpplibs\lib\opengl\glad\src\glad.c" />
     <ClCompile Include="AbstractThreadTask.cpp" />
+    <ClCompile Include="BoxObject.cpp" />
     <ClCompile Include="BulletPhysicsWorld.cpp" />
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="CapsuleObject.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkManager.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
@@ -166,14 +168,18 @@
     <ClCompile Include="HeightmapMeshGenerator.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="MarchingCubes.cpp" />
+    <ClCompile Include="MemoryLeakChecker.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenGLWithWindow.cpp" />
+    <ClCompile Include="PC.cpp" />
+    <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="ProcessingStage.cpp" />
     <ClCompile Include="RenderBox.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Sky.cpp" />
+    <ClCompile Include="SphereObject.cpp" />
     <ClCompile Include="SSBOComputeShader.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
     <ClCompile Include="TerrainMesh.cpp" />
@@ -184,11 +190,14 @@
     <ClCompile Include="ThreadHolder.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="TriangleMeshGenerator.cpp" />
+    <ClCompile Include="TriangleMeshObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractThreadTask.h" />
+    <ClInclude Include="BoxObject.h" />
     <ClInclude Include="BulletPhysicsWorld.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="CapsuleObject.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkManager.h" />
     <ClInclude Include="ComputeShader.h" />
@@ -204,13 +213,17 @@
     <ClInclude Include="HeightmapMeshGenerator.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="MarchingCubes.h" />
+    <ClInclude Include="MemoryLeakChecker.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="OpenGLWithWindow.h" />
+    <ClInclude Include="PC.h" />
+    <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="ProcessingStage.h" />
     <ClInclude Include="RenderBox.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Sky.h" />
+    <ClInclude Include="SphereObject.h" />
     <ClInclude Include="SSBOComputeShader.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="TerrainMesh.h" />
@@ -219,6 +232,7 @@
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="ThreadSafeQueue.h" />
     <ClInclude Include="TriangleMeshGenerator.h" />
+    <ClInclude Include="TriangleMeshObject.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="drawTexture.comp" />

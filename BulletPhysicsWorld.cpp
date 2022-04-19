@@ -1,11 +1,16 @@
+#pragma warning(push 0)
 #include "BulletPhysicsWorld.h"
+#pragma warning(pop)
+#include <iostream>
 
 BulletPhysicsWorld::BulletPhysicsWorld()
 	: collisionConfiguration{ new btDefaultCollisionConfiguration() },
 	dispatcher{ new btCollisionDispatcher(collisionConfiguration) },
 	broadphase{ new btDbvtBroadphase() },
 	solver{ new btSequentialImpulseConstraintSolver() },
-	dynamicsWorld{ new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration) } {}
+	dynamicsWorld{ new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration) } {
+	std::cout << "Creating Physics World" << std::endl;
+}
 
 BulletPhysicsWorld::BulletPhysicsWorld(BulletPhysicsWorld& world)
 	: collisionConfiguration{ new btDefaultCollisionConfiguration(*(world.collisionConfiguration)) },
@@ -35,11 +40,43 @@ BulletPhysicsWorld& BulletPhysicsWorld::operator=(BulletPhysicsWorld&& world) no
 }
 
 BulletPhysicsWorld::~BulletPhysicsWorld() {
+
+	//remove the rigidbodies from the dynamics world and delete them
+	for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
+	{
+		btCollisionObject* obj = getWorld()->getCollisionObjectArray()[i];
+		btRigidBody* body = btRigidBody::upcast(obj);
+		if (body && body->getMotionState())
+		{
+			delete body->getMotionState();
+		}
+		dynamicsWorld->removeCollisionObject(obj);
+		delete obj;
+	}
+
 	delete dynamicsWorld;
 	delete solver;
 	delete broadphase;
 	delete dispatcher;
 	delete collisionConfiguration;
+
+	std::cout << "Destroyed Physics World" << std::endl;
+}
+
+void BulletPhysicsWorld::update(double deltatime) {
+	dynamicsWorld->stepSimulation(deltatime, 10);
+}
+
+btDiscreteDynamicsWorld* BulletPhysicsWorld::getWorld() {
+	return dynamicsWorld;
+}
+
+void BulletPhysicsWorld::addRigidBody(btRigidBody* body) {
+	dynamicsWorld->addRigidBody(body);
+}
+
+void BulletPhysicsWorld::removeRigidBody(btRigidBody* body) {
+	dynamicsWorld->removeCollisionObject(body);
 }
 
 void BulletPhysicsWorld::setGravity(float strength) {

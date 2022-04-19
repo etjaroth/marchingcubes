@@ -1,19 +1,31 @@
 #pragma once
-#include "Config.h"
-#include "Shader.h"
 #include "ComputeShader.h"
-#include "SSBOComputeShader.h"
-#include "Heightmap.h"
+#include "Config.h"
 #include "CoordinateSystem.h"
 #include "Fence.h"
+#include "Heightmap.h"
+#include "Shader.h"
+#include "SSBOComputeShader.h"
 
 class MarchingCubes
 {
+
+public:
+
+	struct Vertex {
+		glm::vec4 pos;
+		glm::vec4 normal;
+		glm::vec4 material;
+	};
+
 private:
 	glm::ivec3 pos;
 	int verticies_on_side;
 	int edges_on_side;
 	int verticies_on_side_with_buffer;
+
+	// Physics
+
 
 	// Shaders
 	Heightmap& heightmapGenerator;
